@@ -1,38 +1,24 @@
-// Chess Quest v2.1
-// Chess Quest — Firebase Edition
+// Chess Quest v2.2 — Firebase compat SDK edition
+// Switched to the same proven setup as Wavr: plain global <script> tags,
+// firebase-*-compat.js builds, v8-style API (firebase.auth(), firebase.firestore()).
+// No ES modules, no dynamic import() — avoids all the module/non-module
+// boundary issues that caused Firestore writes to hang indefinitely.
 const { useState, useCallback, useRef, useEffect } = React;
 
-// ═══════════════════════════════════════════════════════════
-// FIREBASE CONFIG
-// ═══════════════════════════════════════════════════════════
-// Firebase is loaded via a real <script type="module"> in index.html
-// (Babel-standalone can't do dynamic import() outside module scope),
-// which exposes everything we need on window.__firebase
 let fbAuth = null, fbDb = null, googleProvider = null;
-let _signInWithPopup, _signInWithEmailAndPassword, _createUserWithEmailAndPassword, _signOut, _onAuthStateChanged;
-let _doc, _getDoc, _setDoc;
 
 async function initFirebase(){
   if(fbAuth) return true;
-  // Wait for the module script in index.html to finish loading Firebase
+  // Wait for the compat scripts + config in index.html to finish loading
   let tries = 0;
   while(!window.__firebase && tries < 100){
     await new Promise(r=>setTimeout(r,50));
     tries++;
   }
-  if(!window.__firebase){ console.error("Firebase failed to load"); return false; }
-  const fb = window.__firebase;
-  fbAuth = fb.auth;
-  fbDb   = fb.db;
-  googleProvider = fb.googleProvider;
-  _signInWithPopup                 = fb.signInWithPopup;
-  _signInWithEmailAndPassword      = fb.signInWithEmailAndPassword;
-  _createUserWithEmailAndPassword  = fb.createUserWithEmailAndPassword;
-  _signOut                         = fb.signOut;
-  _onAuthStateChanged              = fb.onAuthStateChanged;
-  _doc    = fb.doc;
-  _getDoc = fb.getDoc;
-  _setDoc = fb.setDoc;
+  if(!window.__fbAuth || !window.__fbDb){ console.error("Firebase failed to load"); return false; }
+  fbAuth = window.__fbAuth;
+  fbDb   = window.__fbDb;
+  googleProvider = new firebase.auth.GoogleAuthProvider();
   return true;
 }
 
@@ -2200,7 +2186,7 @@ function LoginScreen({onLogin}){
     setLoading(true); setError("");
     try {
       await initFirebase();
-      const result = await _signInWithPopup(fbAuth, googleProvider);
+      const result = await fbAuth.signInWithPopup(googleProvider);
       onLogin(result.user);
     } catch(e) {
       console.error(e);
@@ -2213,8 +2199,9 @@ function LoginScreen({onLogin}){
     if(!email || !password){ setError("Please fill in all fields."); return; }
     setLoading(true); setError("");
     try {
-      const fn = isSignup ? _createUserWithEmailAndPassword : _signInWithEmailAndPassword;
-      const result = await fn(fbAuth, email, password);
+      const result = isSignup
+        ? await fbAuth.createUserWithEmailAndPassword(email, password)
+        : await fbAuth.signInWithEmailAndPassword(email, password);
       onLogin(result.user);
     } catch(e) {
       if(e.code==="auth/email-already-in-use") setError("Email already registered. Try logging in.");
@@ -2548,7 +2535,7 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
           <div style={{fontSize:11,color:"rgba(255,255,255,.4)",fontWeight:700,letterSpacing:1,marginBottom:12}}>
             🏆 LEARN CHESS · EARN GEMS · BECOME A MASTER
           </div>
-          <button onClick={async()=>{await _signOut(fbAuth);}} style={{background:"rgba(255,255,255,.08)",border:"2px solid rgba(255,255,255,.15)",borderRadius:12,padding:"8px 20px",fontSize:12,fontWeight:800,color:"rgba(255,255,255,.5)",cursor:"pointer"}}>
+          <button onClick={async()=>{await fbAuth.signOut();}} style={{background:"rgba(255,255,255,.08)",border:"2px solid rgba(255,255,255,.15)",borderRadius:12,padding:"8px 20px",fontSize:12,fontWeight:800,color:"rgba(255,255,255,.5)",cursor:"pointer"}}>
             Sign Out
           </button>
         </div>
@@ -2589,13 +2576,13 @@ function ChessWorld(){
     let unsub = ()=>{};
     initFirebase().then(ok=>{
       if(!ok){ setAuthLoading(false); return; }
-      unsub = _onAuthStateChanged(fbAuth, async user => {
+      unsub = fbAuth.onAuthStateChanged(async user => {
         setAuthUser(user);
         setAuthLoading(false);
         if(user){
           try {
-            const snap = await _getDoc(_doc(fbDb,"users",user.uid));
-            if(snap.exists() && snap.data().profiles){
+            const snap = await fbDb.collection("users").doc(user.uid).get();
+            if(snap.exists && snap.data().profiles){
               setProfiles(snap.data().profiles);
             }
           } catch(e){
@@ -2615,10 +2602,10 @@ function ChessWorld(){
       console.warn("[ChessQuest] Not saving — no authenticated user");
       return;
     }
-    if(!fbDb || !_setDoc || !_doc){
+    if(!fbDb){
       setSyncStatus("error");
-      setSyncErrorDetail("Firestore not initialized — fbDb/_setDoc/_doc missing");
-      console.error("[ChessQuest] Firestore not ready", {fbDb:!!fbDb,_setDoc:!!_setDoc,_doc:!!_doc});
+      setSyncErrorDetail("Firestore not initialized — fbDb missing");
+      console.error("[ChessQuest] Firestore not ready", {fbDb:!!fbDb});
       return;
     }
     setSyncStatus("saving");
@@ -2627,7 +2614,7 @@ function ChessWorld(){
       const now = new Date();
       // Race the Firestore write against a 10s timeout so a hung connection
       // shows a clear error instead of spinning forever
-      const writePromise = _setDoc(_doc(fbDb,"users",authUser.uid), {
+      const writePromise = fbDb.collection("users").doc(authUser.uid).set({
         profiles: updatedProfiles,
         lastSaved: now.toISOString(),
         email: authUser.email || "",
@@ -2993,7 +2980,7 @@ function ChessWorld(){
             </button>
 
             {/* Sign out */}
-            <button onClick={async()=>{SFX.tap();await _signOut(fbAuth);setShowSettings(false);}} style={{width:"100%",background:"#fff0f0",border:"2px solid #ff7675",borderRadius:14,padding:"12px",fontSize:13,fontWeight:800,color:"#e74c3c",cursor:"pointer"}}>
+            <button onClick={async()=>{SFX.tap();await fbAuth.signOut();setShowSettings(false);}} style={{width:"100%",background:"#fff0f0",border:"2px solid #ff7675",borderRadius:14,padding:"12px",fontSize:13,fontWeight:800,color:"#e74c3c",cursor:"pointer"}}>
               🚪 Sign Out
             </button>
           </div>

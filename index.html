@@ -28,48 +28,25 @@
   </div>
   <div id="root"></div>
 
-  <!-- Firebase config loaded from config.js (gitignored, not committed) -->
+  <!-- Firebase — compat SDK (v8-style global API), same proven approach as Wavr.
+       Plain global scripts, no ES modules, no dynamic import() complexity. -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="/config.js"></script>
-
-  <!-- Firebase v10 — loaded as a real ES module (only way to use dynamic CDN imports) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import {
-      getAuth, signInWithPopup, signInWithEmailAndPassword,
-      createUserWithEmailAndPassword, GoogleAuthProvider,
-      signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import {
-      initializeFirestore, doc, getDoc, setDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey:            window.__ENV?.CHESS_QUEST_API_KEY        || "",
-      authDomain:        window.__ENV?.CHESS_QUEST_AUTH_DOMAIN    || "",
-      projectId:         window.__ENV?.CHESS_QUEST_PROJECT_ID     || "",
-      storageBucket:     window.__ENV?.CHESS_QUEST_STORAGE_BUCKET || "",
-      messagingSenderId: window.__ENV?.CHESS_QUEST_SENDER_ID      || "",
-      appId:             window.__ENV?.CHESS_QUEST_APP_ID         || "",
+  <script>
+    var firebaseConfig = {
+      apiKey:            (window.__ENV && window.__ENV.CHESS_QUEST_API_KEY)        || "",
+      authDomain:        (window.__ENV && window.__ENV.CHESS_QUEST_AUTH_DOMAIN)    || "",
+      projectId:         (window.__ENV && window.__ENV.CHESS_QUEST_PROJECT_ID)     || "",
+      storageBucket:     (window.__ENV && window.__ENV.CHESS_QUEST_STORAGE_BUCKET) || "",
+      messagingSenderId: (window.__ENV && window.__ENV.CHESS_QUEST_SENDER_ID)      || "",
+      appId:             (window.__ENV && window.__ENV.CHESS_QUEST_APP_ID)         || "",
     };
-
-    const app = initializeApp(firebaseConfig);
-
-    // Force long-polling instead of WebChannel streaming — fixes Firestore
-    // writes hanging forever on some WiFi networks/firewalls/proxies that
-    // block or interfere with gRPC-style streaming connections.
-    const db = initializeFirestore(app, {
-      experimentalForceLongPolling: true,
-      useFetchStreams: false,
-    });
-
-    // Expose everything the main app needs on a global object
-    window.__firebase = {
-      auth: getAuth(app),
-      db: db,
-      googleProvider: new GoogleAuthProvider(),
-      signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-      signOut, onAuthStateChanged, doc, getDoc, setDoc,
-    };
+    firebase.initializeApp(firebaseConfig);
+    window.__fbAuth = firebase.auth();
+    window.__fbDb = firebase.firestore();
+    window.__firebase = { ready: true }; // signal to chess-quest.jsx that Firebase is loaded
   </script>
 
   <!-- React 18 -->

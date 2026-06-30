@@ -29,7 +29,7 @@ In Cloudflare Pages → **Settings → Environment Variables** → add these for
 
 Then go to **Deployments** → click **Retry deployment** for the variables to take effect.
 
-**How it works:** `functions/config.js.js.js` is a Cloudflare Pages Function that generates `/config.js` on the fly using your environment variables — so the actual keys are never committed to GitHub.
+**How it works:** `functions/config.js.js` is a Cloudflare Pages Function that generates `/config.js` on the fly using your environment variables — so the actual keys are never committed to GitHub.
 
 ### Step 4 — Firebase Setup
 
