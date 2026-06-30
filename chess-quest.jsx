@@ -1,6 +1,6 @@
 // Chess Quest v2.1
 // Chess Quest — Firebase Edition
-import { useState, useCallback, useRef, useEffect } from "react";
+const { useState, useCallback, useRef, useEffect } = React;
 
 // ═══════════════════════════════════════════════════════════
 // FIREBASE CONFIG
@@ -2586,7 +2586,7 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
   );
 }
 
-export default function ChessWorld(){
+function ChessWorld(){
   // ── Auth state ──
   const [authUser,   setAuthUser]   = useState(undefined); // undefined=loading, null=not logged in
   const [authLoading,setAuthLoading] = useState(true);

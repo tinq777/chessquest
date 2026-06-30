@@ -61,13 +61,25 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- Chess Quest app -->
-  <script type="text/babel" data-type="module" src="/chess-quest.jsx"></script>
+  <script type="text/babel" data-presets="react" src="/chess-quest.jsx"></script>
 
   <script>
     window.__chessQuestReady = () => {
       const el = document.getElementById('loading');
       if(el) el.style.display = 'none';
     };
+    // Surface any errors instead of hanging silently on loading screen
+    window.addEventListener('error', (e) => {
+      const el = document.getElementById('loading');
+      if(el){
+        el.innerHTML = `
+          <div style="color:#fff;text-align:center;padding:20px;max-width:340px;font-family:monospace;">
+            <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Something went wrong loading the app</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);word-break:break-word;">${e.message || e}</div>
+          </div>`;
+      }
+    });
   </script>
 </body>
 </html>
