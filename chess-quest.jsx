@@ -2607,20 +2607,26 @@ function ChessWorld(){
 
   // Save profiles to Firestore whenever they change
   const saveToCloud = async (updatedProfiles) => {
-    if(!authUser) return;
+    if(!authUser){
+      console.warn("[ChessQuest] Not saving — no authenticated user");
+      return;
+    }
     setSyncStatus("saving");
     try {
+      const now = new Date();
       await _setDoc(_doc(fbDb,"users",authUser.uid), {
         profiles: updatedProfiles,
-        lastSaved: new Date().toISOString(),
+        lastSaved: now.toISOString(),
         email: authUser.email || "",
         displayName: authUser.displayName || "",
       }, {merge:true});
       setSyncStatus("saved");
-      setTimeout(()=>setSyncStatus(""),2000);
+      setLastSavedAt(now);
+      console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
+      setTimeout(()=>setSyncStatus(""),3000);
     } catch(e){
       setSyncStatus("error");
-      console.error("Save error",e);
+      console.error("[ChessQuest] Save FAILED:", e.code || e.message || e);
     }
   };
 
@@ -2675,6 +2681,8 @@ function ChessWorld(){
   const [zoneCompleteData,setZoneCompleteData]=useState(null);
 
   const [confirmLeavePlay,setConfirmLeavePlay]=useState(false);
+  const [showSettings,setShowSettings]=useState(false);
+  const [lastSavedAt,setLastSavedAt]=useState(null);
 
   // Free play state — lifted here so game persists when switching tabs
   const [playBoard,setPlayBoard]=useState(INIT);
@@ -2812,10 +2820,26 @@ function ChessWorld(){
             <span style={{fontSize:14,display:"inline-block",animation:"gemPulse 2s ease-in-out infinite"}}>💎</span>
             <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>{gems}</span>
           </div>
-          {/* Cloud sync indicator */}
-          {syncStatus==="saving"&&<div style={{fontSize:11,color:"rgba(255,255,255,.6)",fontWeight:700}}>☁️ saving…</div>}
-          {syncStatus==="saved"&&<div style={{fontSize:11,color:"#00b894",fontWeight:700}}>☁️ saved ✓</div>}
-          {syncStatus==="error"&&<div style={{fontSize:11,color:"#ff7675",fontWeight:700}}>☁️ error</div>}
+          {/* Cloud sync indicator — more visible pill */}
+          <div style={{
+            display:"flex",alignItems:"center",gap:4,
+            background:syncStatus==="error"?"rgba(231,76,60,.25)":"rgba(255,255,255,.12)",
+            border:`1.5px solid ${syncStatus==="error"?"#ff7675":"rgba(255,255,255,.2)"}`,
+            borderRadius:14,padding:"4px 9px",
+          }}>
+            {syncStatus==="saving"&&<><span style={{fontSize:11,animation:"pulse .8s ease-in-out infinite"}}>☁️</span><span style={{fontSize:10,color:"rgba(255,255,255,.7)",fontWeight:700}}>saving</span></>}
+            {syncStatus==="saved"&&<><span style={{fontSize:11}}>☁️</span><span style={{fontSize:10,color:"#00d9a3",fontWeight:800}}>synced</span></>}
+            {syncStatus==="error"&&<><span style={{fontSize:11}}>⚠️</span><span style={{fontSize:10,color:"#ff7675",fontWeight:800}}>failed</span></>}
+            {syncStatus===""&&<><span style={{fontSize:11,opacity:.5}}>☁️</span><span style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:700}}>idle</span></>}
+          </div>
+
+          {/* Settings gear */}
+          <button onClick={()=>{SFX.tap();setShowSettings(true);}} style={{
+            width:32,height:32,borderRadius:"50%",
+            background:"rgba(255,255,255,.12)",border:"2px solid rgba(255,255,255,.25)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:15,cursor:"pointer",flexShrink:0,
+          }}>⚙️</button>
 
           {/* Profile switcher button — clearly labelled */}
           <button onClick={()=>setActiveProfile(null)} style={{
@@ -2907,6 +2931,55 @@ function ChessWorld(){
           );
         })}
       </div>
+
+      {/* ── SETTINGS PANEL ── */}
+      {showSettings&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn .2s ease"}} onClick={()=>setShowSettings(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:28,padding:"24px",maxWidth:320,width:"100%",boxShadow:"0 20px 0 rgba(0,0,0,.2)",border:"4px solid #6c5ce7",maxHeight:"80vh",overflowY:"auto"}}>
+
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+              <div style={{fontSize:20,fontWeight:900,color:"#2d3436"}}>⚙️ Settings</div>
+              <button onClick={()=>setShowSettings(false)} style={{width:30,height:30,borderRadius:"50%",background:"#dfe6e9",border:"none",fontSize:14,fontWeight:900,color:"#636e72",cursor:"pointer"}}>✕</button>
+            </div>
+
+            {/* Account info */}
+            <div style={{background:"#f0f4ff",borderRadius:16,padding:14,marginBottom:14}}>
+              <div style={{fontSize:11,fontWeight:800,color:"#636e72",letterSpacing:1,marginBottom:6}}>SIGNED IN AS</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#2d3436",wordBreak:"break-all"}}>{authUser?.email || "Unknown"}</div>
+            </div>
+
+            {/* Sync status */}
+            <div style={{background:syncStatus==="error"?"#fff0f0":"#f0fff8",border:`2px solid ${syncStatus==="error"?"#ff7675":"#00d9a3"}`,borderRadius:16,padding:14,marginBottom:14}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                <span style={{fontSize:18}}>{syncStatus==="error"?"⚠️":"☁️"}</span>
+                <span style={{fontSize:14,fontWeight:900,color:"#2d3436"}}>
+                  {syncStatus==="saving"?"Saving…":syncStatus==="error"?"Sync failed":"Cloud Sync"}
+                </span>
+              </div>
+              <div style={{fontSize:11,color:"#636e72",lineHeight:1.5}}>
+                {lastSavedAt
+                  ? `Last saved: ${lastSavedAt.toLocaleTimeString()}`
+                  : "No saves yet this session"}
+              </div>
+              {syncStatus==="error"&&(
+                <div style={{fontSize:11,color:"#e74c3c",marginTop:6,fontWeight:700}}>
+                  Check your internet connection or Firestore security rules.
+                </div>
+              )}
+            </div>
+
+            {/* Manual sync button */}
+            <button onClick={()=>{SFX.tap();saveToCloud(profiles);}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
+              🔄 Sync Now
+            </button>
+
+            {/* Sign out */}
+            <button onClick={async()=>{SFX.tap();await _signOut(fbAuth);setShowSettings(false);}} style={{width:"100%",background:"#fff0f0",border:"2px solid #ff7675",borderRadius:14,padding:"12px",fontSize:13,fontWeight:800,color:"#e74c3c",cursor:"pointer"}}>
+              🚪 Sign Out
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── LEAVE GAME CONFIRMATION ── */}
       {confirmLeavePlay&&(
