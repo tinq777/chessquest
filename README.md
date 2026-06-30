@@ -5,7 +5,7 @@ A kids chess learning app with puzzles, adventure map, profiles and Firebase clo
 ## 🚀 Deploy to Cloudflare Pages
 
 ### Step 1 — Push to GitHub
-Upload this folder to a new GitHub repository.
+Upload this entire folder (including the `functions/` directory) to a new GitHub repository.
 
 ### Step 2 — Connect to Cloudflare Pages
 1. Go to [pages.cloudflare.com](https://pages.cloudflare.com)
@@ -16,7 +16,7 @@ Upload this folder to a new GitHub repository.
 4. Click **Save and Deploy**
 
 ### Step 3 — Add Environment Variables
-In Cloudflare Pages → **Settings → Environment Variables** → add these:
+In Cloudflare Pages → **Settings → Environment Variables** → add these for **Production**:
 
 | Variable | Value |
 |---|---|
@@ -27,7 +27,9 @@ In Cloudflare Pages → **Settings → Environment Variables** → add these:
 | `CHESS_QUEST_SENDER_ID` | Your sender ID |
 | `CHESS_QUEST_APP_ID` | Your app ID |
 
-Then **redeploy** for the variables to take effect.
+Then go to **Deployments** → click **Retry deployment** for the variables to take effect.
+
+**How it works:** `functions/config.js.js` is a Cloudflare Pages Function that generates `/config.js` on the fly using your environment variables — so the actual keys are never committed to GitHub.
 
 ### Step 4 — Firebase Setup
 
@@ -47,10 +49,10 @@ service cloud.firestore {
 - Add your `your-app.pages.dev` domain
 
 ## 🔒 Security Notes
-- Firebase API keys are **not** stored in the code
-- They are injected at runtime via Cloudflare Pages Functions
-- Firestore rules ensure users can only access their own data
-- The `functions/index.js` handles server-side injection
+- Firebase keys are generated server-side per request, never committed to the repo
+- Firestore rules ensure each user can only access their own data
+- All external scripts use Subresource Integrity (SRI) hashes
+- Error messages are rendered via safe DOM methods (no innerHTML)
 
 ## ✉️ Enable Google Sign-In (optional)
 1. Firebase → Authentication → Sign-in method → Google → Enable

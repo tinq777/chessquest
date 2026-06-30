@@ -28,22 +28,8 @@
   </div>
   <div id="root"></div>
 
-  <!--
-    Environment variables injected by Cloudflare Pages at build time.
-    In Cloudflare Pages dashboard: Settings → Environment Variables → add all CHESS_QUEST_* vars.
-    This script tag is replaced by your CF Pages build — see _worker.js or use Pages Functions.
-    For local testing, copy .env.example to .env.local and fill in values.
-  -->
-  <script>
-    window.__ENV = {
-      CHESS_QUEST_API_KEY:        "%%CHESS_QUEST_API_KEY%%",
-      CHESS_QUEST_AUTH_DOMAIN:    "%%CHESS_QUEST_AUTH_DOMAIN%%",
-      CHESS_QUEST_PROJECT_ID:     "%%CHESS_QUEST_PROJECT_ID%%",
-      CHESS_QUEST_STORAGE_BUCKET: "%%CHESS_QUEST_STORAGE_BUCKET%%",
-      CHESS_QUEST_SENDER_ID:      "%%CHESS_QUEST_SENDER_ID%%",
-      CHESS_QUEST_APP_ID:         "%%CHESS_QUEST_APP_ID%%",
-    };
-  </script>
+  <!-- Firebase config loaded from config.js (gitignored, not committed) -->
+  <script src="/config.js"></script>
 
   <!-- Firebase v10 — loaded as a real ES module (only way to use dynamic CDN imports) -->
   <script type="module">
@@ -91,7 +77,9 @@
     crossorigin="anonymous"></script>
 
   <!-- Babel standalone for JSX transpilation -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"
+    integrity="sha384-t5dCbwd2JAhkzYowmy8eV7aUW/ByHz2ZXUp1P2le0v8vAVHoCgLsHMrNOwDb5DF4"
+    crossorigin="anonymous"></script>
 
   <!-- Chess Quest app -->
   <script type="text/babel" data-presets="react" src="/chess-quest.jsx"></script>
@@ -109,16 +97,38 @@
       const src = (e && e.filename) ? e.filename.split('/').pop() : 'unknown file';
       const line = (e && e.lineno) ? e.lineno : '?';
       const col = (e && e.colno) ? e.colno : '?';
-      el.innerHTML = `
-        <div style="color:#fff;text-align:center;padding:20px;max-width:360px;font-family:monospace;">
-          <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:10px;">${label}</div>
-          <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:12px;text-align:left;font-size:11px;color:#ffeb3b;word-break:break-word;line-height:1.6;">
-            <div><b>File:</b> ${src}</div>
-            <div><b>Line:</b> ${line}, <b>Col:</b> ${col}</div>
-            <div style="margin-top:8px;"><b>Message:</b><br/>${msg}</div>
-          </div>
-        </div>`;
+
+      // Build DOM nodes safely instead of innerHTML (avoids XSS risk)
+      el.textContent = '';
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'color:#fff;text-align:center;padding:20px;max-width:360px;font-family:monospace;';
+
+      const icon = document.createElement('div');
+      icon.style.cssText = 'font-size:40px;margin-bottom:12px;';
+      icon.textContent = '⚠️';
+
+      const title = document.createElement('div');
+      title.style.cssText = 'font-size:14px;font-weight:700;margin-bottom:10px;';
+      title.textContent = label; // label is always a trusted internal string
+
+      const box = document.createElement('div');
+      box.style.cssText = 'background:rgba(0,0,0,.3);border-radius:10px;padding:12px;text-align:left;font-size:11px;color:#ffeb3b;word-break:break-word;line-height:1.6;';
+
+      const fileLine = document.createElement('div');
+      fileLine.textContent = 'File: ' + src;
+      const posLine = document.createElement('div');
+      posLine.textContent = 'Line: ' + line + ', Col: ' + col;
+      const msgLine = document.createElement('div');
+      msgLine.style.marginTop = '8px';
+      msgLine.textContent = 'Message: ' + msg;
+
+      box.appendChild(fileLine);
+      box.appendChild(posLine);
+      box.appendChild(msgLine);
+      wrap.appendChild(icon);
+      wrap.appendChild(title);
+      wrap.appendChild(box);
+      el.appendChild(wrap);
     }
     window.addEventListener('error', (e) => showError('Script Error', e));
     window.addEventListener('unhandledrejection', (e) => showError('Promise Error', {message: e.reason?.message || e.reason}));
