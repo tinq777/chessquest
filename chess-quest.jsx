@@ -2616,25 +2616,33 @@ function ChessWorld(){
     }
     setSyncStatus("saving");
     setSyncErrorDetail("");
+    let slowSaveTimer = null;
     try {
       const now = new Date();
-      // Race the Firestore write against a 10s timeout so a hung connection
-      // shows a clear error instead of spinning forever
-      const writePromise = fbDb.collection("users").doc(authUser.uid).set({
+      // Important: do not fail the save just because Firestore is slow.
+      // On iPhone/PWA or some networks, Firestore writes can complete after 10–20s.
+      // The previous build used Promise.race(timeout), which caused a false
+      // "Sync failed" message even though the data later appeared in Firebase.
+      slowSaveTimer = setTimeout(()=>{
+        setSyncStatus("saving");
+        setSyncErrorDetail("Still saving… Firestore is responding slowly, but the app will keep trying instead of marking this as failed.");
+      },12000);
+
+      await fbDb.collection("users").doc(authUser.uid).set({
         profiles: updatedProfiles,
         lastSaved: now.toISOString(),
         email: authUser.email || "",
         displayName: authUser.displayName || "",
       }, {merge:true});
-      const timeoutPromise = new Promise((_,reject)=>
-        setTimeout(()=>reject(new Error("TIMEOUT: Firestore write took longer than 15s — check Firestore database, rules, project ID, and network transport")),15000)
-      );
-      await Promise.race([writePromise, timeoutPromise]);
+
+      if(slowSaveTimer) clearTimeout(slowSaveTimer);
       setSyncStatus("saved");
+      setSyncErrorDetail("");
       setLastSavedAt(now);
       console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
       setTimeout(()=>setSyncStatus(""),3000);
     } catch(e){
+      if(slowSaveTimer) clearTimeout(slowSaveTimer);
       setSyncStatus("error");
       const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
       setSyncErrorDetail(detail);

@@ -67,3 +67,7 @@ Once deployed, visit the URL on iPhone → Share → Add to Home Screen
 This build includes `functions/config.js.js`, which is the Cloudflare Pages Function route for `/config.js`. The app loads `/config.js` before Firebase starts, so this file name matters. If `/config.js` returns 404 or an empty `window.__ENV`, Firebase will not sync.
 
 After deploying, open `https://YOUR-PAGES-SITE.pages.dev/config.js` in the browser. It should show `window.__ENV = { ... }` with your Firebase config values filled in.
+
+## Cloud sync timeout fix in this build
+
+This build removes the old hard Firestore write timeout. The previous build could show `Sync failed` after 10–15 seconds even when Firebase completed the save shortly afterwards. Now the app keeps the status as `Saving…` for slow Firestore writes and only shows an error if Firebase itself rejects the write.
