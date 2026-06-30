@@ -2810,7 +2810,7 @@ function ChessWorld(){
             <div style={{fontSize:9,color:"rgba(255,255,255,.55)",fontWeight:800,letterSpacing:2,marginTop:1}}>KIDS CHESS ⚔️</div>
           </div>
         </div>
-        {/* Stats + profile switcher */}
+        {/* Stats + settings — simplified */}
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <div style={{background:"linear-gradient(145deg,#f1c40f,#e67e22)",borderRadius:16,padding:"4px 10px",border:"2px solid rgba(255,255,255,.3)",boxShadow:"0 3px 0 #d4ac0d",display:"flex",alignItems:"center",gap:3}}>
             <span style={{fontSize:14,display:"inline-block",animation:"starSpin 4s linear infinite"}}>⭐</span>
@@ -2820,40 +2820,22 @@ function ChessWorld(){
             <span style={{fontSize:14,display:"inline-block",animation:"gemPulse 2s ease-in-out infinite"}}>💎</span>
             <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>{gems}</span>
           </div>
-          {/* Cloud sync indicator — more visible pill */}
-          <div style={{
-            display:"flex",alignItems:"center",gap:4,
-            background:syncStatus==="error"?"rgba(231,76,60,.25)":"rgba(255,255,255,.12)",
-            border:`1.5px solid ${syncStatus==="error"?"#ff7675":"rgba(255,255,255,.2)"}`,
-            borderRadius:14,padding:"4px 9px",
-          }}>
-            {syncStatus==="saving"&&<><span style={{fontSize:11,animation:"pulse .8s ease-in-out infinite"}}>☁️</span><span style={{fontSize:10,color:"rgba(255,255,255,.7)",fontWeight:700}}>saving</span></>}
-            {syncStatus==="saved"&&<><span style={{fontSize:11}}>☁️</span><span style={{fontSize:10,color:"#00d9a3",fontWeight:800}}>synced</span></>}
-            {syncStatus==="error"&&<><span style={{fontSize:11}}>⚠️</span><span style={{fontSize:10,color:"#ff7675",fontWeight:800}}>failed</span></>}
-            {syncStatus===""&&<><span style={{fontSize:11,opacity:.5}}>☁️</span><span style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:700}}>idle</span></>}
-          </div>
 
-          {/* Settings gear */}
+          {/* Player avatar + settings combined into one tappable button */}
           <button onClick={()=>{SFX.tap();setShowSettings(true);}} style={{
-            width:32,height:32,borderRadius:"50%",
-            background:"rgba(255,255,255,.12)",border:"2px solid rgba(255,255,255,.25)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:15,cursor:"pointer",flexShrink:0,
-          }}>⚙️</button>
-
-          {/* Profile switcher button — clearly labelled */}
-          <button onClick={()=>setActiveProfile(null)} style={{
+            display:"flex",alignItems:"center",gap:6,
             background:`linear-gradient(145deg,${profile.color},${profile.color}88)`,
-            border:"2px solid rgba(255,255,255,.4)",borderRadius:16,
+            border:"2px solid rgba(255,255,255,.4)",borderRadius:18,
             boxShadow:"0 3px 0 rgba(0,0,0,.3)",
-            cursor:"pointer",display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 6px",
+            cursor:"pointer",padding:"4px 10px 4px 4px",
           }}>
-            <span style={{fontSize:18}}>{profile.avatar}</span>
-            <div style={{textAlign:"left"}}>
-              <div style={{fontSize:10,fontWeight:900,color:"rgba(255,255,255,.7)",letterSpacing:.5}}>PLAYER</div>
-              <div style={{fontSize:11,fontWeight:900,color:"#fff",lineHeight:1}}>{profile.name}</div>
-            </div>
-            <span style={{fontSize:10,color:"rgba(255,255,255,.6)",marginLeft:2}}>▼</span>
+            <span style={{
+              width:26,height:26,borderRadius:"50%",
+              background:"rgba(255,255,255,.2)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:15,
+            }}>{profile.avatar}</span>
+            <span style={{fontSize:15}}>⚙️</span>
           </button>
         </div>
       </div>
@@ -2942,13 +2924,25 @@ function ChessWorld(){
               <button onClick={()=>setShowSettings(false)} style={{width:30,height:30,borderRadius:"50%",background:"#dfe6e9",border:"none",fontSize:14,fontWeight:900,color:"#636e72",cursor:"pointer"}}>✕</button>
             </div>
 
+            {/* Current player card */}
+            <div style={{background:`linear-gradient(135deg,${profile.color},${profile.color}cc)`,borderRadius:18,padding:16,marginBottom:14,textAlign:"center"}}>
+              <div style={{width:54,height:54,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,margin:"0 auto 8px"}}>{profile.avatar}</div>
+              <div style={{fontSize:16,fontWeight:900,color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,.3)"}}>{profile.name}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,.85)",fontWeight:700,marginTop:2}}>⭐ {xp} XP · 💎 {gems} gems</div>
+            </div>
+
+            {/* Switch player */}
+            <button onClick={()=>{SFX.tap();setShowSettings(false);setActiveProfile(null);}} style={{width:"100%",background:"#f0f4ff",border:"2px solid #6c5ce7",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#6c5ce7",cursor:"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              👥 Switch Player
+            </button>
+
             {/* Account info */}
             <div style={{background:"#f0f4ff",borderRadius:16,padding:14,marginBottom:14}}>
               <div style={{fontSize:11,fontWeight:800,color:"#636e72",letterSpacing:1,marginBottom:6}}>SIGNED IN AS</div>
               <div style={{fontSize:14,fontWeight:800,color:"#2d3436",wordBreak:"break-all"}}>{authUser?.email || "Unknown"}</div>
             </div>
 
-            {/* Sync status */}
+            {/* Sync status — moved here from header */}
             <div style={{background:syncStatus==="error"?"#fff0f0":"#f0fff8",border:`2px solid ${syncStatus==="error"?"#ff7675":"#00d9a3"}`,borderRadius:16,padding:14,marginBottom:14}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
                 <span style={{fontSize:18}}>{syncStatus==="error"?"⚠️":"☁️"}</span>
