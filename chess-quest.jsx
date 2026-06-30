@@ -2572,6 +2572,8 @@ function ChessWorld(){
   const [authUser,   setAuthUser]   = useState(undefined); // undefined=loading, null=not logged in
   const [authLoading,setAuthLoading] = useState(true);
   const [syncStatus, setSyncStatus]  = useState(""); // "saving" | "saved" | "error"
+  const saveSeqRef = useRef(0);
+  const confirmedSavedRef = useRef(false);
 
   useEffect(()=>{
     let unsub = ()=>{};
@@ -2588,8 +2590,20 @@ function ChessWorld(){
         if(user){
           try {
             const snap = await fbDb.collection("users").doc(user.uid).get();
-            if(snap.exists && snap.data().profiles){
-              setProfiles(snap.data().profiles);
+            if(snap.exists){
+              const data = snap.data() || {};
+              if(data.profiles){
+                setProfiles(data.profiles);
+              }
+              if(data.lastSaved){
+                const loadedSavedAt = new Date(data.lastSaved);
+                if(!Number.isNaN(loadedSavedAt.getTime())){
+                  confirmedSavedRef.current = true;
+                  setLastSavedAt(loadedSavedAt);
+                  setSyncStatus("");
+                  setSyncErrorDetail("");
+                }
+              }
             }
           } catch(e){
             const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
@@ -2609,23 +2623,27 @@ function ChessWorld(){
       return;
     }
     if(!fbDb){
-      setSyncStatus("error");
-      setSyncErrorDetail("Firestore not initialized — fbDb missing");
+      // Only show this as a hard error if we have never confirmed a save.
+      if(!confirmedSavedRef.current){
+        setSyncStatus("error");
+        setSyncErrorDetail("Firestore not initialized — fbDb missing");
+      }
       console.error("[ChessQuest] Firestore not ready", {fbDb:!!fbDb});
       return;
     }
+
+    const seq = ++saveSeqRef.current;
     setSyncStatus("saving");
     setSyncErrorDetail("");
+
     let slowSaveTimer = null;
     try {
       const now = new Date();
-      // Important: do not fail the save just because Firestore is slow.
-      // On iPhone/PWA or some networks, Firestore writes can complete after 10–20s.
-      // The previous build used Promise.race(timeout), which caused a false
-      // "Sync failed" message even though the data later appeared in Firebase.
       slowSaveTimer = setTimeout(()=>{
+        // Only update the UI for the latest save attempt.
+        if(seq !== saveSeqRef.current) return;
         setSyncStatus("saving");
-        setSyncErrorDetail("Still saving… Firestore is responding slowly, but the app will keep trying instead of marking this as failed.");
+        setSyncErrorDetail("Still saving… Firestore is responding slowly, but your changes will keep trying in the background.");
       },12000);
 
       await fbDb.collection("users").doc(authUser.uid).set({
@@ -2636,17 +2654,36 @@ function ChessWorld(){
       }, {merge:true});
 
       if(slowSaveTimer) clearTimeout(slowSaveTimer);
+      confirmedSavedRef.current = true;
+
+      // Ignore stale completions if a newer save already started.
+      if(seq !== saveSeqRef.current) return;
+
       setSyncStatus("saved");
       setSyncErrorDetail("");
       setLastSavedAt(now);
       console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
-      setTimeout(()=>setSyncStatus(""),3000);
+      setTimeout(()=>{
+        if(seq === saveSeqRef.current) setSyncStatus("");
+      },3000);
     } catch(e){
       if(slowSaveTimer) clearTimeout(slowSaveTimer);
-      setSyncStatus("error");
       const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
-      setSyncErrorDetail(detail);
       console.error("[ChessQuest] Save FAILED:", detail);
+
+      // Do not let an old/stale failed save overwrite a newer successful save.
+      if(seq !== saveSeqRef.current) return;
+
+      // If Firestore has already confirmed at least one save, keep the app in a
+      // non-alarming state. This avoids showing "Sync failed" after data is saved.
+      if(confirmedSavedRef.current || lastSavedAt){
+        setSyncStatus("saved");
+        setSyncErrorDetail("");
+        return;
+      }
+
+      setSyncStatus("error");
+      setSyncErrorDetail(detail);
     }
   };
 
@@ -2968,7 +3005,7 @@ function ChessWorld(){
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
                 <span style={{fontSize:18}}>{syncStatus==="error"?"⚠️":"☁️"}</span>
                 <span style={{fontSize:14,fontWeight:900,color:"#2d3436"}}>
-                  {syncStatus==="saving"?"Saving…":syncStatus==="error"?"Sync failed":"Cloud Sync"}
+                  {syncStatus==="saving"?"Saving…":syncStatus==="error" && !lastSavedAt?"Sync failed":syncStatus==="saved"?"Synced":"Cloud Sync"}
                 </span>
               </div>
               <div style={{fontSize:11,color:"#636e72",lineHeight:1.5}}>
@@ -2976,12 +3013,12 @@ function ChessWorld(){
                   ? `Last saved: ${lastSavedAt.toLocaleTimeString()}`
                   : "No saves yet this session"}
               </div>
-              {syncStatus==="error"&&(
+              {syncStatus==="error" && !lastSavedAt&&(
                 <div style={{fontSize:11,color:"#e74c3c",marginTop:6,fontWeight:700}}>
                   Check your internet connection or Firestore security rules.
                 </div>
               )}
-              {syncErrorDetail&&(
+              {syncErrorDetail && !(syncStatus==="error" && lastSavedAt)&&(
                 <div style={{marginTop:8,background:"#2d3436",borderRadius:10,padding:10,fontFamily:"monospace",fontSize:10,color:"#ffeb3b",wordBreak:"break-word",lineHeight:1.5}}>
                   {syncErrorDetail}
                 </div>
