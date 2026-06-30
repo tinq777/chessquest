@@ -2598,7 +2598,11 @@ function ChessWorld(){
             if(snap.exists() && snap.data().profiles){
               setProfiles(snap.data().profiles);
             }
-          } catch(e){ console.error("Load error",e); }
+          } catch(e){
+            const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
+            setSyncErrorDetail("LOAD: "+detail);
+            console.error("[ChessQuest] Load FAILED:", detail);
+          }
         }
       });
     });
@@ -2626,7 +2630,9 @@ function ChessWorld(){
       setTimeout(()=>setSyncStatus(""),3000);
     } catch(e){
       setSyncStatus("error");
-      console.error("[ChessQuest] Save FAILED:", e.code || e.message || e);
+      const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
+      setSyncErrorDetail(detail);
+      console.error("[ChessQuest] Save FAILED:", detail);
     }
   };
 
@@ -2683,6 +2689,7 @@ function ChessWorld(){
   const [confirmLeavePlay,setConfirmLeavePlay]=useState(false);
   const [showSettings,setShowSettings]=useState(false);
   const [lastSavedAt,setLastSavedAt]=useState(null);
+  const [syncErrorDetail,setSyncErrorDetail]=useState("");
 
   // Free play state — lifted here so game persists when switching tabs
   const [playBoard,setPlayBoard]=useState(INIT);
@@ -2958,6 +2965,11 @@ function ChessWorld(){
               {syncStatus==="error"&&(
                 <div style={{fontSize:11,color:"#e74c3c",marginTop:6,fontWeight:700}}>
                   Check your internet connection or Firestore security rules.
+                </div>
+              )}
+              {syncErrorDetail&&(
+                <div style={{marginTop:8,background:"#2d3436",borderRadius:10,padding:10,fontFamily:"monospace",fontSize:10,color:"#ffeb3b",wordBreak:"break-word",lineHeight:1.5}}>
+                  {syncErrorDetail}
                 </div>
               )}
             </div>
