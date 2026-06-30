@@ -15,6 +15,7 @@ async function initFirebase(){
     await new Promise(r=>setTimeout(r,50));
     tries++;
   }
+  if(window.__firebaseConfigError){ console.error(window.__firebaseConfigError); return false; }
   if(!window.__fbAuth || !window.__fbDb){ console.error("Firebase failed to load"); return false; }
   fbAuth = window.__fbAuth;
   fbDb   = window.__fbDb;
@@ -2575,7 +2576,12 @@ function ChessWorld(){
   useEffect(()=>{
     let unsub = ()=>{};
     initFirebase().then(ok=>{
-      if(!ok){ setAuthLoading(false); return; }
+      if(!ok){
+        setAuthLoading(false);
+        setSyncStatus("error");
+        setSyncErrorDetail(window.__firebaseConfigError || "Firebase failed to load — check /config.js and Cloudflare env vars");
+        return;
+      }
       unsub = fbAuth.onAuthStateChanged(async user => {
         setAuthUser(user);
         setAuthLoading(false);
@@ -2621,7 +2627,7 @@ function ChessWorld(){
         displayName: authUser.displayName || "",
       }, {merge:true});
       const timeoutPromise = new Promise((_,reject)=>
-        setTimeout(()=>reject(new Error("TIMEOUT: Firestore write took longer than 10s — check network/Firestore setup")),10000)
+        setTimeout(()=>reject(new Error("TIMEOUT: Firestore write took longer than 15s — check Firestore database, rules, project ID, and network transport")),15000)
       );
       await Promise.race([writePromise, timeoutPromise]);
       setSyncStatus("saved");

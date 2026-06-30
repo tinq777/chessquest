@@ -35,18 +35,34 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="/config.js"></script>
   <script>
+    // Firebase config is injected by the Cloudflare Pages Function at /config.js.
+    // Note: the Pages Function file must be functions/config.js.js for this route.
+    var env = window.__ENV || {};
     var firebaseConfig = {
-      apiKey:            (window.__ENV && window.__ENV.CHESS_QUEST_API_KEY)        || "",
-      authDomain:        (window.__ENV && window.__ENV.CHESS_QUEST_AUTH_DOMAIN)    || "",
-      projectId:         (window.__ENV && window.__ENV.CHESS_QUEST_PROJECT_ID)     || "",
-      storageBucket:     (window.__ENV && window.__ENV.CHESS_QUEST_STORAGE_BUCKET) || "",
-      messagingSenderId: (window.__ENV && window.__ENV.CHESS_QUEST_SENDER_ID)      || "",
-      appId:             (window.__ENV && window.__ENV.CHESS_QUEST_APP_ID)         || "",
+      apiKey:            env.CHESS_QUEST_API_KEY        || "",
+      authDomain:        env.CHESS_QUEST_AUTH_DOMAIN    || "",
+      projectId:         env.CHESS_QUEST_PROJECT_ID     || "",
+      storageBucket:     env.CHESS_QUEST_STORAGE_BUCKET || "",
+      messagingSenderId: env.CHESS_QUEST_SENDER_ID      || "",
+      appId:             env.CHESS_QUEST_APP_ID         || "",
     };
-    firebase.initializeApp(firebaseConfig);
-    window.__fbAuth = firebase.auth();
-    window.__fbDb = firebase.firestore();
-    window.__firebase = { ready: true }; // signal to chess-quest.jsx that Firebase is loaded
+
+    var missingFirebaseKeys = Object.keys(firebaseConfig).filter(function(k){ return !firebaseConfig[k]; });
+    if(missingFirebaseKeys.length){
+      console.error("[ChessQuest] Missing Firebase config from /config.js:", missingFirebaseKeys);
+      window.__firebaseConfigError = "Missing Firebase config: " + missingFirebaseKeys.join(", ") + ". Check Cloudflare Pages env vars and the /functions/config.js.js route.";
+    } else {
+      firebase.initializeApp(firebaseConfig);
+      window.__fbAuth = firebase.auth();
+      window.__fbDb = firebase.firestore();
+      // Helps Firestore on iOS/Safari/PWA and some networks where the default transport can hang.
+      try {
+        window.__fbDb.settings({ experimentalAutoDetectLongPolling: true, merge: true });
+      } catch(e) {
+        console.warn("[ChessQuest] Firestore settings skipped:", e && e.message ? e.message : e);
+      }
+      window.__firebase = { ready: true }; // signal to chess-quest.jsx that Firebase is loaded
+    }
   </script>
 
   <!-- React 18 -->

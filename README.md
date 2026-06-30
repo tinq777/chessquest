@@ -61,3 +61,9 @@ service cloud.firestore {
 
 ## 📱 Install as App
 Once deployed, visit the URL on iPhone → Share → Add to Home Screen
+
+## Cloud sync fix in this build
+
+This build includes `functions/config.js.js`, which is the Cloudflare Pages Function route for `/config.js`. The app loads `/config.js` before Firebase starts, so this file name matters. If `/config.js` returns 404 or an empty `window.__ENV`, Firebase will not sync.
+
+After deploying, open `https://YOUR-PAGES-SITE.pages.dev/config.js` in the browser. It should show `window.__ENV = { ... }` with your Firebase config values filled in.
