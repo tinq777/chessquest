@@ -102,17 +102,26 @@
       if(el) el.style.display = 'none';
     };
     // Surface any errors instead of hanging silently on loading screen
-    window.addEventListener('error', (e) => {
+    function showError(label, e){
       const el = document.getElementById('loading');
-      if(el){
-        el.innerHTML = `
-          <div style="color:#fff;text-align:center;padding:20px;max-width:340px;font-family:monospace;">
-            <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
-            <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Something went wrong loading the app</div>
-            <div style="font-size:11px;color:rgba(255,255,255,.6);word-break:break-word;">${e.message || e}</div>
-          </div>`;
-      }
-    });
+      if(!el) return;
+      const msg = (e && e.message) || e || 'Unknown error';
+      const src = (e && e.filename) ? e.filename.split('/').pop() : 'unknown file';
+      const line = (e && e.lineno) ? e.lineno : '?';
+      const col = (e && e.colno) ? e.colno : '?';
+      el.innerHTML = `
+        <div style="color:#fff;text-align:center;padding:20px;max-width:360px;font-family:monospace;">
+          <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:10px;">${label}</div>
+          <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:12px;text-align:left;font-size:11px;color:#ffeb3b;word-break:break-word;line-height:1.6;">
+            <div><b>File:</b> ${src}</div>
+            <div><b>Line:</b> ${line}, <b>Col:</b> ${col}</div>
+            <div style="margin-top:8px;"><b>Message:</b><br/>${msg}</div>
+          </div>
+        </div>`;
+    }
+    window.addEventListener('error', (e) => showError('Script Error', e));
+    window.addEventListener('unhandledrejection', (e) => showError('Promise Error', {message: e.reason?.message || e.reason}));
   </script>
 </body>
 </html>
