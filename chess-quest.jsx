@@ -2615,15 +2615,28 @@ function ChessWorld(){
       console.warn("[ChessQuest] Not saving — no authenticated user");
       return;
     }
+    if(!fbDb || !_setDoc || !_doc){
+      setSyncStatus("error");
+      setSyncErrorDetail("Firestore not initialized — fbDb/_setDoc/_doc missing");
+      console.error("[ChessQuest] Firestore not ready", {fbDb:!!fbDb,_setDoc:!!_setDoc,_doc:!!_doc});
+      return;
+    }
     setSyncStatus("saving");
+    setSyncErrorDetail("");
     try {
       const now = new Date();
-      await _setDoc(_doc(fbDb,"users",authUser.uid), {
+      // Race the Firestore write against a 10s timeout so a hung connection
+      // shows a clear error instead of spinning forever
+      const writePromise = _setDoc(_doc(fbDb,"users",authUser.uid), {
         profiles: updatedProfiles,
         lastSaved: now.toISOString(),
         email: authUser.email || "",
         displayName: authUser.displayName || "",
       }, {merge:true});
+      const timeoutPromise = new Promise((_,reject)=>
+        setTimeout(()=>reject(new Error("TIMEOUT: Firestore write took longer than 10s — check network/Firestore setup")),10000)
+      );
+      await Promise.race([writePromise, timeoutPromise]);
       setSyncStatus("saved");
       setLastSavedAt(now);
       console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
