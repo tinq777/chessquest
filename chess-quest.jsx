@@ -5,42 +5,35 @@ const { useState, useCallback, useRef, useEffect } = React;
 // ═══════════════════════════════════════════════════════════
 // FIREBASE CONFIG
 // ═══════════════════════════════════════════════════════════
-// Firebase loaded dynamically to work in any environment
+// Firebase is loaded via a real <script type="module"> in index.html
+// (Babel-standalone can't do dynamic import() outside module scope),
+// which exposes everything we need on window.__firebase
 let fbAuth = null, fbDb = null, googleProvider = null;
 let _signInWithPopup, _signInWithEmailAndPassword, _createUserWithEmailAndPassword, _signOut, _onAuthStateChanged;
 let _doc, _getDoc, _setDoc;
 
 async function initFirebase(){
   if(fbAuth) return true;
-  try {
-    // Config is injected at build time via Cloudflare Pages environment variables
-    // See README.md for setup instructions
-    const firebaseConfig = {
-      apiKey:            window.__ENV?.CHESS_QUEST_API_KEY        || "",
-      authDomain:        window.__ENV?.CHESS_QUEST_AUTH_DOMAIN    || "",
-      projectId:         window.__ENV?.CHESS_QUEST_PROJECT_ID     || "",
-      storageBucket:     window.__ENV?.CHESS_QUEST_STORAGE_BUCKET || "",
-      messagingSenderId: window.__ENV?.CHESS_QUEST_SENDER_ID      || "",
-      appId:             window.__ENV?.CHESS_QUEST_APP_ID         || "",
-    };
-    if(!firebaseConfig.apiKey){ console.warn("Firebase config missing — check environment variables"); return false; }
-    const {initializeApp} = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-    const authMod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
-    const dbMod   = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const app = initializeApp(firebaseConfig);
-    fbAuth = authMod.getAuth(app);
-    fbDb   = dbMod.getFirestore(app);
-    googleProvider = new authMod.GoogleAuthProvider();
-    _signInWithPopup              = authMod.signInWithPopup;
-    _signInWithEmailAndPassword   = authMod.signInWithEmailAndPassword;
-    _createUserWithEmailAndPassword = authMod.createUserWithEmailAndPassword;
-    _signOut                      = authMod.signOut;
-    _onAuthStateChanged           = authMod.onAuthStateChanged;
-    _doc    = dbMod.doc;
-    _getDoc = dbMod.getDoc;
-    _setDoc = dbMod.setDoc;
-    return true;
-  } catch(e){ console.error("Firebase init failed",e); return false; }
+  // Wait for the module script in index.html to finish loading Firebase
+  let tries = 0;
+  while(!window.__firebase && tries < 100){
+    await new Promise(r=>setTimeout(r,50));
+    tries++;
+  }
+  if(!window.__firebase){ console.error("Firebase failed to load"); return false; }
+  const fb = window.__firebase;
+  fbAuth = fb.auth;
+  fbDb   = fb.db;
+  googleProvider = fb.googleProvider;
+  _signInWithPopup                 = fb.signInWithPopup;
+  _signInWithEmailAndPassword      = fb.signInWithEmailAndPassword;
+  _createUserWithEmailAndPassword  = fb.createUserWithEmailAndPassword;
+  _signOut                         = fb.signOut;
+  _onAuthStateChanged              = fb.onAuthStateChanged;
+  _doc    = fb.doc;
+  _getDoc = fb.getDoc;
+  _setDoc = fb.setDoc;
+  return true;
 }
 
 // ═══════════════════════════════════════════════════════════

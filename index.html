@@ -45,6 +45,39 @@
     };
   </script>
 
+  <!-- Firebase v10 — loaded as a real ES module (only way to use dynamic CDN imports) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getAuth, signInWithPopup, signInWithEmailAndPassword,
+      createUserWithEmailAndPassword, GoogleAuthProvider,
+      signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      getFirestore, doc, getDoc, setDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            window.__ENV?.CHESS_QUEST_API_KEY        || "",
+      authDomain:        window.__ENV?.CHESS_QUEST_AUTH_DOMAIN    || "",
+      projectId:         window.__ENV?.CHESS_QUEST_PROJECT_ID     || "",
+      storageBucket:     window.__ENV?.CHESS_QUEST_STORAGE_BUCKET || "",
+      messagingSenderId: window.__ENV?.CHESS_QUEST_SENDER_ID      || "",
+      appId:             window.__ENV?.CHESS_QUEST_APP_ID         || "",
+    };
+
+    const app = initializeApp(firebaseConfig);
+
+    // Expose everything the main app needs on a global object
+    window.__firebase = {
+      auth: getAuth(app),
+      db: getFirestore(app),
+      googleProvider: new GoogleAuthProvider(),
+      signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      signOut, onAuthStateChanged, doc, getDoc, setDoc,
+    };
+  </script>
+
   <!-- React 18 -->
   <script crossorigin
     src="https://unpkg.com/react@18/umd/react.production.min.js"
