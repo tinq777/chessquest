@@ -67,28 +67,33 @@
   <!-- React 18 -->
   <script crossorigin
     src="https://unpkg.com/react@18/umd/react.production.min.js"
-    integrity="sha384-MNM0yCjWyHAGWQQfBMRe+FHg3H5OKIYL/6bOyTZBMClnpJOqlX5cvOvMFn3HWFP"
     crossorigin="anonymous"></script>
 
   <!-- ReactDOM 18 -->
   <script crossorigin
     src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-    integrity="sha384-QGW0ZYr01HUZV2bVgJjDCEFX2pZZIVa01e4TFuqJqoRq9AxF6FfBGEJNLHBkWnb"
     crossorigin="anonymous"></script>
 
   <!-- Babel standalone for JSX transpilation -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"
-    integrity="sha384-t5dCbwd2JAhkzYowmy8eV7aUW/ByHz2ZXUp1P2le0v8vAVHoCgLsHMrNOwDb5DF4"
     crossorigin="anonymous"></script>
-
-  <!-- Chess Quest app -->
-  <script type="text/babel" data-presets="react" src="/chess-quest.jsx"></script>
 
   <script>
     window.__chessQuestReady = () => {
       const el = document.getElementById('loading');
       if(el) el.style.display = 'none';
     };
+
+    // Safety fallback: if React renders before the ready callback is called,
+    // remove the loading screen once the root has content.
+    const hideLoadingWhenRendered = () => {
+      const root = document.getElementById('root');
+      const loading = document.getElementById('loading');
+      if(root && loading && root.children.length > 0){
+        loading.style.display = 'none';
+      }
+    };
+    setInterval(hideLoadingWhenRendered, 300);
     // Surface any errors instead of hanging silently on loading screen
     function showError(label, e){
       const el = document.getElementById('loading');
@@ -133,5 +138,8 @@
     window.addEventListener('error', (e) => showError('Script Error', e));
     window.addEventListener('unhandledrejection', (e) => showError('Promise Error', {message: e.reason?.message || e.reason}));
   </script>
+
+  <!-- Chess Quest app -->
+  <script type="text/babel" data-presets="react" src="/chess-quest.jsx"></script>
 </body>
 </html>
