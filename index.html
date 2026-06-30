@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"/>
+  <meta name="theme-color" content="#0d1b4b"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>Chess Quest</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="icon" type="image/svg+xml" href="/icon.svg"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body, #root { margin:0; padding:0; height:100%; width:100%; overflow:hidden; background:#0d1b4b; }
+    body { font-family:"Fredoka One","Nunito",-apple-system,BlinkMacSystemFont,sans-serif; -webkit-font-smoothing:antialiased; }
+    #loading { position:fixed; inset:0; background:linear-gradient(180deg,#0d1b4b,#1a2a6a); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; z-index:9999; }
+    #loading .piece { font-size:64px; animation:bob 1.5s ease-in-out infinite; }
+    #loading .text  { font-size:14px; color:rgba(255,255,255,.5); font-weight:700; letter-spacing:2px; }
+    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="piece">♟️</div>
+    <div class="text">LOADING CHESS QUEST…</div>
+  </div>
+  <div id="root"></div>
+
+  <!--
+    Environment variables injected by Cloudflare Pages at build time.
+    In Cloudflare Pages dashboard: Settings → Environment Variables → add all CHESS_QUEST_* vars.
+    This script tag is replaced by your CF Pages build — see _worker.js or use Pages Functions.
+    For local testing, copy .env.example to .env.local and fill in values.
+  -->
+  <script>
+    window.__ENV = {
+      CHESS_QUEST_API_KEY:        "%%CHESS_QUEST_API_KEY%%",
+      CHESS_QUEST_AUTH_DOMAIN:    "%%CHESS_QUEST_AUTH_DOMAIN%%",
+      CHESS_QUEST_PROJECT_ID:     "%%CHESS_QUEST_PROJECT_ID%%",
+      CHESS_QUEST_STORAGE_BUCKET: "%%CHESS_QUEST_STORAGE_BUCKET%%",
+      CHESS_QUEST_SENDER_ID:      "%%CHESS_QUEST_SENDER_ID%%",
+      CHESS_QUEST_APP_ID:         "%%CHESS_QUEST_APP_ID%%",
+    };
+  </script>
+
+  <!-- React 18 -->
+  <script crossorigin
+    src="https://unpkg.com/react@18/umd/react.production.min.js"
+    integrity="sha384-MNM0yCjWyHAGWQQfBMRe+FHg3H5OKIYL/6bOyTZBMClnpJOqlX5cvOvMFn3HWFP"
+    crossorigin="anonymous"></script>
+
+  <!-- ReactDOM 18 -->
+  <script crossorigin
+    src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    integrity="sha384-QGW0ZYr01HUZV2bVgJjDCEFX2pZZIVa01e4TFuqJqoRq9AxF6FfBGEJNLHBkWnb"
+    crossorigin="anonymous"></script>
+
+  <!-- Babel standalone for JSX transpilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Chess Quest app -->
+  <script type="text/babel" data-type="module" src="/chess-quest.jsx"></script>
+
+  <script>
+    window.__chessQuestReady = () => {
+      const el = document.getElementById('loading');
+      if(el) el.style.display = 'none';
+    };
+  </script>
+</body>
+</html>
