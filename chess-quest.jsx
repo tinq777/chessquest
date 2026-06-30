@@ -2574,6 +2574,10 @@ function ChessWorld(){
   const [syncStatus, setSyncStatus]  = useState(""); // "saving" | "saved" | "error"
   const saveSeqRef = useRef(0);
   const confirmedSavedRef = useRef(false);
+  const saveDebounceRef = useRef(null);
+  const pendingProfilesRef = useRef(null);
+  const saveInFlightRef = useRef(false);
+  const lastSaveHashRef = useRef("");
 
   useEffect(()=>{
     let unsub = ()=>{};
@@ -2616,14 +2620,14 @@ function ChessWorld(){
     return ()=>unsub();
   },[]);
 
-  // Save profiles to Firestore whenever they change
-  const saveToCloud = async (updatedProfiles) => {
+  // Save profiles to Firestore, but coalesce rapid game updates into one write.
+  // This avoids slow cloud sync caused by writing after every tiny state change.
+  const saveToCloudNow = async (updatedProfiles, {force=false}={}) => {
     if(!authUser){
       console.warn("[ChessQuest] Not saving — no authenticated user");
       return;
     }
     if(!fbDb){
-      // Only show this as a hard error if we have never confirmed a save.
       if(!confirmedSavedRef.current){
         setSyncStatus("error");
         setSyncErrorDetail("Firestore not initialized — fbDb missing");
@@ -2632,6 +2636,18 @@ function ChessWorld(){
       return;
     }
 
+    const hash = JSON.stringify(updatedProfiles);
+    if(!force && hash === lastSaveHashRef.current){
+      return;
+    }
+
+    // If a write is already running, keep only the newest profiles and save them next.
+    if(saveInFlightRef.current){
+      pendingProfilesRef.current = updatedProfiles;
+      return;
+    }
+
+    saveInFlightRef.current = true;
     const seq = ++saveSeqRef.current;
     setSyncStatus("saving");
     setSyncErrorDetail("");
@@ -2640,11 +2656,10 @@ function ChessWorld(){
     try {
       const now = new Date();
       slowSaveTimer = setTimeout(()=>{
-        // Only update the UI for the latest save attempt.
         if(seq !== saveSeqRef.current) return;
         setSyncStatus("saving");
-        setSyncErrorDetail("Still saving… Firestore is responding slowly, but your changes will keep trying in the background.");
-      },12000);
+        setSyncErrorDetail("Still saving… Firestore is slow, but the latest progress is queued and will keep saving in the background.");
+      },15000);
 
       await fbDb.collection("users").doc(authUser.uid).set({
         profiles: updatedProfiles,
@@ -2655,36 +2670,56 @@ function ChessWorld(){
 
       if(slowSaveTimer) clearTimeout(slowSaveTimer);
       confirmedSavedRef.current = true;
+      lastSaveHashRef.current = hash;
 
-      // Ignore stale completions if a newer save already started.
-      if(seq !== saveSeqRef.current) return;
-
-      setSyncStatus("saved");
-      setSyncErrorDetail("");
-      setLastSavedAt(now);
-      console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
-      setTimeout(()=>{
-        if(seq === saveSeqRef.current) setSyncStatus("");
-      },3000);
+      if(seq === saveSeqRef.current){
+        setSyncStatus("saved");
+        setSyncErrorDetail("");
+        setLastSavedAt(now);
+        console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
+        setTimeout(()=>{
+          if(seq === saveSeqRef.current) setSyncStatus("");
+        },2500);
+      }
     } catch(e){
       if(slowSaveTimer) clearTimeout(slowSaveTimer);
       const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
       console.error("[ChessQuest] Save FAILED:", detail);
 
-      // Do not let an old/stale failed save overwrite a newer successful save.
-      if(seq !== saveSeqRef.current) return;
-
-      // If Firestore has already confirmed at least one save, keep the app in a
-      // non-alarming state. This avoids showing "Sync failed" after data is saved.
-      if(confirmedSavedRef.current || lastSavedAt){
-        setSyncStatus("saved");
-        setSyncErrorDetail("");
-        return;
+      if(seq === saveSeqRef.current){
+        if(confirmedSavedRef.current || lastSavedAt){
+          setSyncStatus("saved");
+          setSyncErrorDetail("");
+        } else {
+          setSyncStatus("error");
+          setSyncErrorDetail(detail);
+        }
       }
-
-      setSyncStatus("error");
-      setSyncErrorDetail(detail);
+    } finally {
+      saveInFlightRef.current = false;
+      const pending = pendingProfilesRef.current;
+      pendingProfilesRef.current = null;
+      if(pending && JSON.stringify(pending) !== lastSaveHashRef.current){
+        setTimeout(()=>saveToCloudNow(pending), 250);
+      }
     }
+  };
+
+  const saveToCloud = (updatedProfiles, {force=false}={}) => {
+    pendingProfilesRef.current = updatedProfiles;
+    if(saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+
+    const delay = force ? 0 : 1200;
+    if(!force){
+      setSyncStatus("saving");
+      setSyncErrorDetail("");
+    }
+
+    saveDebounceRef.current = setTimeout(()=>{
+      const latest = pendingProfilesRef.current;
+      pendingProfilesRef.current = null;
+      if(latest) saveToCloudNow(latest, {force});
+    }, delay);
   };
 
   // Profile system
@@ -3026,7 +3061,7 @@ function ChessWorld(){
             </div>
 
             {/* Manual sync button */}
-            <button onClick={()=>{SFX.tap();saveToCloud(profiles);}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
+            <button onClick={()=>{SFX.tap();saveToCloud(profiles,{force:true});}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
               🔄 Sync Now
             </button>
 
