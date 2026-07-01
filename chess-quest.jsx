@@ -1875,7 +1875,7 @@ function BoardContainer({children}){
   );
 }
 
-function PuzzleScreen({puzzle, onComplete, onBack}){
+function PuzzleScreen({puzzle, onComplete, onBack, onProgressChange}){
   const [board,setBoard]=useState(puzzle.board.map(r=>r.slice()));
   const [selected,setSelected]=useState(null);
   const [targets,setTargets]=useState([]);
@@ -1883,7 +1883,24 @@ function PuzzleScreen({puzzle, onComplete, onBack}){
   const [hintUsed,setHintUsed]=useState(false);
   const [lastMove,setLastMove]=useState(null);
   const [tries,setTries]=useState(0);
+  const [hasProgress,setHasProgress]=useState(false);
   const earned=hintUsed?Math.floor(puzzle.xp*.7):puzzle.xp;
+
+  useEffect(()=>{
+    setBoard(puzzle.board.map(r=>r.slice()));
+    setSelected(null);
+    setTargets([]);
+    setPhase("play");
+    setHintUsed(false);
+    setLastMove(null);
+    setTries(0);
+    setHasProgress(false);
+    onProgressChange?.(false);
+  },[puzzle.id]);
+
+  useEffect(()=>{
+    onProgressChange?.(hasProgress && phase!=="correct");
+  },[hasProgress, phase]);
 
   const msgs={
     play: puzzle.desc,
@@ -1903,8 +1920,9 @@ function PuzzleScreen({puzzle, onComplete, onBack}){
     const sol=puzzle.solution;
     const ok=move.from.r===sol.from.r&&move.from.c===sol.from.c&&move.to.r===sol.to.r&&move.to.c===sol.to.c;
     const nb=applyM(board,move);
+    setHasProgress(true);
     setBoard(nb);setLastMove({from:move.from,to:move.to});setSelected(null);setTargets([]);
-    if(ok){ SFX.correct(); setPhase("correct"); }
+    if(ok){ SFX.correct(); setHasProgress(false); setPhase("correct"); }
     else{ SFX.wrong(); setTries(t=>t+1);setPhase("wrong");setTimeout(()=>{setBoard(puzzle.board.map(r=>r.slice()));setLastMove(null);setPhase("play");},1800);}
   };
 
@@ -1918,7 +1936,7 @@ function PuzzleScreen({puzzle, onComplete, onBack}){
           <div style={{fontSize:15,fontWeight:900,color:"#fff"}}><span style={{display:"inline-block",animation:"puzzleWiggle 2s ease-in-out infinite"}}>{puzzle.emoji}</span> {puzzle.title}</div>
           <div style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:700}}>+{puzzle.xp} 💎 gems</div>
         </div>
-        <button onClick={()=>{SFX.hint();setHintUsed(true);setPhase("hint");setTimeout(()=>setPhase("play"),3000);}}
+        <button onClick={()=>{SFX.hint();setHasProgress(true);setHintUsed(true);setPhase("hint");setTimeout(()=>setPhase("play"),3000);}}
           style={{background:"linear-gradient(145deg,#f1c40f,#f39c12)",border:"none",borderRadius:14,padding:"8px 12px",color:"#1a1a2e",fontSize:13,fontWeight:900,boxShadow:"0 4px 0 #d4ac0d"}}>
           💡 Hint
         </button>
@@ -2747,6 +2765,8 @@ function ChessWorld(){
   const [zoneCompleteData,setZoneCompleteData]=useState(null);
 
   const [confirmLeavePlay,setConfirmLeavePlay]=useState(false);
+  const [confirmLeavePuzzle,setConfirmLeavePuzzle]=useState(false);
+  const [puzzleInProgress,setPuzzleInProgress]=useState(false);
   const [showSettings,setShowSettings]=useState(false);
   const [lastSavedAt,setLastSavedAt]=useState(null);
   const [syncErrorDetail,setSyncErrorDetail]=useState("");
@@ -2797,6 +2817,14 @@ function ChessWorld(){
     }
   };
 
+  const tryLeavePuzzle = (onConfirm) => {
+    if(activePuzzle && puzzleInProgress){
+      setConfirmLeavePuzzle({cb: onConfirm}); // wrap in object so useState doesn't invoke it
+    } else {
+      onConfirm();
+    }
+  };
+
   const earnXp=amount=>{
     updateProfile({xp:xp+amount, gems:gems+amount, completed:completed+1});
     setXpPop(amount);
@@ -2808,6 +2836,7 @@ function ChessWorld(){
     if(!zp.length) return;
     // Pick first puzzle the player hasn't completed yet; fall back to first
     const next = zp.find(p=>p.id>completed) || zp[0];
+    setPuzzleInProgress(false);
     setActivePuzzle(next);
     setPuzzleSource(source);
   };
@@ -2913,18 +2942,22 @@ function ChessWorld(){
           ? <PuzzleScreen
               key={activePuzzle.id}
               puzzle={activePuzzle}
-              onBack={()=>{setActivePuzzle(null);setTab(puzzleSource);}}
+              onBack={()=>tryLeavePuzzle(()=>{setActivePuzzle(null);setPuzzleInProgress(false);setTab(puzzleSource);})}
+              onProgressChange={setPuzzleInProgress}
               onComplete={earned=>{
+                setPuzzleInProgress(false);
                 earnXp(earned);
                 const zonePuzzles=PUZZLES.filter(p=>p.zone===activePuzzle.zone);
                 const currentIdx=zonePuzzles.findIndex(p=>p.id===activePuzzle.id);
                 const nextPuzzle=zonePuzzles[currentIdx+1];
                 if(nextPuzzle){
+                  setPuzzleInProgress(false);
                   setActivePuzzle(nextPuzzle);
                 } else {
                   SFX.zoneComplete();
                   const zone = ZONES.find(z=>z.id===activePuzzle.zone);
                   setZoneCompleteData({zoneName:zone?.label||"Zone", emoji:zone?.emoji||"🏆"});
+                  setPuzzleInProgress(false);
                   setActivePuzzle(null);
                 }
               }}
@@ -2958,10 +2991,19 @@ function ChessWorld(){
           return(
             <button key={id} onClick={()=>{
               SFX.tap();
-              if(id==="play"){ setShowPlay(true); setActivePuzzle(null); setZoneCompleteData(null); }
+              if(id==="play"){
+                if(activePuzzle){
+                  tryLeavePuzzle(()=>{ setShowPlay(true); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null); });
+                } else {
+                  setShowPlay(true); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null);
+                }
+              }
+              else if(activePuzzle){
+                tryLeavePuzzle(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null); });
+              }
               else if(showPlay && id!=="play"){
-                tryLeavePlay(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); });
-              } else { setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); }
+                tryLeavePlay(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null); });
+              } else { setTab(id); setShowPlay(false); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null); }
             }}
               style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px 0"}}>
               <div style={{
@@ -3044,6 +3086,35 @@ function ChessWorld(){
             <button onClick={async()=>{SFX.tap();await fbAuth.signOut();setShowSettings(false);}} style={{width:"100%",background:"#fff0f0",border:"2px solid #ff7675",borderRadius:14,padding:"12px",fontSize:13,fontWeight:800,color:"#e74c3c",cursor:"pointer"}}>
               🚪 Sign Out
             </button>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* ── LEAVE PUZZLE CONFIRMATION ── */}
+      {confirmLeavePuzzle&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24,animation:"fadeIn .2s ease"}}>
+          <div style={{background:"#fff",borderRadius:28,padding:"28px 24px",maxWidth:310,width:"100%",textAlign:"center",boxShadow:"0 20px 0 rgba(0,0,0,.2)",border:"4px solid #6c5ce7"}}>
+            <div style={{fontSize:48,marginBottom:8,animation:"puzzleWiggle 1s ease-in-out infinite"}}>🧩</div>
+            <div style={{fontSize:20,fontWeight:900,color:"#2d3436",marginBottom:6}}>Leave this puzzle?</div>
+            <div style={{fontSize:14,color:"#636e72",marginBottom:20,lineHeight:1.5}}>You have a puzzle in progress. Keep playing, or leave and lose this puzzle attempt.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button
+                onClick={()=>setConfirmLeavePuzzle(false)}
+                style={{flex:1,background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"14px",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 0 #4a3ab5",color:"#fff"}}>
+                ▶️ Continue
+              </button>
+              <button
+                onClick={()=>{
+                  setConfirmLeavePuzzle(false);
+                  setPuzzleInProgress(false);
+                  confirmLeavePuzzle.cb();
+                }}
+                style={{flex:1,background:"linear-gradient(135deg,#e74c3c,#c0392b)",border:"none",borderRadius:14,padding:"14px",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 0 #922b21",color:"#fff"}}>
+                🚪 Leave
+              </button>
+            </div>
           </div>
         </div>
       )}
