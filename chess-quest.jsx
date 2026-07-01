@@ -59,35 +59,66 @@ function cqWithTimeout(promise, ms, label){
   return Promise.race([promise, timeout]).finally(()=>clearTimeout(timer));
 }
 
+function cqUserDocRef(user){
+  if(!fbDb || !user || !user.uid) return null;
+  return fbDb.collection("users").doc(user.uid);
+}
+
+function cqProfilesEqual(a,b){
+  try { return JSON.stringify(a||[]) === JSON.stringify(b||[]); }
+  catch(e){ return false; }
+}
+
+async function cqVerifyCloudSave(user, updatedProfiles, updatedAt){
+  const ref = cqUserDocRef(user);
+  if(!ref) throw new Error("No Firestore user document available");
+  const snap = await cqWithTimeout(ref.get({source:"server"}), 15000, "Cloud verify");
+  if(!snap || !snap.exists) throw new Error("Cloud verify failed: document was not found on server");
+  const data = snap.data() || {};
+  if(!Array.isArray(data.profiles)) throw new Error("Cloud verify failed: profiles missing from server document");
+  if(data.updatedAt !== updatedAt){
+    console.warn("[ChessQuest] Cloud verify updatedAt mismatch", {expected:updatedAt, actual:data.updatedAt});
+  }
+  if(!cqProfilesEqual(data.profiles, updatedProfiles)){
+    throw new Error("Cloud verify failed: server profiles did not match this device");
+  }
+  return data;
+}
+
 async function cqFetchCloudProfiles(user){
   if(!fbDb || !user) return null;
-  const primaryRef = fbDb.collection("users").doc(user.uid);
+  const primaryRef = cqUserDocRef(user);
 
-  // After a browser/cache clear, force a real server read. If that fails, then
-  // fall back to default Firestore behaviour so the app can still open offline.
+  // Always try the exact signed-in user document first. This is the only
+  // restore path most Firestore security rules will allow.
   let snap;
   try{
-    snap = await cqWithTimeout(primaryRef.get({source:"server"}), 12000, "Cloud restore");
+    snap = await cqWithTimeout(primaryRef.get({source:"server"}), 15000, "Cloud restore");
   }catch(serverErr){
     console.warn("[ChessQuest] Server restore failed, trying default Firestore get", serverErr);
     snap = await cqWithTimeout(primaryRef.get(), 8000, "Cloud restore fallback");
   }
   if(snap && snap.exists){
     const data = snap.data();
-    if(data && Array.isArray(data.profiles)) return data;
+    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid}`};
   }
 
-  // Safety fallback: if the same email was previously saved under another auth
-  // provider UID, recover that save instead of showing empty/default profiles.
+  // Optional fallback only. Some rule sets do not allow email queries, so this
+  // must never block the app or hide the real primary restore result.
   if(user.email){
-    const qSnap = await cqWithTimeout(
-      fbDb.collection("users").where("email","==",user.email).limit(1).get({source:"server"}),
-      12000,
-      "Email cloud restore"
-    );
-    if(qSnap && !qSnap.empty){
-      const data = qSnap.docs[0].data();
-      if(data && Array.isArray(data.profiles)) return data;
+    try{
+      const qSnap = await cqWithTimeout(
+        fbDb.collection("users").where("email","==",user.email).limit(1).get({source:"server"}),
+        10000,
+        "Email cloud restore"
+      );
+      if(qSnap && !qSnap.empty){
+        const doc = qSnap.docs[0];
+        const data = doc.data();
+        if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${doc.id}`};
+      }
+    }catch(emailErr){
+      console.warn("[ChessQuest] Email restore fallback unavailable", emailErr);
     }
   }
   return null;
@@ -2684,6 +2715,7 @@ function ChessWorld(){
         setAuthUser(user);
         setAuthLoading(false);
         clearTimeout(authFallback);
+        setCloudDebug(d=>({...d, uid:user?.uid||"", email:user?.email||"", docPath:user?`users/${user.uid}`:"", lastAction:user?"Signed in":"Signed out"}));
 
         if(!user){
           setCloudRestoreDone(true);
@@ -2707,6 +2739,7 @@ function ChessWorld(){
                   setProfiles(data.profiles);
                   cqSaveLocalProfiles(data.profiles, cloudUpdatedAt);
                   if(data.lastSaved || cloudUpdatedAt) setLastSavedAt(new Date(data.lastSaved || cloudUpdatedAt));
+                  setCloudDebug(d=>({...d,lastRestore:`Restored ${data.profiles.length} profile(s) from ${data._restorePath||"cloud"} at ${new Date().toLocaleTimeString()}`,lastError:""}));
                   setSyncStatus("restored");
                   setCloudRestoreDone(true);
                   setTimeout(()=>setSyncStatus(""),2500);
@@ -2715,6 +2748,7 @@ function ChessWorld(){
                   setCloudRestoreDone(true);
                 }
               }else{
+                setCloudDebug(d=>({...d,lastRestore:`No cloud profiles found at ${new Date().toLocaleTimeString()}`}));
                 setSyncStatus("");
                 setCloudRestoreDone(true);
               }
@@ -2722,6 +2756,7 @@ function ChessWorld(){
             .catch(e=>{
               const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
               setSyncErrorDetail("LOAD: "+detail);
+              setCloudDebug(d=>({...d,lastError:"LOAD: "+detail,lastRestore:`Restore failed at ${new Date().toLocaleTimeString()}`}));
               console.error("[ChessQuest] Cloud restore failed; using local data:", detail);
               setSyncStatus("");
               setCloudRestoreDone(true);
@@ -2734,43 +2769,94 @@ function ChessWorld(){
 
   // Save profiles locally immediately, then push the same data to Firestore.
   // The UI only says "saved" after Firestore confirms the write.
-  const saveToCloud = async (updatedProfiles) => {
+  const saveToCloud = async (updatedProfiles, opts={}) => {
     const now = new Date();
     const updatedAt = now.toISOString();
-    cqSaveLocalProfiles(updatedProfiles, updatedAt);
+    const profilesToSave = Array.isArray(updatedProfiles) ? updatedProfiles : profilesRef.current;
+    cqSaveLocalProfiles(profilesToSave, updatedAt);
 
     if(!authUser){
       console.warn("[ChessQuest] Saved locally only — no authenticated user");
-      setSyncStatus("");
-      return;
+      setSyncStatus("error");
+      setSyncErrorDetail("Not signed in — progress saved on this device only. Sign in before clearing cache or changing devices.");
+      setCloudDebug(d=>({...d,lastAction:"Local-only save",lastError:"No authenticated user",lastWrite:""}));
+      return false;
     }
     if(!fbDb){
       setSyncStatus("error");
       setSyncErrorDetail("Firestore not initialized — fbDb missing");
+      setCloudDebug(d=>({...d,lastAction:"Save failed",lastError:"Firestore not initialized"}));
       console.error("[ChessQuest] Firestore not ready", {fbDb:!!fbDb});
-      return;
+      return false;
     }
+    const ref = cqUserDocRef(authUser);
     setSyncStatus("saving");
     setSyncErrorDetail("");
+    setCloudDebug(d=>({...d,projectId:(window.__ENV&&window.__ENV.CHESS_QUEST_PROJECT_ID)||d.projectId,uid:authUser.uid,email:authUser.email||"",docPath:`users/${authUser.uid}`,lastAction:"Saving to Firestore…",lastError:""}));
     try {
-      await cqWithTimeout(fbDb.collection("users").doc(authUser.uid).set({
-        profiles: updatedProfiles,
+      await cqWithTimeout(ref.set({
+        profiles: profilesToSave,
         updatedAt,
         lastSaved: updatedAt,
         email: authUser.email || "",
         displayName: authUser.displayName || "",
-      }, {merge:true}), 15000, "Cloud save");
+        app: "chess-quest",
+        schemaVersion: 2
+      }, {merge:true}), 20000, "Cloud save");
+
+      // Important: Firestore can sometimes acknowledge a local/offline write.
+      // Do a server read-back before claiming it is truly saved to cloud.
+      await cqVerifyCloudSave(authUser, profilesToSave, updatedAt);
+
       setSyncStatus("saved");
       setLastSavedAt(now);
-      console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
+      setCloudDebug(d=>({...d,lastAction:"Cloud save verified",lastWrite:`Verified ${profilesToSave.length} profile(s) on server at ${now.toLocaleTimeString()}`,lastError:""}));
+      console.log("[ChessQuest] Saved + verified Firestore at", now.toLocaleTimeString());
       setTimeout(()=>setSyncStatus(""),2500);
+      return true;
     } catch(e){
       setSyncStatus("error");
       const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
       setSyncErrorDetail(detail);
+      setCloudDebug(d=>({...d,lastAction:"Cloud save failed",lastError:detail,lastWrite:`Local save only at ${now.toLocaleTimeString()}`}));
       console.error("[ChessQuest] Cloud save failed, but local save is safe:", detail);
+      return false;
     }
   };
+
+  const restoreFromCloudNow = async () => {
+    if(!authUser || !fbDb){
+      setSyncStatus("error");
+      setSyncErrorDetail("Cannot restore — not signed in or Firestore is not ready.");
+      return;
+    }
+    setSyncStatus("checking");
+    setSyncErrorDetail("");
+    setCloudDebug(d=>({...d,lastAction:"Manual cloud restore…",lastError:""}));
+    try{
+      const data = await cqFetchCloudProfiles(authUser);
+      if(data && Array.isArray(data.profiles)){
+        const cloudUpdatedAt = data.updatedAt || data.lastSaved || new Date().toISOString();
+        setProfiles(data.profiles);
+        profilesRef.current = data.profiles;
+        cqSaveLocalProfiles(data.profiles, cloudUpdatedAt);
+        setLastSavedAt(new Date(data.lastSaved || cloudUpdatedAt));
+        setSyncStatus("restored");
+        setCloudDebug(d=>({...d,lastAction:"Manual restore complete",lastRestore:`Restored ${data.profiles.length} profile(s) from ${data._restorePath||`users/${authUser.uid}`} at ${new Date().toLocaleTimeString()}`,lastError:""}));
+        setTimeout(()=>setSyncStatus(""),2500);
+      }else{
+        setSyncStatus("error");
+        setSyncErrorDetail("No cloud save found for this signed-in account.");
+        setCloudDebug(d=>({...d,lastAction:"Manual restore found nothing",lastRestore:`No server document at users/${authUser.uid}`}));
+      }
+    }catch(e){
+      const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
+      setSyncStatus("error");
+      setSyncErrorDetail("RESTORE: "+detail);
+      setCloudDebug(d=>({...d,lastAction:"Manual restore failed",lastError:"RESTORE: "+detail}));
+    }
+  };
+
 
   // Profile system
   const [profiles,setProfiles]=useState(()=>cqLoadLocalProfiles()?.profiles || cqDefaultProfiles());
@@ -2825,6 +2911,13 @@ function ChessWorld(){
   const [showSettings,setShowSettings]=useState(false);
   const [lastSavedAt,setLastSavedAt]=useState(null);
   const [syncErrorDetail,setSyncErrorDetail]=useState("");
+  const [cloudDebug,setCloudDebug]=useState({
+    projectId: (window.__ENV && window.__ENV.CHESS_QUEST_PROJECT_ID) || "",
+    uid: "", email: "", docPath: "",
+    lastAction: "", lastWrite: "", lastRestore: "", lastError: ""
+  });
+  const profilesRef = useRef(profiles);
+  useEffect(()=>{ profilesRef.current = profiles; }, [profiles]);
 
   // Free play state — lifted here so game persists when switching tabs
   const [playBoard,setPlayBoard]=useState(INIT);
@@ -3146,9 +3239,28 @@ function ChessWorld(){
             </div>
 
             {/* Manual sync button */}
-            <button onClick={()=>{SFX.tap();saveToCloud(profiles);}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
+            <button onClick={async()=>{SFX.tap();await saveToCloud(profilesRef.current,{manual:true});}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
               🔄 Sync Now
             </button>
+
+            <button onClick={async()=>{SFX.tap();await restoreFromCloudNow();}} style={{width:"100%",background:"#eaf8ff",border:"2px solid #74b9ff",borderRadius:14,padding:"12px",fontSize:13,fontWeight:900,color:"#0984e3",cursor:"pointer",marginBottom:10}}>
+              ☁️ Restore From Cloud
+            </button>
+
+
+            <details style={{background:"#f7f7f7",border:"2px solid #dfe6e9",borderRadius:14,padding:12,marginBottom:10}}>
+              <summary style={{fontSize:12,fontWeight:900,color:"#2d3436",cursor:"pointer"}}>Cloud diagnostics</summary>
+              <div style={{marginTop:10,fontFamily:"monospace",fontSize:10,lineHeight:1.6,color:"#2d3436",wordBreak:"break-word"}}>
+                <div>Project: {cloudDebug.projectId || "missing"}</div>
+                <div>UID: {cloudDebug.uid || "not signed in"}</div>
+                <div>Email: {cloudDebug.email || "none"}</div>
+                <div>Doc: {cloudDebug.docPath || "none"}</div>
+                <div>Action: {cloudDebug.lastAction || "none"}</div>
+                <div>Write: {cloudDebug.lastWrite || "none"}</div>
+                <div>Restore: {cloudDebug.lastRestore || "none"}</div>
+                <div>Error: {cloudDebug.lastError || "none"}</div>
+              </div>
+            </details>
 
             {/* Sign out */}
             <button onClick={async()=>{SFX.tap();await fbAuth.signOut();setShowSettings(false);}} style={{width:"100%",background:"#fff0f0",border:"2px solid #ff7675",borderRadius:14,padding:"12px",fontSize:13,fontWeight:800,color:"#e74c3c",cursor:"pointer"}}>
