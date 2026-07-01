@@ -2578,6 +2578,7 @@ function ChessWorld(){
   const pendingProfilesRef = useRef(null);
   const saveInFlightRef = useRef(false);
   const lastSaveHashRef = useRef("");
+  const cloudLoadedRef = useRef(false);
 
   useEffect(()=>{
     let unsub = ()=>{};
@@ -2589,32 +2590,54 @@ function ChessWorld(){
         return;
       }
       unsub = fbAuth.onAuthStateChanged(async user => {
-        setAuthUser(user);
-        setAuthLoading(false);
+        // IMPORTANT: do not show the app until the cloud document has been read.
+        // Previously the default Alex/Sam profiles could render first, then a quick
+        // user action could save those defaults back to Firestore before restore
+        // finished. That made the UI say "Synced" while reopening showed no restored
+        // progress. We now complete restore before leaving the loading screen.
+        setAuthLoading(true);
+        cloudLoadedRef.current = false;
+
         if(user){
           try {
             const snap = await fbDb.collection("users").doc(user.uid).get();
             if(snap.exists){
               const data = snap.data() || {};
-              if(data.profiles){
+              if(Array.isArray(data.profiles) && data.profiles.length){
                 setProfiles(data.profiles);
+                lastSaveHashRef.current = JSON.stringify(data.profiles);
+                console.log("[ChessQuest] Restored profiles from Firestore", data.profiles.length);
               }
               if(data.lastSaved){
                 const loadedSavedAt = new Date(data.lastSaved);
                 if(!Number.isNaN(loadedSavedAt.getTime())){
                   confirmedSavedRef.current = true;
                   setLastSavedAt(loadedSavedAt);
-                  setSyncStatus("");
-                  setSyncErrorDetail("");
                 }
               }
+              setSyncStatus("");
+              setSyncErrorDetail("");
+            } else {
+              console.log("[ChessQuest] No cloud save found for this user yet");
+              lastSaveHashRef.current = "";
             }
           } catch(e){
             const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
+            setSyncStatus("error");
             setSyncErrorDetail("LOAD: "+detail);
             console.error("[ChessQuest] Load FAILED:", detail);
           }
+        } else {
+          lastSaveHashRef.current = "";
+          confirmedSavedRef.current = false;
+          setLastSavedAt(null);
+          setSyncStatus("");
+          setSyncErrorDetail("");
         }
+
+        cloudLoadedRef.current = true;
+        setAuthUser(user);
+        setAuthLoading(false);
       });
     });
     return ()=>unsub();
@@ -2625,6 +2648,11 @@ function ChessWorld(){
   const saveToCloudNow = async (updatedProfiles, {force=false}={}) => {
     if(!authUser){
       console.warn("[ChessQuest] Not saving — no authenticated user");
+      return;
+    }
+    if(!cloudLoadedRef.current){
+      console.warn("[ChessQuest] Not saving yet — cloud restore has not finished");
+      pendingProfilesRef.current = updatedProfiles;
       return;
     }
     if(!fbDb){
@@ -2706,6 +2734,13 @@ function ChessWorld(){
   };
 
   const saveToCloud = (updatedProfiles, {force=false}={}) => {
+    if(!cloudLoadedRef.current){
+      console.warn("[ChessQuest] Save queued until cloud restore completes");
+      pendingProfilesRef.current = updatedProfiles;
+      setSyncStatus("saving");
+      setSyncErrorDetail("Waiting for cloud restore to finish before saving…");
+      return;
+    }
     pendingProfilesRef.current = updatedProfiles;
     if(saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
 
