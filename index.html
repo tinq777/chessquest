@@ -46,6 +46,10 @@
     firebase.initializeApp(firebaseConfig);
     window.__fbAuth = firebase.auth();
     window.__fbDb = firebase.firestore();
+    try {
+      // Helps iPhone/Safari/Cloudflare Pages connections that can hang on streaming transport.
+      window.__fbDb.settings({ experimentalAutoDetectLongPolling: true, merge: true });
+    } catch (e) { console.warn("Firestore settings already locked", e); }
     window.__firebase = { ready: true }; // signal to chess-quest.jsx that Firebase is loaded
   </script>
 

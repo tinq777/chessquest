@@ -51,6 +51,48 @@ async function initFirebase(){
   return true;
 }
 
+function cqWithTimeout(promise, ms, label){
+  let timer;
+  const timeout = new Promise((_, reject)=>{
+    timer = setTimeout(()=>reject(new Error((label||"Operation")+" timed out after "+ms+"ms")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(()=>clearTimeout(timer));
+}
+
+async function cqFetchCloudProfiles(user){
+  if(!fbDb || !user) return null;
+  const primaryRef = fbDb.collection("users").doc(user.uid);
+
+  // After a browser/cache clear, force a real server read. If that fails, then
+  // fall back to default Firestore behaviour so the app can still open offline.
+  let snap;
+  try{
+    snap = await cqWithTimeout(primaryRef.get({source:"server"}), 12000, "Cloud restore");
+  }catch(serverErr){
+    console.warn("[ChessQuest] Server restore failed, trying default Firestore get", serverErr);
+    snap = await cqWithTimeout(primaryRef.get(), 8000, "Cloud restore fallback");
+  }
+  if(snap && snap.exists){
+    const data = snap.data();
+    if(data && Array.isArray(data.profiles)) return data;
+  }
+
+  // Safety fallback: if the same email was previously saved under another auth
+  // provider UID, recover that save instead of showing empty/default profiles.
+  if(user.email){
+    const qSnap = await cqWithTimeout(
+      fbDb.collection("users").where("email","==",user.email).limit(1).get({source:"server"}),
+      12000,
+      "Email cloud restore"
+    );
+    if(qSnap && !qSnap.empty){
+      const data = qSnap.docs[0].data();
+      if(data && Array.isArray(data.profiles)) return data;
+    }
+  }
+  return null;
+}
+
 // ═══════════════════════════════════════════════════════════
 // SOUND ENGINE — Web Audio API, no external files needed
 // ═══════════════════════════════════════════════════════════
@@ -2614,10 +2656,13 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
 }
 
 function ChessWorld(){
+  const hadLocalProfilesAtStart = useRef(!!cqLoadLocalProfiles());
+
   // ── Auth state ──
   const [authUser,   setAuthUser]   = useState(undefined); // undefined=loading, null=not logged in
   const [authLoading,setAuthLoading] = useState(true);
   const [syncStatus, setSyncStatus]  = useState(""); // "saving" | "saved" | "error"
+  const [cloudRestoreDone,setCloudRestoreDone] = useState(false);
 
   useEffect(()=>{
     let unsub = ()=>{};
@@ -2633,36 +2678,45 @@ function ChessWorld(){
 
     initFirebase().then(ok=>{
       if(cancelled) return;
-      if(!ok){ clearTimeout(authFallback); setAuthLoading(false); return; }
+      if(!ok){ clearTimeout(authFallback); setAuthLoading(false); setCloudRestoreDone(true); return; }
       unsub = fbAuth.onAuthStateChanged(user => {
         if(cancelled) return;
         setAuthUser(user);
         setAuthLoading(false);
         clearTimeout(authFallback);
 
-        // Cloud restore runs in the background. It must never block the app.
+        if(!user){
+          setCloudRestoreDone(true);
+          return;
+        }
+
+        // Cloud restore runs in the background. If local cache was cleared,
+        // briefly hold the profile picker so defaults don't appear as progress.
+        setCloudRestoreDone(false);
         if(user){
           setSyncStatus("checking");
-          fbDb.collection("users").doc(user.uid).get()
-            .then(snap=>{
+          cqFetchCloudProfiles(user)
+            .then(data=>{
               if(cancelled) return;
-              const data = snap.exists ? snap.data() : null;
               if(data && Array.isArray(data.profiles)){
-                const cloudUpdatedAt = data.updatedAt || data.lastSaved || "";
+                const cloudUpdatedAt = data.updatedAt || data.lastSaved || new Date().toISOString();
                 const local = cqLoadLocalProfiles();
                 const localUpdatedAt = local?.updatedAt || "";
-                // Prefer the newest copy. If timestamps are missing, prefer cloud.
+                // If local cache was cleared or is older, restore from Firestore.
                 if(!local || !localUpdatedAt || !cloudUpdatedAt || cloudUpdatedAt >= localUpdatedAt){
                   setProfiles(data.profiles);
-                  cqSaveLocalProfiles(data.profiles, cloudUpdatedAt || new Date().toISOString());
+                  cqSaveLocalProfiles(data.profiles, cloudUpdatedAt);
                   if(data.lastSaved || cloudUpdatedAt) setLastSavedAt(new Date(data.lastSaved || cloudUpdatedAt));
                   setSyncStatus("restored");
+                  setCloudRestoreDone(true);
                   setTimeout(()=>setSyncStatus(""),2500);
                 }else{
                   setSyncStatus("");
+                  setCloudRestoreDone(true);
                 }
               }else{
                 setSyncStatus("");
+                setCloudRestoreDone(true);
               }
             })
             .catch(e=>{
@@ -2670,6 +2724,7 @@ function ChessWorld(){
               setSyncErrorDetail("LOAD: "+detail);
               console.error("[ChessQuest] Cloud restore failed; using local data:", detail);
               setSyncStatus("");
+              setCloudRestoreDone(true);
             });
         }
       });
@@ -2698,13 +2753,13 @@ function ChessWorld(){
     setSyncStatus("saving");
     setSyncErrorDetail("");
     try {
-      await fbDb.collection("users").doc(authUser.uid).set({
+      await cqWithTimeout(fbDb.collection("users").doc(authUser.uid).set({
         profiles: updatedProfiles,
         updatedAt,
         lastSaved: updatedAt,
         email: authUser.email || "",
         displayName: authUser.displayName || "",
-      }, {merge:true});
+      }, {merge:true}), 15000, "Cloud save");
       setSyncStatus("saved");
       setLastSavedAt(now);
       console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
@@ -2796,6 +2851,17 @@ function ChessWorld(){
   // Show login screen if not authenticated
   if(!authUser) return <LoginScreen onLogin={user=>{setAuthUser(user);}}/>;
 
+  // If browser cache was cleared, wait briefly for a real Firestore restore before
+  // showing default profiles. This prevents users thinking cloud sync is empty.
+  if(authUser && !hadLocalProfilesAtStart.current && !cloudRestoreDone) return(
+    <div style={{height:"100dvh",background:"linear-gradient(180deg,#0d1b4b,#1a2a6a)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,padding:24,textAlign:"center"}}>
+      <div style={{fontSize:64,animation:"logoBounce 1.5s ease-in-out infinite"}}>☁️</div>
+      <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>Restoring cloud progress…</div>
+      <div style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)",lineHeight:1.5,maxWidth:320}}>This only appears after cache is cleared. The app is checking Firestore before showing profiles.</div>
+      <GlobalStyles/>
+    </div>
+  );
+
   // Show profile select if no active profile
   if(activeProfile===null) return(
     <ProfileSelect
@@ -2818,7 +2884,9 @@ function ChessWorld(){
   };
 
   const tryLeavePuzzle = (onConfirm) => {
-    if(activePuzzle && puzzleInProgress){
+    // Any open puzzle should ask before leaving. Previously this only asked
+    // after a move/hint, so tapping Back immediately left without a prompt.
+    if(activePuzzle){
       setConfirmLeavePuzzle({cb: onConfirm}); // wrap in object so useState doesn't invoke it
     } else {
       onConfirm();
