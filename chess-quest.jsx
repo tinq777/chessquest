@@ -7,6 +7,35 @@ const { useState, useCallback, useRef, useEffect } = React;
 
 let fbAuth = null, fbDb = null, googleProvider = null;
 
+const CQ_STORAGE_KEY = "chessQuestProfiles:v1";
+
+function cqLoadLocalProfiles(){
+  try{
+    const raw = localStorage.getItem(CQ_STORAGE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(Array.isArray(parsed)) return {profiles: parsed, updatedAt: ""};
+    if(parsed && Array.isArray(parsed.profiles)) return parsed;
+  }catch(e){ console.warn("[ChessQuest] Local profile load failed", e); }
+  return null;
+}
+
+function cqSaveLocalProfiles(profiles, updatedAt){
+  try{
+    localStorage.setItem(CQ_STORAGE_KEY, JSON.stringify({
+      profiles,
+      updatedAt: updatedAt || new Date().toISOString()
+    }));
+  }catch(e){ console.warn("[ChessQuest] Local profile save failed", e); }
+}
+
+function cqDefaultProfiles(){
+  return [
+    {name:"Alex",  avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0},
+    {name:"Sam",   avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0},
+  ];
+}
+
 async function initFirebase(){
   if(fbAuth) return true;
   // Wait for the compat scripts + config in index.html to finish loading
@@ -15,7 +44,6 @@ async function initFirebase(){
     await new Promise(r=>setTimeout(r,50));
     tries++;
   }
-  if(window.__firebaseConfigError){ console.error(window.__firebaseConfigError); return false; }
   if(!window.__fbAuth || !window.__fbDb){ console.error("Firebase failed to load"); return false; }
   fbAuth = window.__fbAuth;
   fbDb   = window.__fbDb;
@@ -2572,196 +2600,107 @@ function ChessWorld(){
   const [authUser,   setAuthUser]   = useState(undefined); // undefined=loading, null=not logged in
   const [authLoading,setAuthLoading] = useState(true);
   const [syncStatus, setSyncStatus]  = useState(""); // "saving" | "saved" | "error"
-  const saveSeqRef = useRef(0);
-  const confirmedSavedRef = useRef(false);
-  const saveDebounceRef = useRef(null);
-  const pendingProfilesRef = useRef(null);
-  const saveInFlightRef = useRef(false);
-  const lastSaveHashRef = useRef("");
-  const cloudLoadedRef = useRef(false);
 
   useEffect(()=>{
     let unsub = ()=>{};
-    initFirebase().then(ok=>{
-      if(!ok){
+    let cancelled = false;
+
+    // Never let Firebase startup trap the app on a loading screen.
+    const authFallback = setTimeout(()=>{
+      if(!cancelled && authLoading){
+        console.warn("[ChessQuest] Auth check is slow — opening app/login anyway");
         setAuthLoading(false);
-        setSyncStatus("error");
-        setSyncErrorDetail(window.__firebaseConfigError || "Firebase failed to load — check /config.js and Cloudflare env vars");
-        return;
       }
-      unsub = fbAuth.onAuthStateChanged(async user => {
-        // IMPORTANT: do not show the app until the cloud document has been read.
-        // Previously the default Alex/Sam profiles could render first, then a quick
-        // user action could save those defaults back to Firestore before restore
-        // finished. That made the UI say "Synced" while reopening showed no restored
-        // progress. We now complete restore before leaving the loading screen.
-        setAuthLoading(true);
-        cloudLoadedRef.current = false;
+    }, 3500);
 
-        if(user){
-          try {
-            const snap = await fbDb.collection("users").doc(user.uid).get();
-            if(snap.exists){
-              const data = snap.data() || {};
-              if(Array.isArray(data.profiles) && data.profiles.length){
-                setProfiles(data.profiles);
-                lastSaveHashRef.current = JSON.stringify(data.profiles);
-                console.log("[ChessQuest] Restored profiles from Firestore", data.profiles.length);
-              }
-              if(data.lastSaved){
-                const loadedSavedAt = new Date(data.lastSaved);
-                if(!Number.isNaN(loadedSavedAt.getTime())){
-                  confirmedSavedRef.current = true;
-                  setLastSavedAt(loadedSavedAt);
-                }
-              }
-              setSyncStatus("");
-              setSyncErrorDetail("");
-            } else {
-              console.log("[ChessQuest] No cloud save found for this user yet");
-              lastSaveHashRef.current = "";
-            }
-          } catch(e){
-            const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
-            setSyncStatus("error");
-            setSyncErrorDetail("LOAD: "+detail);
-            console.error("[ChessQuest] Load FAILED:", detail);
-          }
-        } else {
-          lastSaveHashRef.current = "";
-          confirmedSavedRef.current = false;
-          setLastSavedAt(null);
-          setSyncStatus("");
-          setSyncErrorDetail("");
-        }
-
-        cloudLoadedRef.current = true;
+    initFirebase().then(ok=>{
+      if(cancelled) return;
+      if(!ok){ clearTimeout(authFallback); setAuthLoading(false); return; }
+      unsub = fbAuth.onAuthStateChanged(user => {
+        if(cancelled) return;
         setAuthUser(user);
         setAuthLoading(false);
+        clearTimeout(authFallback);
+
+        // Cloud restore runs in the background. It must never block the app.
+        if(user){
+          setSyncStatus("checking");
+          fbDb.collection("users").doc(user.uid).get()
+            .then(snap=>{
+              if(cancelled) return;
+              const data = snap.exists ? snap.data() : null;
+              if(data && Array.isArray(data.profiles)){
+                const cloudUpdatedAt = data.updatedAt || data.lastSaved || "";
+                const local = cqLoadLocalProfiles();
+                const localUpdatedAt = local?.updatedAt || "";
+                // Prefer the newest copy. If timestamps are missing, prefer cloud.
+                if(!local || !localUpdatedAt || !cloudUpdatedAt || cloudUpdatedAt >= localUpdatedAt){
+                  setProfiles(data.profiles);
+                  cqSaveLocalProfiles(data.profiles, cloudUpdatedAt || new Date().toISOString());
+                  if(data.lastSaved || cloudUpdatedAt) setLastSavedAt(new Date(data.lastSaved || cloudUpdatedAt));
+                  setSyncStatus("restored");
+                  setTimeout(()=>setSyncStatus(""),2500);
+                }else{
+                  setSyncStatus("");
+                }
+              }else{
+                setSyncStatus("");
+              }
+            })
+            .catch(e=>{
+              const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
+              setSyncErrorDetail("LOAD: "+detail);
+              console.error("[ChessQuest] Cloud restore failed; using local data:", detail);
+              setSyncStatus("");
+            });
+        }
       });
     });
-    return ()=>unsub();
+    return ()=>{cancelled=true; clearTimeout(authFallback); unsub();};
   },[]);
 
-  // Save profiles to Firestore, but coalesce rapid game updates into one write.
-  // This avoids slow cloud sync caused by writing after every tiny state change.
-  const saveToCloudNow = async (updatedProfiles, {force=false}={}) => {
+  // Save profiles locally immediately, then push the same data to Firestore.
+  // The UI only says "saved" after Firestore confirms the write.
+  const saveToCloud = async (updatedProfiles) => {
+    const now = new Date();
+    const updatedAt = now.toISOString();
+    cqSaveLocalProfiles(updatedProfiles, updatedAt);
+
     if(!authUser){
-      console.warn("[ChessQuest] Not saving — no authenticated user");
-      return;
-    }
-    if(!cloudLoadedRef.current){
-      console.warn("[ChessQuest] Not saving yet — cloud restore has not finished");
-      pendingProfilesRef.current = updatedProfiles;
+      console.warn("[ChessQuest] Saved locally only — no authenticated user");
+      setSyncStatus("");
       return;
     }
     if(!fbDb){
-      if(!confirmedSavedRef.current){
-        setSyncStatus("error");
-        setSyncErrorDetail("Firestore not initialized — fbDb missing");
-      }
+      setSyncStatus("error");
+      setSyncErrorDetail("Firestore not initialized — fbDb missing");
       console.error("[ChessQuest] Firestore not ready", {fbDb:!!fbDb});
       return;
     }
-
-    const hash = JSON.stringify(updatedProfiles);
-    if(!force && hash === lastSaveHashRef.current){
-      return;
-    }
-
-    // If a write is already running, keep only the newest profiles and save them next.
-    if(saveInFlightRef.current){
-      pendingProfilesRef.current = updatedProfiles;
-      return;
-    }
-
-    saveInFlightRef.current = true;
-    const seq = ++saveSeqRef.current;
     setSyncStatus("saving");
     setSyncErrorDetail("");
-
-    let slowSaveTimer = null;
     try {
-      const now = new Date();
-      slowSaveTimer = setTimeout(()=>{
-        if(seq !== saveSeqRef.current) return;
-        setSyncStatus("saving");
-        setSyncErrorDetail("Still saving… Firestore is slow, but the latest progress is queued and will keep saving in the background.");
-      },15000);
-
       await fbDb.collection("users").doc(authUser.uid).set({
         profiles: updatedProfiles,
-        lastSaved: now.toISOString(),
+        updatedAt,
+        lastSaved: updatedAt,
         email: authUser.email || "",
         displayName: authUser.displayName || "",
       }, {merge:true});
-
-      if(slowSaveTimer) clearTimeout(slowSaveTimer);
-      confirmedSavedRef.current = true;
-      lastSaveHashRef.current = hash;
-
-      if(seq === saveSeqRef.current){
-        setSyncStatus("saved");
-        setSyncErrorDetail("");
-        setLastSavedAt(now);
-        console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
-        setTimeout(()=>{
-          if(seq === saveSeqRef.current) setSyncStatus("");
-        },2500);
-      }
+      setSyncStatus("saved");
+      setLastSavedAt(now);
+      console.log("[ChessQuest] Saved to Firestore at", now.toLocaleTimeString());
+      setTimeout(()=>setSyncStatus(""),2500);
     } catch(e){
-      if(slowSaveTimer) clearTimeout(slowSaveTimer);
+      setSyncStatus("error");
       const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
-      console.error("[ChessQuest] Save FAILED:", detail);
-
-      if(seq === saveSeqRef.current){
-        if(confirmedSavedRef.current || lastSavedAt){
-          setSyncStatus("saved");
-          setSyncErrorDetail("");
-        } else {
-          setSyncStatus("error");
-          setSyncErrorDetail(detail);
-        }
-      }
-    } finally {
-      saveInFlightRef.current = false;
-      const pending = pendingProfilesRef.current;
-      pendingProfilesRef.current = null;
-      if(pending && JSON.stringify(pending) !== lastSaveHashRef.current){
-        setTimeout(()=>saveToCloudNow(pending), 250);
-      }
+      setSyncErrorDetail(detail);
+      console.error("[ChessQuest] Cloud save failed, but local save is safe:", detail);
     }
-  };
-
-  const saveToCloud = (updatedProfiles, {force=false}={}) => {
-    if(!cloudLoadedRef.current){
-      console.warn("[ChessQuest] Save queued until cloud restore completes");
-      pendingProfilesRef.current = updatedProfiles;
-      setSyncStatus("saving");
-      setSyncErrorDetail("Waiting for cloud restore to finish before saving…");
-      return;
-    }
-    pendingProfilesRef.current = updatedProfiles;
-    if(saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
-
-    const delay = force ? 0 : 1200;
-    if(!force){
-      setSyncStatus("saving");
-      setSyncErrorDetail("");
-    }
-
-    saveDebounceRef.current = setTimeout(()=>{
-      const latest = pendingProfilesRef.current;
-      pendingProfilesRef.current = null;
-      if(latest) saveToCloudNow(latest, {force});
-    }, delay);
   };
 
   // Profile system
-  const [profiles,setProfiles]=useState([
-    {name:"Alex",  avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0},
-    {name:"Sam",   avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0},
-  ]);
+  const [profiles,setProfiles]=useState(()=>cqLoadLocalProfiles()?.profiles || cqDefaultProfiles());
   const [activeProfile,setActiveProfile]=useState(null); // null = profile select screen
 
   const profile = activeProfile!==null ? profiles[activeProfile] : null;
@@ -3075,20 +3014,21 @@ function ChessWorld(){
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
                 <span style={{fontSize:18}}>{syncStatus==="error"?"⚠️":"☁️"}</span>
                 <span style={{fontSize:14,fontWeight:900,color:"#2d3436"}}>
-                  {syncStatus==="saving"?"Saving…":syncStatus==="error" && !lastSavedAt?"Sync failed":syncStatus==="saved"?"Synced":"Cloud Sync"}
+                  {syncStatus==="saving"?"Saving…":syncStatus==="checking"?"Checking cloud…":syncStatus==="restored"?"Restored from cloud":syncStatus==="error"?"Sync failed":"Cloud Sync"}
                 </span>
               </div>
               <div style={{fontSize:11,color:"#636e72",lineHeight:1.5}}>
                 {lastSavedAt
                   ? `Last saved: ${lastSavedAt.toLocaleTimeString()}`
-                  : "No saves yet this session"}
+                  : syncStatus==="checking" ? "Opening app while cloud restore checks in background"
+                  : "Local progress is ready"}
               </div>
-              {syncStatus==="error" && !lastSavedAt&&(
+              {syncStatus==="error"&&(
                 <div style={{fontSize:11,color:"#e74c3c",marginTop:6,fontWeight:700}}>
                   Check your internet connection or Firestore security rules.
                 </div>
               )}
-              {syncErrorDetail && !(syncStatus==="error" && lastSavedAt)&&(
+              {syncErrorDetail&&(
                 <div style={{marginTop:8,background:"#2d3436",borderRadius:10,padding:10,fontFamily:"monospace",fontSize:10,color:"#ffeb3b",wordBreak:"break-word",lineHeight:1.5}}>
                   {syncErrorDetail}
                 </div>
@@ -3096,7 +3036,7 @@ function ChessWorld(){
             </div>
 
             {/* Manual sync button */}
-            <button onClick={()=>{SFX.tap();saveToCloud(profiles,{force:true});}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
+            <button onClick={()=>{SFX.tap();saveToCloud(profiles);}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
               🔄 Sync Now
             </button>
 
