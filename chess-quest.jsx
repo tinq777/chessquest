@@ -59,6 +59,99 @@ function cqWithTimeout(promise, ms, label){
   return Promise.race([promise, timeout]).finally(()=>clearTimeout(timer));
 }
 
+function cqFirestoreValue(value){
+  if(value === null || value === undefined) return {nullValue:null};
+  if(Array.isArray(value)) return {arrayValue:{values:value.map(cqFirestoreValue)}};
+  if(typeof value === "object"){
+    const fields = {};
+    Object.keys(value).forEach(k=>{ fields[k] = cqFirestoreValue(value[k]); });
+    return {mapValue:{fields}};
+  }
+  if(typeof value === "boolean") return {booleanValue:value};
+  if(typeof value === "number") return Number.isInteger(value) ? {integerValue:String(value)} : {doubleValue:value};
+  return {stringValue:String(value)};
+}
+
+function cqFromFirestoreValue(v){
+  if(!v || typeof v !== "object") return undefined;
+  if("nullValue" in v) return null;
+  if("stringValue" in v) return v.stringValue;
+  if("booleanValue" in v) return !!v.booleanValue;
+  if("integerValue" in v) return Number(v.integerValue);
+  if("doubleValue" in v) return Number(v.doubleValue);
+  if("timestampValue" in v) return v.timestampValue;
+  if("arrayValue" in v) return (v.arrayValue.values || []).map(cqFromFirestoreValue);
+  if("mapValue" in v){
+    const out = {};
+    const fields = v.mapValue.fields || {};
+    Object.keys(fields).forEach(k=>{ out[k] = cqFromFirestoreValue(fields[k]); });
+    return out;
+  }
+  return undefined;
+}
+
+function cqFromFirestoreFields(fields){
+  const out = {};
+  Object.keys(fields || {}).forEach(k=>{ out[k] = cqFromFirestoreValue(fields[k]); });
+  return out;
+}
+
+function cqProjectId(){
+  return (window.__ENV && window.__ENV.CHESS_QUEST_PROJECT_ID) || (window.firebase && window.firebase.app && window.firebase.app().options && window.firebase.app().options.projectId) || "";
+}
+
+async function cqFetchJsonWithTimeout(url, opts={}, ms=12000, label="Firestore REST"){
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), ms);
+  try{
+    const res = await fetch(url, {...opts, signal:controller.signal});
+    const text = await res.text();
+    let json = null;
+    try{ json = text ? JSON.parse(text) : null; }catch(e){ json = {raw:text}; }
+    if(!res.ok){
+      const msg = json?.error?.message || json?.raw || res.statusText || "Request failed";
+      const err = new Error(`${label} failed ${res.status}: ${msg}`);
+      err.status = res.status;
+      err.response = json;
+      throw err;
+    }
+    return json;
+  }catch(e){
+    if(e && e.name === "AbortError") throw new Error(`${label} timed out after ${ms}ms`);
+    throw e;
+  }finally{ clearTimeout(timer); }
+}
+
+async function cqFirestoreRestSet(user, payload){
+  if(!user || !user.uid) throw new Error("No signed-in Firebase user");
+  const projectId = cqProjectId();
+  if(!projectId) throw new Error("Missing Firebase projectId");
+  const token = await cqWithTimeout(user.getIdToken(true), 10000, "Auth token");
+  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/users/${encodeURIComponent(user.uid)}`;
+  const fields = {};
+  Object.keys(payload).forEach(k=>{ fields[k] = cqFirestoreValue(payload[k]); });
+  return cqFetchJsonWithTimeout(url, {
+    method:"PATCH",
+    headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+    body:JSON.stringify({fields})
+  }, 15000, "Cloud save REST");
+}
+
+async function cqFirestoreRestGet(user){
+  if(!user || !user.uid) throw new Error("No signed-in Firebase user");
+  const projectId = cqProjectId();
+  if(!projectId) throw new Error("Missing Firebase projectId");
+  const token = await cqWithTimeout(user.getIdToken(), 10000, "Auth token");
+  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/users/${encodeURIComponent(user.uid)}`;
+  try{
+    const json = await cqFetchJsonWithTimeout(url, {headers:{"Authorization":"Bearer "+token}}, 10000, "Cloud restore REST");
+    return cqFromFirestoreFields(json.fields || {});
+  }catch(e){
+    if(e && e.status === 404) return null;
+    throw e;
+  }
+}
+
 function cqUserDocRef(user){
   if(!fbDb || !user || !user.uid) return null;
   return fbDb.collection("users").doc(user.uid);
@@ -70,11 +163,17 @@ function cqProfilesEqual(a,b){
 }
 
 async function cqVerifyCloudSave(user, updatedProfiles, updatedAt){
-  const ref = cqUserDocRef(user);
-  if(!ref) throw new Error("No Firestore user document available");
-  const snap = await cqWithTimeout(ref.get({source:"server"}), 15000, "Cloud verify");
-  if(!snap || !snap.exists) throw new Error("Cloud verify failed: document was not found on server");
-  const data = snap.data() || {};
+  let data = null;
+  try{
+    data = await cqFirestoreRestGet(user);
+  }catch(restErr){
+    console.warn("[ChessQuest] REST verify failed, trying SDK verify", restErr);
+    const ref = cqUserDocRef(user);
+    if(!ref) throw new Error("No Firestore user document available");
+    const snap = await cqWithTimeout(ref.get({source:"server"}), 10000, "Cloud verify SDK");
+    if(!snap || !snap.exists) throw new Error("Cloud verify failed: document was not found on server");
+    data = snap.data() || {};
+  }
   if(!Array.isArray(data.profiles)) throw new Error("Cloud verify failed: profiles missing from server document");
   if(data.updatedAt !== updatedAt){
     console.warn("[ChessQuest] Cloud verify updatedAt mismatch", {expected:updatedAt, actual:data.updatedAt});
@@ -86,40 +185,24 @@ async function cqVerifyCloudSave(user, updatedProfiles, updatedAt){
 }
 
 async function cqFetchCloudProfiles(user){
-  if(!fbDb || !user) return null;
-  const primaryRef = cqUserDocRef(user);
+  if(!user) return null;
 
-  // Always try the exact signed-in user document first. This is the only
-  // restore path most Firestore security rules will allow.
-  let snap;
+  // Prefer Firestore REST. It is more reliable on iPhone/Safari when the SDK
+  // streaming transport hangs behind Cloudflare Pages or mobile networks.
   try{
-    snap = await cqWithTimeout(primaryRef.get({source:"server"}), 15000, "Cloud restore");
-  }catch(serverErr){
-    console.warn("[ChessQuest] Server restore failed, trying default Firestore get", serverErr);
-    snap = await cqWithTimeout(primaryRef.get(), 8000, "Cloud restore fallback");
+    const data = await cqFirestoreRestGet(user);
+    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} REST`};
+    if(data === null) return null;
+  }catch(restErr){
+    console.warn("[ChessQuest] REST restore failed, trying SDK restore", restErr);
   }
+
+  if(!fbDb) return null;
+  const primaryRef = cqUserDocRef(user);
+  const snap = await cqWithTimeout(primaryRef.get({source:"server"}), 10000, "Cloud restore SDK");
   if(snap && snap.exists){
     const data = snap.data();
-    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid}`};
-  }
-
-  // Optional fallback only. Some rule sets do not allow email queries, so this
-  // must never block the app or hide the real primary restore result.
-  if(user.email){
-    try{
-      const qSnap = await cqWithTimeout(
-        fbDb.collection("users").where("email","==",user.email).limit(1).get({source:"server"}),
-        10000,
-        "Email cloud restore"
-      );
-      if(qSnap && !qSnap.empty){
-        const doc = qSnap.docs[0];
-        const data = doc.data();
-        if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${doc.id}`};
-      }
-    }catch(emailErr){
-      console.warn("[ChessQuest] Email restore fallback unavailable", emailErr);
-    }
+    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} SDK`};
   }
   return null;
 }
@@ -2737,6 +2820,7 @@ function ChessWorld(){
                 // If local cache was cleared or is older, restore from Firestore.
                 if(!local || !localUpdatedAt || !cloudUpdatedAt || cloudUpdatedAt >= localUpdatedAt){
                   setProfiles(data.profiles);
+                  profilesRef.current = data.profiles;
                   cqSaveLocalProfiles(data.profiles, cloudUpdatedAt);
                   if(data.lastSaved || cloudUpdatedAt) setLastSavedAt(new Date(data.lastSaved || cloudUpdatedAt));
                   setCloudDebug(d=>({...d,lastRestore:`Restored ${data.profiles.length} profile(s) from ${data._restorePath||"cloud"} at ${new Date().toLocaleTimeString()}`,lastError:""}));
@@ -2794,18 +2878,24 @@ function ChessWorld(){
     setSyncErrorDetail("");
     setCloudDebug(d=>({...d,projectId:(window.__ENV&&window.__ENV.CHESS_QUEST_PROJECT_ID)||d.projectId,uid:authUser.uid,email:authUser.email||"",docPath:`users/${authUser.uid}`,lastAction:"Saving to Firestore…",lastError:""}));
     try {
-      await cqWithTimeout(ref.set({
+      const payload = {
         profiles: profilesToSave,
         updatedAt,
         lastSaved: updatedAt,
         email: authUser.email || "",
         displayName: authUser.displayName || "",
         app: "chess-quest",
-        schemaVersion: 2
-      }, {merge:true}), 20000, "Cloud save");
+        schemaVersion: 3
+      };
 
-      // Important: Firestore can sometimes acknowledge a local/offline write.
-      // Do a server read-back before claiming it is truly saved to cloud.
+      try{
+        await cqFirestoreRestSet(authUser, payload);
+      }catch(restErr){
+        console.warn("[ChessQuest] REST save failed, trying SDK save", restErr);
+        await cqWithTimeout(ref.set(payload, {merge:true}), 12000, "Cloud save SDK");
+      }
+
+      // Only claim cloud success after a server read-back confirms the same data.
       await cqVerifyCloudSave(authUser, profilesToSave, updatedAt);
 
       setSyncStatus("saved");
@@ -2944,16 +3034,8 @@ function ChessWorld(){
   // Show login screen if not authenticated
   if(!authUser) return <LoginScreen onLogin={user=>{setAuthUser(user);}}/>;
 
-  // If browser cache was cleared, wait briefly for a real Firestore restore before
-  // showing default profiles. This prevents users thinking cloud sync is empty.
-  if(authUser && !hadLocalProfilesAtStart.current && !cloudRestoreDone) return(
-    <div style={{height:"100dvh",background:"linear-gradient(180deg,#0d1b4b,#1a2a6a)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,padding:24,textAlign:"center"}}>
-      <div style={{fontSize:64,animation:"logoBounce 1.5s ease-in-out infinite"}}>☁️</div>
-      <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>Restoring cloud progress…</div>
-      <div style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)",lineHeight:1.5,maxWidth:320}}>This only appears after cache is cleared. The app is checking Firestore before showing profiles.</div>
-      <GlobalStyles/>
-    </div>
-  );
+  // Never block app entry on cloud restore. If cache was cleared, the app opens
+  // immediately and cloud profiles replace defaults as soon as restore completes.
 
   // Show profile select if no active profile
   if(activeProfile===null) return(
