@@ -152,6 +152,31 @@ async function cqFirestoreRestGet(user){
   }
 }
 
+async function cqCloudProxySet(user, payload){
+  if(!user || !user.uid) throw new Error("No signed-in Firebase user");
+  const token = await cqWithTimeout(user.getIdToken(false), 10000, "Auth token");
+  return cqFetchJsonWithTimeout(`/api/cloud-sync?uid=${encodeURIComponent(user.uid)}`, {
+    method:"PATCH",
+    headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+    body:JSON.stringify({fields:payload})
+  }, 20000, "Cloud save proxy");
+}
+
+async function cqCloudProxyGet(user){
+  if(!user || !user.uid) throw new Error("No signed-in Firebase user");
+  const token = await cqWithTimeout(user.getIdToken(false), 10000, "Auth token");
+  try{
+    const json = await cqFetchJsonWithTimeout(`/api/cloud-sync?uid=${encodeURIComponent(user.uid)}`, {
+      headers:{"Authorization":"Bearer "+token}
+    }, 15000, "Cloud restore proxy");
+    if(json && json.notFound) return null;
+    return json && json.data ? json.data : null;
+  }catch(e){
+    if(e && e.status === 404) return null;
+    throw e;
+  }
+}
+
 function cqUserDocRef(user){
   if(!fbDb || !user || !user.uid) return null;
   return fbDb.collection("users").doc(user.uid);
@@ -165,15 +190,12 @@ function cqProfilesEqual(a,b){
 async function cqVerifyCloudSave(user, updatedProfiles, updatedAt){
   let data = null;
   try{
+    data = await cqCloudProxyGet(user);
+  }catch(proxyErr){
+    console.warn("[ChessQuest] Proxy verify failed, trying direct REST verify", proxyErr);
     data = await cqFirestoreRestGet(user);
-  }catch(restErr){
-    console.warn("[ChessQuest] REST verify failed, trying SDK verify", restErr);
-    const ref = cqUserDocRef(user);
-    if(!ref) throw new Error("No Firestore user document available");
-    const snap = await cqWithTimeout(ref.get({source:"server"}), 10000, "Cloud verify SDK");
-    if(!snap || !snap.exists) throw new Error("Cloud verify failed: document was not found on server");
-    data = snap.data() || {};
   }
+  if(!data) throw new Error("Cloud verify failed: document was not found on server");
   if(!Array.isArray(data.profiles)) throw new Error("Cloud verify failed: profiles missing from server document");
   if(data.updatedAt !== updatedAt){
     console.warn("[ChessQuest] Cloud verify updatedAt mismatch", {expected:updatedAt, actual:data.updatedAt});
@@ -187,23 +209,19 @@ async function cqVerifyCloudSave(user, updatedProfiles, updatedAt){
 async function cqFetchCloudProfiles(user){
   if(!user) return null;
 
-  // Prefer Firestore REST. It is more reliable on iPhone/Safari when the SDK
-  // streaming transport hangs behind Cloudflare Pages or mobile networks.
+  // Use the same-origin Cloudflare proxy first. This avoids iPhone/Safari
+  // hangs when connecting directly to Firestore. Do not fall back to the
+  // Firebase SDK here because that was the path timing out for this app.
   try{
-    const data = await cqFirestoreRestGet(user);
-    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} REST`};
+    const data = await cqCloudProxyGet(user);
+    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} proxy`};
     if(data === null) return null;
-  }catch(restErr){
-    console.warn("[ChessQuest] REST restore failed, trying SDK restore", restErr);
+  }catch(proxyErr){
+    console.warn("[ChessQuest] Proxy restore failed, trying direct REST restore", proxyErr);
   }
 
-  if(!fbDb) return null;
-  const primaryRef = cqUserDocRef(user);
-  const snap = await cqWithTimeout(primaryRef.get({source:"server"}), 10000, "Cloud restore SDK");
-  if(snap && snap.exists){
-    const data = snap.data();
-    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} SDK`};
-  }
+  const data = await cqFirestoreRestGet(user);
+  if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} direct REST`};
   return null;
 }
 
@@ -2866,14 +2884,8 @@ function ChessWorld(){
       setCloudDebug(d=>({...d,lastAction:"Local-only save",lastError:"No authenticated user",lastWrite:""}));
       return false;
     }
-    if(!fbDb){
-      setSyncStatus("error");
-      setSyncErrorDetail("Firestore not initialized — fbDb missing");
-      setCloudDebug(d=>({...d,lastAction:"Save failed",lastError:"Firestore not initialized"}));
-      console.error("[ChessQuest] Firestore not ready", {fbDb:!!fbDb});
-      return false;
-    }
-    const ref = cqUserDocRef(authUser);
+    // Cloud sync uses a same-origin Cloudflare proxy first, so it does not require
+    // the Firestore SDK object to be ready.
     setSyncStatus("saving");
     setSyncErrorDetail("");
     setCloudDebug(d=>({...d,projectId:(window.__ENV&&window.__ENV.CHESS_QUEST_PROJECT_ID)||d.projectId,uid:authUser.uid,email:authUser.email||"",docPath:`users/${authUser.uid}`,lastAction:"Saving to Firestore…",lastError:""}));
@@ -2889,10 +2901,10 @@ function ChessWorld(){
       };
 
       try{
+        await cqCloudProxySet(authUser, payload);
+      }catch(proxyErr){
+        console.warn("[ChessQuest] Proxy save failed, trying direct REST save", proxyErr);
         await cqFirestoreRestSet(authUser, payload);
-      }catch(restErr){
-        console.warn("[ChessQuest] REST save failed, trying SDK save", restErr);
-        await cqWithTimeout(ref.set(payload, {merge:true}), 12000, "Cloud save SDK");
       }
 
       // Only claim cloud success after a server read-back confirms the same data.
@@ -2915,9 +2927,9 @@ function ChessWorld(){
   };
 
   const restoreFromCloudNow = async () => {
-    if(!authUser || !fbDb){
+    if(!authUser){
       setSyncStatus("error");
-      setSyncErrorDetail("Cannot restore — not signed in or Firestore is not ready.");
+      setSyncErrorDetail("Cannot restore — not signed in.");
       return;
     }
     setSyncStatus("checking");
