@@ -182,19 +182,31 @@ function cqUserDocRef(user){
   return fbDb.collection("users").doc(user.uid);
 }
 
+
+async function cqFirestoreSdkSet(user, payload){
+  const ref = cqUserDocRef(user);
+  if(!ref) throw new Error("Firestore SDK is not ready");
+  await cqWithTimeout(ref.set(payload, {merge:true}), 45000, "Cloud save SDK");
+  return {ok:true};
+}
+
+async function cqFirestoreSdkGet(user, ms=25000){
+  const ref = cqUserDocRef(user);
+  if(!ref) throw new Error("Firestore SDK is not ready");
+  const snap = await cqWithTimeout(ref.get({source:"server"}), ms, "Cloud restore SDK server");
+  if(!snap || !snap.exists) return null;
+  return snap.data() || null;
+}
+
 function cqProfilesEqual(a,b){
   try { return JSON.stringify(a||[]) === JSON.stringify(b||[]); }
   catch(e){ return false; }
 }
 
 async function cqVerifyCloudSave(user, updatedProfiles, updatedAt){
-  let data = null;
-  try{
-    data = await cqCloudProxyGet(user);
-  }catch(proxyErr){
-    console.warn("[ChessQuest] Proxy verify failed, trying direct REST verify", proxyErr);
-    data = await cqFirestoreRestGet(user);
-  }
+  // Verify using the authenticated Firestore SDK. The REST/proxy path can be
+  // rejected by Firestore security rules in projects that only allow SDK auth.
+  const data = await cqFirestoreSdkGet(user, 30000);
   if(!data) throw new Error("Cloud verify failed: document was not found on server");
   if(!Array.isArray(data.profiles)) throw new Error("Cloud verify failed: profiles missing from server document");
   if(data.updatedAt !== updatedAt){
@@ -209,19 +221,23 @@ async function cqVerifyCloudSave(user, updatedProfiles, updatedAt){
 async function cqFetchCloudProfiles(user){
   if(!user) return null;
 
-  // Use the same-origin Cloudflare proxy first. This avoids iPhone/Safari
-  // hangs when connecting directly to Firestore. Do not fall back to the
-  // Firebase SDK here because that was the path timing out for this app.
+  // Restore from the authenticated Firestore SDK first. This is the path that
+  // matches normal Firebase security rules: allow read/write when request.auth.uid == uid.
+  try{
+    const data = await cqFirestoreSdkGet(user, 30000);
+    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} SDK server`};
+    if(data === null) return null;
+  }catch(sdkErr){
+    console.warn("[ChessQuest] SDK restore failed, trying proxy restore", sdkErr);
+  }
+
   try{
     const data = await cqCloudProxyGet(user);
     if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} proxy`};
-    if(data === null) return null;
   }catch(proxyErr){
-    console.warn("[ChessQuest] Proxy restore failed, trying direct REST restore", proxyErr);
+    console.warn("[ChessQuest] Proxy restore failed", proxyErr);
   }
 
-  const data = await cqFirestoreRestGet(user);
-  if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} direct REST`};
   return null;
 }
 
@@ -2900,12 +2916,10 @@ function ChessWorld(){
         schemaVersion: 3
       };
 
-      try{
-        await cqCloudProxySet(authUser, payload);
-      }catch(proxyErr){
-        console.warn("[ChessQuest] Proxy save failed, trying direct REST save", proxyErr);
-        await cqFirestoreRestSet(authUser, payload);
-      }
+      // Use the authenticated Firebase SDK for writes. Your Firestore rules
+      // are rejecting the REST/proxy path with 403, but SDK auth matches the
+      // signed-in user and the users/{uid} document path.
+      await cqFirestoreSdkSet(authUser, payload);
 
       // Only claim cloud success after a server read-back confirms the same data.
       await cqVerifyCloudSave(authUser, profilesToSave, updatedAt);
