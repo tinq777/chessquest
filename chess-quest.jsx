@@ -1563,19 +1563,41 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
           </div>
         </div>
 
-        {/* Daily Challenge */}
-        <div onClick={()=>onNav("zones")} className="tap-target" style={{background:"linear-gradient(135deg,#e74c3c,#c0392b)",borderRadius:20,padding:"14px",marginBottom:14,border:"3px solid rgba(255,255,255,.3)",boxShadow:"0 6px 0 #922b21",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{fontSize:40,filter:"drop-shadow(0 3px 6px rgba(0,0,0,.3))",display:"inline-block",animation:"dailyPulse 1.5s ease-in-out infinite"}}>🎯</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,.8)",fontWeight:800,letterSpacing:1}}>⚡ DAILY CHALLENGE</div>
-            <div style={{fontSize:15,fontWeight:900,color:"#fff",marginBottom:6}}>Complete 3 puzzles! +50 💎</div>
-            <div style={{height:10,background:"rgba(0,0,0,.25)",borderRadius:999,overflow:"hidden",border:"2px solid rgba(255,255,255,.2)"}}>
-              <div style={{height:"100%",width:`${(Math.min(completedPuzzles,3)/3)*100}%`,background:"linear-gradient(90deg,#f1c40f,#f39c12)",borderRadius:999}}/>
+        {/* Next Zone Challenge */}
+        {(()=>{
+          const nextZoneIdx = ZONES.findIndex((z,i)=>{
+            const prevZ = i>0 ? ZONES[i-1] : null;
+            const prevPs = prevZ ? PUZZLES.filter(p=>p.zone===prevZ.id) : [];
+            const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
+            return i>0 && prevD<prevPs.length ? false : PUZZLES.filter(p=>p.zone===z.id).some(p=>!(completedIds||[]).includes(p.id));
+          });
+          const currentZone = nextZoneIdx>=0 ? ZONES[nextZoneIdx] : null;
+          if(!currentZone) return(
+            <div style={{background:"linear-gradient(135deg,#f1c40f,#e67e22)",borderRadius:20,padding:"14px",marginBottom:14,border:"3px solid rgba(255,255,255,.3)",boxShadow:"0 6px 0 #d4ac0d",textAlign:"center"}}>
+              <div style={{fontSize:28,marginBottom:4}}>🏆</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#1a1a2e"}}>All 63 puzzles complete!</div>
+              <div style={{fontSize:12,color:"rgba(0,0,0,.6)",fontWeight:700}}>You are a Chess Grand Master!</div>
             </div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,.8)",marginTop:3,fontWeight:700}}>{Math.min(completedPuzzles,3)}/3 done</div>
-          </div>
-          <div style={{fontSize:28,animation:"dailyPulse 0.8s ease-in-out infinite",fontWeight:900}}>→</div>
-        </div>
+          );
+          const zonePuzzles = PUZZLES.filter(p=>p.zone===currentZone.id);
+          const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+          const pct = (done/zonePuzzles.length)*100;
+          return(
+            <div onClick={()=>onNav("zone:"+currentZone.id)} className="tap-target"
+              style={{background:`linear-gradient(135deg,${currentZone.color},${currentZone.bg})`,borderRadius:20,padding:"14px",marginBottom:14,border:"3px solid rgba(255,255,255,.3)",boxShadow:`0 6px 0 ${currentZone.bg}`,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+              <div style={{fontSize:36,animation:"dailyPulse 1.5s ease-in-out infinite"}}>{currentZone.emoji}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.8)",fontWeight:800,letterSpacing:1}}>🏰 CURRENT ZONE</div>
+                <div style={{fontSize:14,fontWeight:900,color:"#fff",marginBottom:6}}>{currentZone.label}</div>
+                <div style={{height:10,background:"rgba(0,0,0,.25)",borderRadius:999,overflow:"hidden",border:"2px solid rgba(255,255,255,.2)"}}>
+                  <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#f1c40f,#fff)",borderRadius:999,transition:"width .8s ease"}}/>
+                </div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.8)",marginTop:3,fontWeight:700}}>{done}/{zonePuzzles.length} puzzles done</div>
+              </div>
+              <div style={{fontSize:24,animation:"dailyPulse 0.8s ease-in-out infinite",fontWeight:900}}>→</div>
+            </div>
+          );
+        })()}
 
         {/* Stats bubbles */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
@@ -1592,33 +1614,62 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
           ))}
         </div>
 
-        {/* Zone icons — all 5 zones, locked ones greyed */}
-        <div style={{background:"rgba(255,255,255,.15)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:"2px solid rgba(255,255,255,.3)",marginBottom:8}}>
-          <div style={{fontSize:12,fontWeight:900,color:"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center",textShadow:"0 1px 3px rgba(0,0,0,.3)"}}>
-            <span style={{display:"inline-block",animation:"swordSlash 1.5s ease-in-out infinite"}}>⚔️</span>
-            {" CHESS REALMS "}
-            <span style={{display:"inline-block",animation:"swordSlash 1.5s ease-in-out infinite reverse"}}>⚔️</span>
+        {/* Chess Village zone grid */}
+        <div style={{background:"rgba(255,255,255,.12)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:"2px solid rgba(255,255,255,.2)",marginBottom:8}}>
+          {/* Title */}
+          <div style={{fontSize:12,fontWeight:900,color:"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center"}}>
+            <span style={{display:"inline-block",animation:"mascotFloat 2s ease-in-out infinite"}}>🏰</span>
+            {" CHESS VILLAGE "}
+            <span style={{display:"inline-block",animation:"mascotFloat 2.5s ease-in-out infinite reverse"}}>🏠</span>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,justifyItems:"center"}}>
-            {ZONES.map(z=>(
-              <button key={z.id}
-                onClick={()=>{
-                  const prevZ = ZONES[ZONES.indexOf(z)-1];
-                  const prevPs = prevZ ? PUZZLES.filter(p=>p.zone===prevZ.id) : [];
-                  const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
-                  const isLocked = ZONES.indexOf(z)>0 && prevD<prevPs.length;
-                  if(!isLocked) onNav("zone:"+z.id);
-                }}
-                style={{background:"none",border:"none",cursor:(()=>{const prevZ=ZONES[ZONES.indexOf(z)-1];const prevPs=prevZ?PUZZLES.filter(p=>p.zone===prevZ.id):[];const prevD=prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;return ZONES.indexOf(z)>0&&prevD<prevPs.length?"default":"pointer";})(),display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0,opacity:(()=>{const prevZ=ZONES[ZONES.indexOf(z)-1];const prevPs=prevZ?PUZZLES.filter(p=>p.zone===prevZ.id):[];const prevD=prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;return ZONES.indexOf(z)>0&&prevD<prevPs.length?.4:1;})(),width:"100%"}}>
-                <div style={{position:"relative",width:56,height:56}}>
-                  <ZoneIcon zone={z} size={56}/>
-                  {(()=>{const prevZ=ZONES[ZONES.indexOf(z)-1];const prevPs=prevZ?PUZZLES.filter(p=>p.zone===prevZ.id):[];const prevD=prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;return ZONES.indexOf(z)>0&&prevD<prevPs.length;})()&&(
-                    <div style={{position:"absolute",inset:0,borderRadius:56*.28,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🔒</div>
+          {/* 3-column grid of zones */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+            {ZONES.map((z,i)=>{
+              const prevZ = i>0 ? ZONES[i-1] : null;
+              const prevPs = prevZ ? PUZZLES.filter(p=>p.zone===prevZ.id) : [];
+              const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
+              const isLocked = i>0 && prevD<prevPs.length;
+              const zonePuzzles = PUZZLES.filter(p=>p.zone===z.id);
+              const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+              const isComplete = done===zonePuzzles.length;
+              return(
+                <button key={z.id}
+                  onClick={()=>{ if(!isLocked) onNav("zone:"+z.id); }}
+                  style={{
+                    background:isLocked?"rgba(0,0,0,.25)":`linear-gradient(145deg,${z.color},${z.bg})`,
+                    border:`2px solid ${isLocked?"rgba(255,255,255,.1)":"rgba(255,255,255,.3)"}`,
+                    borderRadius:16,padding:"10px 6px 8px",
+                    cursor:isLocked?"default":"pointer",
+                    display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+                    opacity:isLocked?.5:1,
+                    boxShadow:isLocked?"none":`0 4px 0 ${z.bg}`,
+                    position:"relative",
+                  }}>
+                  {/* Emoji icon */}
+                  <div style={{fontSize:22,filter:isLocked?"grayscale(1)":"none",animation:isLocked?"none":`iconBob ${2+i*.2}s ease-in-out infinite`}}>
+                    {isLocked?"🔒":z.emoji}
+                  </div>
+                  {/* Zone name */}
+                  <div style={{fontSize:8,fontWeight:900,color:isLocked?"rgba(255,255,255,.4)":"#fff",textAlign:"center",lineHeight:1.3,letterSpacing:.3}}>
+                    {z.label.toUpperCase()}
+                  </div>
+                  {/* Progress pills */}
+                  {!isLocked&&(
+                    <div style={{fontSize:8,color:"rgba(255,255,255,.8)",fontWeight:700}}>
+                      {isComplete?"✓ Done":`${done}/${zonePuzzles.length}`}
+                    </div>
                   )}
-                </div>
-                <div style={{fontSize:10,fontWeight:900,color:z.locked?"rgba(255,255,255,.45)":"#fff",textAlign:"center",textShadow:"0 1px 3px rgba(0,0,0,.4)",lineHeight:1.2,maxWidth:70}}>{z.label}</div>
-              </button>
-            ))}
+                  {/* Complete badge */}
+                  {isComplete&&(
+                    <div style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#27ae60",border:"2px solid #fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:900}}>✓</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {/* Progress summary */}
+          <div style={{marginTop:12,textAlign:"center",fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:700}}>
+            {completedPuzzles}/63 puzzles complete 🏆
           </div>
         </div>
       </div>
@@ -1648,7 +1699,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
   // Each building has a position, style, and SVG illustration
   const buildings = [
     // Zone 1 — Piece Power — small cozy cottage (bottom left)
-    {x:60,  y:500, zone:"pieces",   label:"Piece Power",  emoji:"♞",
+    {x:60,  y:490, zone:"pieces",   label:"Piece Power",  emoji:"♞",
      draw:(col,locked)=>(
       <g>
         {/* House body */}
@@ -1672,7 +1723,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
      )},
 
     // Zone 2 — Pawn Kingdom — farmhouse with fence (bottom right)
-    {x:215, y:450, zone:"pawns",    label:"Pawn Kingdom", emoji:"♟️",
+    {x:215, y:430, zone:"pawns",    label:"Pawn Kingdom", emoji:"♟️",
      draw:(col,locked)=>(
       <g>
         {/* Barn body */}
@@ -1697,7 +1748,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
      )},
 
     // Zone 3 — Open Strong — tavern/inn (left)
-    {x:55,  y:395, zone:"openings", label:"Open Strong",  emoji:"🏰",
+    {x:55,  y:370, zone:"openings", label:"Open Strong",  emoji:"🏰",
      draw:(col,locked)=>(
       <g>
         {/* Tavern body - 2 story */}
@@ -1720,7 +1771,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
      )},
 
     // Zone 4 — Tactics — blacksmith/forge (right)
-    {x:210, y:340, zone:"tactics",  label:"Tactics",      emoji:"⚔️",
+    {x:210, y:315, zone:"tactics",  label:"Tactics",      emoji:"⚔️",
      draw:(col,locked)=>(
       <g>
         {/* Forge body */}
@@ -1746,7 +1797,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
      )},
 
     // Zone 5 — Checkmate Hunt — wizard tower (left)
-    {x:58,  y:283, zone:"checkmate",label:"Checkmate Hunt",emoji:"🎯",
+    {x:58,  y:258, zone:"checkmate",label:"Checkmate Hunt",emoji:"🎯",
      draw:(col,locked)=>(
       <g>
         {/* Tower body */}
@@ -1772,7 +1823,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
      )},
 
     // Zone 6 — Strategy — library/scholar's house (right)
-    {x:210, y:228, zone:"strategy", label:"Strategy",     emoji:"🧠",
+    {x:210, y:205, zone:"strategy", label:"Strategy",     emoji:"🧠",
      draw:(col,locked)=>(
       <g>
         {/* Library body */}
@@ -1795,7 +1846,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
      )},
 
     // Zone 7 — Endgame — cathedral/church (left)
-    {x:58,  y:172, zone:"endgame",  label:"Endgame",      emoji:"👑",
+    {x:58,  y:155, zone:"endgame",  label:"Endgame",      emoji:"👑",
      draw:(col,locked)=>(
       <g>
         {/* Church nave */}
@@ -1820,7 +1871,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
      )},
 
     // Zone 8 — Master Moves — grand manor (right)
-    {x:210, y:115, zone:"master",   label:"Master Moves", emoji:"🌟",
+    {x:210, y:108, zone:"master",   label:"Master Moves", emoji:"🌟",
      draw:(col,locked)=>(
       <g>
         {/* Manor body */}
@@ -1845,7 +1896,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
      )},
 
     // Zone 9 — Puzzle Rush — CASTLE (top center)
-    {x:130, y:48,  zone:"rush",     label:"Puzzle Rush",  emoji:"⚡",
+    {x:160, y:95,  zone:"rush",     label:"Puzzle Rush",  emoji:"⚡",
      draw:(col,locked)=>(
       <g>
         {/* Castle base */}
@@ -1894,13 +1945,13 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
   ];
 
   // Winding dirt path connecting buildings
-  const pathD = `M85,530 C100,510 160,495 230,475 C290,455 270,420 220,400 C170,380 100,365 70,340 C40,315 80,290 225,270 C300,260 280,235 225,215 C170,195 80,178 72,155 C62,130 150,110 225,95 C270,82 250,65 155,48`;
+  const pathD = `M85,520 C110,505 160,480 230,460 C285,442 270,415 220,395 C170,375 95,360 68,338 C42,315 82,285 220,268 C290,258 275,228 220,208 C168,190 78,172 68,152 C55,128 145,110 218,104 C255,100 220,92 160,90`;
 
   return(
-    <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden",background:"linear-gradient(180deg,#0d1b4b 0%,#1a2a6a 35%,#16355e 60%,#0f4c2a 100%)"}}>
+    <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden",background:"linear-gradient(180deg,#4fc3f7 0%,#81d4fa 40%,#b3e5fc 60%,#27ae60 100%)"}}>
 
       {/* Map title */}
-      <div style={{background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",padding:"8px 14px",flexShrink:0,boxShadow:"0 4px 0 #4a3ab5",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+      <div style={{background:"linear-gradient(135deg,#0288d1,#4fc3f7)",padding:"8px 14px",flexShrink:0,boxShadow:"0 4px 0 #0277bd",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
         <span style={{fontSize:16}}>🗺️</span>
         <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>CHESS VILLAGE</span>
         <span style={{fontSize:16}}>🏰</span>
@@ -1908,15 +1959,20 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
 
       {/* Scrollable village map */}
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
-        <svg viewBox="0 0 320 580" width="100%" style={{display:"block",minHeight:"100%"}}>
+        <svg viewBox="0 0 320 600" width="100%" style={{display:"block",minHeight:"100%"}}>
           <defs>
-            <radialGradient id="skyGrad" cx="50%" cy="0%" r="80%">
-              <stop offset="0%" stopColor="#1a2a6a"/>
-              <stop offset="100%" stopColor="#0d1b4b"/>
-            </radialGradient>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#4fc3f7"/>
+              <stop offset="60%" stopColor="#81d4fa"/>
+              <stop offset="100%" stopColor="#b3e5fc"/>
+            </linearGradient>
+            <linearGradient id="mountainGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6b7f8f"/>
+              <stop offset="100%" stopColor="#4a5a6a"/>
+            </linearGradient>
             <radialGradient id="groundGrad" cx="50%" cy="100%" r="60%">
-              <stop offset="0%" stopColor="#1a6b32"/>
-              <stop offset="100%" stopColor="#0f4c2a"/>
+              <stop offset="0%" stopColor="#27ae60"/>
+              <stop offset="100%" stopColor="#1e8449"/>
             </radialGradient>
             <filter id="bldgShadow">
               <feDropShadow dx="2" dy="4" stdDeviation="3" floodOpacity="0.4"/>
@@ -1927,28 +1983,62 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             </filter>
           </defs>
 
-          {/* Sky background */}
+          {/* Daytime sky */}
           <rect width="320" height="580" fill="url(#skyGrad)"/>
 
-          {/* Stars */}
-          {[[30,40],[80,25],[140,15],[200,30],[260,18],[290,45],[15,70],[170,55],[310,80],[50,90],[250,65]].map(([sx,sy],i)=>(
-            <circle key={i} cx={sx} cy={sy} r={i%3===0?2:1.2} fill="#fff" opacity={.4+Math.sin(i)*.3}/>
-          ))}
+          {/* Sun */}
+          <circle cx="262" cy="52" r="30" fill="#fff176" opacity=".9"/>
+          <circle cx="262" cy="52" r="22" fill="#fdd835"/>
+          {[0,40,80,120,160,200,240,280,320].map((angle,i)=>{
+            const rad=angle*Math.PI/180;
+            return <line key={i}
+              x1={262+Math.cos(rad)*26} y1={52+Math.sin(rad)*26}
+              x2={262+Math.cos(rad)*38} y2={52+Math.sin(rad)*38}
+              stroke="#fdd835" strokeWidth="3" strokeLinecap="round" opacity=".8"/>;
+          })}
 
-          {/* Moon */}
-          <circle cx="270" cy="60" r="28" fill="#f5f5dc" opacity=".9"/>
-          <circle cx="280" cy="52" r="24" fill="#1a2a6a"/>
+          {/* Clouds */}
+          <g opacity=".9">
+            <ellipse cx="55" cy="75" rx="34" ry="13" fill="#fff"/>
+            <ellipse cx="43" cy="68" rx="18" ry="15" fill="#fff"/>
+            <ellipse cx="68" cy="67" rx="20" ry="14" fill="#fff"/>
+          </g>
+          <g opacity=".8">
+            <ellipse cx="175" cy="48" rx="28" ry="11" fill="#fff"/>
+            <ellipse cx="163" cy="42" rx="15" ry="13" fill="#fff"/>
+            <ellipse cx="186" cy="41" rx="16" ry="12" fill="#fff"/>
+          </g>
+          <g opacity=".75">
+            <ellipse cx="100" cy="115" rx="30" ry="12" fill="#fff"/>
+            <ellipse cx="88"  cy="108" rx="16" ry="14" fill="#fff"/>
+            <ellipse cx="112" cy="108" rx="18" ry="12" fill="#fff"/>
+          </g>
 
-          {/* Ground */}
-          <ellipse cx="160" cy="580" rx="240" ry="80" fill="url(#groundGrad)"/>
-          <rect y="545" width="320" height="40" fill="#1a6b32"/>
+          {/* Far mountains (pale blue-grey) */}
+          <polygon points="0,220 80,100 160,220"  fill="#90a4ae" opacity=".5"/>
+          <polygon points="80,220 170,90 260,220" fill="#78909c" opacity=".45"/>
+          <polygon points="160,220 250,105 320,220" fill="#90a4ae" opacity=".4"/>
+          {/* Far snow caps */}
+          <polygon points="80,100  68,138  92,138"  fill="#e0f7fa" opacity=".8"/>
+          <polygon points="170,90 157,130 183,130" fill="#e0f7fa" opacity=".8"/>
 
-          {/* Ground hills */}
-          <ellipse cx="40"  cy="560" rx="120" ry="40" fill="#27ae60" opacity=".6"/>
-          <ellipse cx="280" cy="555" rx="110" ry="38" fill="#27ae60" opacity=".5"/>
+          {/* Main mountain the castle sits on */}
+          <polygon points="30,290 160,52 290,290" fill="#546e7a"/>
+          <polygon points="30,290 160,52 290,290" fill="url(#mountainGrad)"/>
+          {/* Snow cap */}
+          <polygon points="160,52 140,105 180,105" fill="#fff" opacity=".95"/>
+          <polygon points="160,52 148,92  172,92"  fill="#e8f4fd"/>
+          {/* Mountain shading */}
+          <polygon points="160,52 30,290 120,290"  fill="#000" opacity=".08"/>
+
+          {/* Green rolling hills at bottom */}
+          <ellipse cx="160" cy="600" rx="240" ry="80" fill="#27ae60"/>
+          <rect y="565" width="320" height="50" fill="#27ae60"/>
+          <ellipse cx="40"  cy="578" rx="130" ry="42" fill="#2ecc71" opacity=".7"/>
+          <ellipse cx="280" cy="572" rx="120" ry="38" fill="#2ecc71" opacity=".6"/>
 
           {/* Trees scattered around */}
-          {[[18,490],[295,470],[25,390],[300,365],[20,280],[300,255],[22,170],[295,145],[15,80]].map(([tx,ty],i)=>(
+          {[[18,490],[295,470],[25,390],[300,365],[20,280],[300,255],[22,200],[295,180]].map(([tx,ty],i)=>(
             <g key={i} transform={`translate(${tx},${ty})`}>
               <rect x="-4" y="18" width="8" height="14" rx="2" fill="#8B4513"/>
               <polygon points="0,-5 -12,18 12,18" fill={i%2===0?"#27ae60":"#2ecc71"}/>
@@ -1979,9 +2069,12 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                 {/* Pulse ring for current zone */}
                 {isHere&&<circle cx={b.x} cy={b.y} r="46" fill="rgba(241,196,15,.15)" stroke="#f1c40f" strokeWidth="2" opacity=".7" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
 
-                {/* Building SVG (64×64 viewbox, centred on b.x, b.y) */}
-                <g transform={`translate(${b.x-32},${b.y-42})`} filter="url(#bldgShadow)">
-                  <svg viewBox="0 0 64 64" width="64" height="64" overflow="visible">
+                {/* Ground patch under building */}
+                <ellipse cx={b.x} cy={b.y+18} rx="34" ry="8" fill="#1a6b32" opacity=".5"/>
+
+                {/* Building SVG — castle is taller so needs more offset */}
+                <g transform={`translate(${b.x-32},${b.zone==="rush"?b.y-52:b.y-42})`} filter="url(#bldgShadow)">
+                  <svg viewBox="0 0 64 64" width={b.zone==="rush"?72:64} height={b.zone==="rush"?72:64} overflow="visible">
                     {b.draw(col, locked)}
                   </svg>
                 </g>
@@ -2033,7 +2126,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           })}
 
           {/* Village sign at bottom */}
-          <g transform="translate(160,540)">
+          <g transform="translate(160,558)">
             <rect x="-50" y="-14" width="100" height="22" rx="6" fill="#8B4513"/>
             <rect x="-46" y="-11" width="92" height="16" rx="4" fill="#d4a847"/>
             <text x="0" y="1" textAnchor="middle" fill="#5d2906" fontSize="9" fontWeight="900" fontFamily="sans-serif">⚔️ CHESS VILLAGE ⚔️</text>
