@@ -1895,13 +1895,18 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             <polygon points="8,1 15,4 8,7" fill="#81d4fa" opacity=".8"/>
           </g>
 
-          {/* ── ROAD / PATH ── */}
-          {/* Cobblestone road shadow */}
-          <path d={roadPath} fill="none" stroke="#5d4037" strokeWidth="13" strokeLinecap="round" opacity=".4"/>
-          {/* Main road */}
-          <path d={roadPath} fill="none" stroke="#bcaaa4" strokeWidth="10" strokeLinecap="round" opacity=".9"/>
-          {/* Road centre line */}
-          <path d={roadPath} fill="none" stroke="#d7ccc8" strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
+          {/* ── ROAD / PATH — clipped so it doesn't cross the castle hill ── */}
+          <defs>
+            <clipPath id="roadClip">
+              {/* Allow road everywhere EXCEPT inside the castle hill ellipse */}
+              <path d="M0,0 L320,0 L320,590 L0,590 Z M55,140 Q160,60 265,140 Q265,200 160,200 Q55,200 55,140"/>
+            </clipPath>
+          </defs>
+          <g clipPath="url(#roadClip)">
+            <path d={roadPath} fill="none" stroke="#5d4037" strokeWidth="13" strokeLinecap="round" opacity=".4"/>
+            <path d={roadPath} fill="none" stroke="#bcaaa4" strokeWidth="10" strokeLinecap="round" opacity=".9"/>
+            <path d={roadPath} fill="none" stroke="#d7ccc8" strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
+          </g>
 
           {/* ── TREES ── */}
           {[[15,300],[295,290],[22,420],[302,400],[18,480],[300,460],[14,540],[298,525]].map(([tx,ty],i)=>(
