@@ -1695,363 +1695,234 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
     return ZONES.length-1;
   })();
 
-  // Village buildings — one per zone, bottom to top
-  // Each building has a position, style, and SVG illustration
+  // Building positions — spread across the village along the river
   const buildings = [
-    // Zone 1 — Piece Power — small cozy cottage (bottom left)
-    {x:60,  y:490, zone:"pieces",   label:"Piece Power",  emoji:"♞",
-     draw:(col,locked)=>(
-      <g>
-        {/* House body */}
-        <rect x="10" y="28" width="44" height="32" rx="3" fill={locked?"#4a5568":col}/>
-        <rect x="14" y="32" width="16" height="18" rx="2" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.4:1}/>
-        <rect x="34" y="36" width="10" height="12" rx="1" fill={locked?"#2d3748":"#74b9ff"} opacity={locked?.4:1}/>
-        {/* Roof */}
-        <polygon points="5,30 32,8 59,30" fill={locked?"#2d3748":"#e74c3c"}/>
-        <polygon points="10,30 32,11 54,30" fill={locked?"#374151":"#ff6b6b"}/>
-        {/* Chimney */}
-        <rect x="42" y="12" width="8" height="14" rx="2" fill={locked?"#2d3748":"#8e44ad"}/>
-        {/* Door */}
-        <rect x="25" y="42" width="14" height="18" rx="4" fill={locked?"#1a202c":"#8B4513"}/>
-        <circle cx="37" cy="51" r="1.5" fill="#f1c40f"/>
-        {/* Smoke */}
-        {!locked&&<>
-          <circle cx="46" cy="8" r="4" fill="#b2bec3" opacity=".6"/>
-          <circle cx="50" cy="5" r="3" fill="#b2bec3" opacity=".4"/>
-        </>}
-      </g>
-     )},
-
-    // Zone 2 — Pawn Kingdom — farmhouse with fence (bottom right)
-    {x:215, y:430, zone:"pawns",    label:"Pawn Kingdom", emoji:"♟️",
-     draw:(col,locked)=>(
-      <g>
-        {/* Barn body */}
-        <rect x="8" y="30" width="48" height="30" rx="2" fill={locked?"#4a5568":col}/>
-        {/* Barn roof */}
-        <polygon points="4,32 32,6 60,32" fill={locked?"#2d3748":"#c0392b"}/>
-        <rect x="24" y="14" width="16" height="20" rx="2" fill={locked?"#374151":"#c0392b"}/>
-        {/* Barn doors */}
-        <rect x="16" y="38" width="14" height="22" rx="2" fill={locked?"#1a202c":"#8B4513"}/>
-        <rect x="34" y="38" width="14" height="22" rx="2" fill={locked?"#1a202c":"#7a3b10"}/>
-        <line x1="32" y1="38" x2="32" y2="60" stroke="#5d2906" strokeWidth="1.5"/>
-        {/* Fence posts */}
-        {!locked&&[0,10,20,30,40,50].map(fx=>(
-          <g key={fx}>
-            <rect x={fx+2} y="52" width="4" height="10" rx="1" fill="#deb887"/>
-            <rect x={fx} y="54" width="8" height="2" rx="1" fill="#d2a679"/>
-          </g>
-        ))}
-        {/* Window */}
-        <rect x="22" y="18" width="20" height="14" rx="2" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.3:1}/>
-      </g>
-     )},
-
-    // Zone 3 — Open Strong — tavern/inn (left)
-    {x:55,  y:370, zone:"openings", label:"Open Strong",  emoji:"🏰",
-     draw:(col,locked)=>(
-      <g>
-        {/* Tavern body - 2 story */}
-        <rect x="8" y="22" width="48" height="38" rx="3" fill={locked?"#4a5568":"#d4a96a"}/>
-        <rect x="8" y="22" width="48" height="18" rx="3" fill={locked?"#4a5568":"#c49152"}/>
-        {/* Roof with overhang */}
-        <polygon points="2,24 32,4 62,24" fill={locked?"#2d3748":"#8B4513"}/>
-        <rect x="0" y="22" width="64" height="4" rx="1" fill={locked?"#374151":"#7a3b10"}/>
-        {/* Windows upper */}
-        <rect x="14" y="26" width="10" height="10" rx="2" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.3:1}/>
-        <rect x="40" y="26" width="10" height="10" rx="2" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.3:1}/>
-        {/* Sign */}
-        {!locked&&<>
-          <rect x="20" y="38" width="24" height="10" rx="3" fill="#8B4513"/>
-          <text x="32" y="46" textAnchor="middle" fill="#f1c40f" fontSize="6" fontWeight="900">INN</text>
-        </>}
-        {/* Door */}
-        <rect x="24" y="46" width="16" height="14" rx="4" fill={locked?"#1a202c":"#8B4513"}/>
-      </g>
-     )},
-
-    // Zone 4 — Tactics — blacksmith/forge (right)
-    {x:210, y:315, zone:"tactics",  label:"Tactics",      emoji:"⚔️",
-     draw:(col,locked)=>(
-      <g>
-        {/* Forge body */}
-        <rect x="8" y="28" width="48" height="32" rx="3" fill={locked?"#4a5568":"#718096"}/>
-        {/* Stone texture */}
-        {!locked&&[0,1,2].map(row=>[0,1,2].map(col2=>(
-          <rect key={`${row}${col2}`} x={10+col2*16} y={30+row*10} width="14" height="8" rx="1" fill="#636e72" opacity=".5"/>
-        )))}
-        {/* Pointy roof */}
-        <polygon points="4,30 32,6 60,30" fill={locked?"#2d3748":"#2d3748"}/>
-        {/* Chimney with fire */}
-        <rect x="38" y="10" width="10" height="18" rx="2" fill={locked?"#2d3748":"#4a5568"}/>
-        {!locked&&<>
-          <text x="43" y="10" textAnchor="middle" fontSize="10">🔥</text>
-        </>}
-        {/* Anvil sign */}
-        {!locked&&<text x="32" y="38" textAnchor="middle" fontSize="12">⚔️</text>}
-        {/* Door */}
-        <rect x="22" y="42" width="20" height="18" rx="3" fill={locked?"#1a202c":"#4a5568"}/>
-        {/* Glow from forge */}
-        {!locked&&<ellipse cx="32" cy="58" rx="20" ry="4" fill="#e67e22" opacity=".3"/>}
-      </g>
-     )},
-
-    // Zone 5 — Checkmate Hunt — wizard tower (left)
-    {x:58,  y:258, zone:"checkmate",label:"Checkmate Hunt",emoji:"🎯",
-     draw:(col,locked)=>(
-      <g>
-        {/* Tower body */}
-        <rect x="16" y="20" width="32" height="40" rx="4" fill={locked?"#4a5568":"#553c7b"}/>
-        {/* Conical roof */}
-        <polygon points="8,22 32,2 56,22" fill={locked?"#2d3748":"#8e44ad"}/>
-        {/* Windows with stars */}
-        <rect x="22" y="28" width="10" height="10" rx="5" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.3:1}/>
-        <rect x="32" y="28" width="10" height="10" rx="5" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.3:1}/>
-        {!locked&&<>
-          <text x="27" y="37" textAnchor="middle" fontSize="8">✨</text>
-          <text x="37" y="37" textAnchor="middle" fontSize="8">⭐</text>
-          {/* Magic glow */}
-          <ellipse cx="32" cy="21" rx="14" ry="8" fill="#a29bfe" opacity=".3"/>
-        </>}
-        {/* Door arch */}
-        <path d="M22 60 L22 45 Q32 38 42 45 L42 60" fill={locked?"#1a202c":"#4a3060"}/>
-        {/* Tower battlements */}
-        {[16,22,28,34,40].map(bx=>(
-          <rect key={bx} x={bx} y="16" width="4" height="6" rx="1" fill={locked?"#374151":"#6c5ce7"}/>
-        ))}
-      </g>
-     )},
-
-    // Zone 6 — Strategy — library/scholar's house (right)
-    {x:210, y:205, zone:"strategy", label:"Strategy",     emoji:"🧠",
-     draw:(col,locked)=>(
-      <g>
-        {/* Library body */}
-        <rect x="8" y="24" width="48" height="36" rx="3" fill={locked?"#4a5568":"#2c5f8e"}/>
-        {/* Columns */}
-        {!locked&&[14,26,38,50].map(cx=>(
-          <rect key={cx} x={cx} y="24" width="6" height="36" rx="2" fill="#1a4971"/>
-        ))}
-        {/* Triangular pediment */}
-        <polygon points="4,26 32,4 60,26" fill={locked?"#2d3748":"#1a4971"}/>
-        {/* Big window */}
-        <rect x="20" y="28" width="24" height="16" rx="3" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.3:.9}/>
-        {!locked&&<text x="32" y="40" textAnchor="middle" fontSize="10">📚</text>}
-        {/* Door */}
-        <rect x="24" y="44" width="16" height="16" rx="2" fill={locked?"#1a202c":"#1a3a5c"}/>
-        {/* Steps */}
-        <rect x="18" y="57" width="28" height="3" rx="1" fill={locked?"#374151":"#2c5f8e"}/>
-        <rect x="14" y="59" width="36" height="3" rx="1" fill={locked?"#4a5568":"#1a4971"}/>
-      </g>
-     )},
-
-    // Zone 7 — Endgame — cathedral/church (left)
-    {x:58,  y:155, zone:"endgame",  label:"Endgame",      emoji:"👑",
-     draw:(col,locked)=>(
-      <g>
-        {/* Church nave */}
-        <rect x="12" y="30" width="40" height="30" rx="3" fill={locked?"#4a5568":"#5d4e6b"}/>
-        {/* Bell tower */}
-        <rect x="24" y="14" width="16" height="20" rx="2" fill={locked?"#374151":"#4a3d58"}/>
-        {/* Spire */}
-        <polygon points="24,16 32,2 40,16" fill={locked?"#2d3748":"#8e44ad"}/>
-        {/* Cross */}
-        {!locked&&<>
-          <rect x="30" y="4" width="4" height="10" rx="1" fill="#f1c40f"/>
-          <rect x="27" y="7" width="10" height="3" rx="1" fill="#f1c40f"/>
-        </>}
-        {/* Arch windows */}
-        <rect x="18" y="34" width="10" height="14" rx="5" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.3:1}/>
-        <rect x="36" y="34" width="10" height="14" rx="5" fill={locked?"#2d3748":"#ffeaa7"} opacity={locked?.3:1}/>
-        {/* Arched door */}
-        <rect x="26" y="44" width="12" height="16" rx="6" fill={locked?"#1a202c":"#3d2d4a"}/>
-        {/* Rose window */}
-        {!locked&&<text x="32" y="30" textAnchor="middle" fontSize="8">✨</text>}
-      </g>
-     )},
-
-    // Zone 8 — Master Moves — grand manor (right)
-    {x:210, y:108, zone:"master",   label:"Master Moves", emoji:"🌟",
-     draw:(col,locked)=>(
-      <g>
-        {/* Manor body */}
-        <rect x="6" y="26" width="52" height="34" rx="3" fill={locked?"#4a5568":"#8B4513"}/>
-        {/* Wings */}
-        <rect x="2" y="34" width="14" height="26" rx="2" fill={locked?"#374151":"#7a3b10"}/>
-        <rect x="48" y="34" width="14" height="26" rx="2" fill={locked?"#374151":"#7a3b10"}/>
-        {/* Roof */}
-        <polygon points="2,28 32,6 62,28" fill={locked?"#2d3748":"#5d2906"}/>
-        {/* Multiple windows */}
-        {!locked&&[10,22,34,46].map(wx=>(
-          <rect key={wx} x={wx} y="30" width="8" height="10" rx="1" fill="#ffeaa7" opacity=".9"/>
-        ))}
-        {/* Grand door */}
-        <rect x="24" y="44" width="16" height="16" rx="6" fill={locked?"#1a202c":"#5d2906"}/>
-        {/* Flag */}
-        {!locked&&<>
-          <rect x="30" y="4" width="2" height="10" fill="#f1c40f"/>
-          <polygon points="32,4 42,7 32,10" fill="#e74c3c"/>
-        </>}
-      </g>
-     )},
-
-    // Zone 9 — Puzzle Rush — CASTLE (top center)
-    {x:160, y:95,  zone:"rush",     label:"Puzzle Rush",  emoji:"⚡",
-     draw:(col,locked)=>(
-      <g>
-        {/* Castle base */}
-        <rect x="4" y="28" width="56" height="32" rx="2" fill={locked?"#4a5568":"#2c3e50"}/>
-        {/* Castle walls detail */}
-        {!locked&&<>
-          <rect x="8" y="32" width="18" height="28" rx="1" fill="#34495e"/>
-          <rect x="38" y="32" width="18" height="28" rx="1" fill="#34495e"/>
-        </>}
-        {/* Left tower */}
-        <rect x="2" y="16" width="18" height="26" rx="2" fill={locked?"#374151":"#34495e"}/>
-        {/* Right tower */}
-        <rect x="44" y="16" width="18" height="26" rx="2" fill={locked?"#374151":"#34495e"}/>
-        {/* Centre tower (tallest) */}
-        <rect x="20" y="8" width="24" height="32" rx="2" fill={locked?"#374151":"#2c3e50"}/>
-        {/* Battlements - left tower */}
-        {[2,7,12,17].map(bx=>(
-          <rect key={bx} x={bx} y="12" width="4" height="6" rx="1" fill={locked?"#2d3748":"#2c3e50"}/>
-        ))}
-        {/* Battlements - right tower */}
-        {[44,49,54,59].map(bx=>(
-          <rect key={bx} x={bx} y="12" width="4" height="6" rx="1" fill={locked?"#2d3748":"#2c3e50"}/>
-        ))}
-        {/* Battlements - centre tower */}
-        {[20,26,32,38].map(bx=>(
-          <rect key={bx} x={bx} y="4" width="4" height="6" rx="1" fill={locked?"#2d3748":"#34495e"}/>
-        ))}
-        {/* Gate arch */}
-        <path d="M24 60 L24 42 Q32 34 40 42 L40 60" fill={locked?"#1a202c":"#1a252f"}/>
-        {/* Portcullis */}
-        {!locked&&[26,30,34,38].map(gx=>(
-          <rect key={gx} x={gx} y="43" width="1.5" height="16" fill="#f1c40f" opacity=".6"/>
-        ))}
-        {/* Windows with glow */}
-        {!locked&&<>
-          <rect x="24" y="14" width="16" height="12" rx="2" fill="#ffeaa7" opacity=".9"/>
-          <text x="32" y="23" textAnchor="middle" fontSize="8">⚡</text>
-          {/* Flag */}
-          <rect x="31" y="2" width="2" height="8" fill="#f1c40f"/>
-          <polygon points="33,2 44,5 33,8" fill="#e74c3c"/>
-          {/* Castle glow */}
-          <ellipse cx="32" cy="60" rx="28" ry="5" fill="#f1c40f" opacity=".15"/>
-        </>}
-      </g>
-     )},
+    {x:240, y:530, zone:"pieces",    label:"Piece Power",    emoji:"♞"},
+    {x:70,  y:470, zone:"pawns",     label:"Pawn Kingdom",   emoji:"♟️"},
+    {x:235, y:408, zone:"openings",  label:"Open Strong",    emoji:"🏰"},
+    {x:68,  y:348, zone:"tactics",   label:"Tactics",        emoji:"⚔️"},
+    {x:232, y:285, zone:"checkmate", label:"Checkmate Hunt", emoji:"🎯"},
+    {x:72,  y:228, zone:"strategy",  label:"Strategy",       emoji:"🧠"},
+    {x:228, y:172, zone:"endgame",   label:"Endgame",        emoji:"👑"},
+    {x:75,  y:118, zone:"master",    label:"Master Moves",   emoji:"🌟"},
+    {x:160, y:58,  zone:"rush",      label:"Puzzle Rush",    emoji:"⚡"},
   ];
 
-  // Winding dirt path connecting buildings
-  const pathD = `M85,520 C110,505 160,480 230,460 C285,442 270,415 220,395 C170,375 95,360 68,338 C42,315 82,285 220,268 C290,258 275,228 220,208 C168,190 78,172 68,152 C55,128 145,110 218,104 C255,100 220,92 160,90`;
+  // Stone road winding through the village
+  const roadPath = "M240,545 C200,525 140,510 70,490 C30,475 50,445 90,428 C150,408 240,400 240,400 C270,385 255,360 210,348 C160,335 60,340 65,340 C30,328 42,300 80,288 C130,272 235,278 235,278 C268,265 252,238 210,228 C165,218 60,222 70,222 C35,210 48,185 88,174 C138,160 228,165 228,165 C258,153 248,128 208,118 C170,108 68,112 75,112 C50,102 80,72 160,58";
 
   return(
-    <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden",background:"linear-gradient(180deg,#4fc3f7 0%,#81d4fa 40%,#b3e5fc 60%,#27ae60 100%)"}}>
+    <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
-      {/* Map title */}
-      <div style={{background:"linear-gradient(135deg,#0288d1,#4fc3f7)",padding:"8px 14px",flexShrink:0,boxShadow:"0 4px 0 #0277bd",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-        <span style={{fontSize:16}}>🗺️</span>
-        <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>CHESS VILLAGE</span>
+      {/* Header */}
+      <div style={{background:"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px",flexShrink:0,boxShadow:"0 4px 0 #1b5e20",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
         <span style={{fontSize:16}}>🏰</span>
+        <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>CHESS VILLAGE</span>
+        <span style={{fontSize:16}}>🗺️</span>
       </div>
 
-      {/* Scrollable village map */}
+      {/* Scrollable map */}
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
-        <svg viewBox="0 0 320 600" width="100%" style={{display:"block",minHeight:"100%"}}>
+        <svg viewBox="0 0 320 590" width="100%" style={{display:"block",minHeight:"100%"}}>
           <defs>
-            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#4fc3f7"/>
-              <stop offset="60%" stopColor="#81d4fa"/>
-              <stop offset="100%" stopColor="#b3e5fc"/>
+            {/* Sky gradient — golden hour light */}
+            <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#87ceeb"/>
+              <stop offset="55%"  stopColor="#b0dff5"/>
+              <stop offset="100%" stopColor="#ddeeff"/>
             </linearGradient>
-            <linearGradient id="mountainGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6b7f8f"/>
-              <stop offset="100%" stopColor="#4a5a6a"/>
+            {/* Ground/grass */}
+            <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#4caf50"/>
+              <stop offset="100%" stopColor="#2e7d32"/>
             </linearGradient>
-            <radialGradient id="groundGrad" cx="50%" cy="100%" r="60%">
-              <stop offset="0%" stopColor="#27ae60"/>
-              <stop offset="100%" stopColor="#1e8449"/>
-            </radialGradient>
-            <filter id="bldgShadow">
-              <feDropShadow dx="2" dy="4" stdDeviation="3" floodOpacity="0.4"/>
+            {/* River */}
+            <linearGradient id="riverG" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"   stopColor="#1565c0"/>
+              <stop offset="100%" stopColor="#42a5f5"/>
+            </linearGradient>
+            {/* Mountain */}
+            <linearGradient id="mtnG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#78909c"/>
+              <stop offset="100%" stopColor="#4a5568"/>
+            </linearGradient>
+            {/* Castle hill */}
+            <linearGradient id="hillG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#388e3c"/>
+              <stop offset="100%" stopColor="#1b5e20"/>
+            </linearGradient>
+            <filter id="shadow">
+              <feDropShadow dx="1" dy="3" stdDeviation="3" floodOpacity="0.3"/>
             </filter>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="blur"/>
+            <filter id="softglow">
+              <feGaussianBlur stdDeviation="4" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
 
-          {/* Daytime sky */}
-          <rect width="320" height="580" fill="url(#skyGrad)"/>
-
-          {/* Sun */}
-          <circle cx="262" cy="52" r="30" fill="#fff176" opacity=".9"/>
-          <circle cx="262" cy="52" r="22" fill="#fdd835"/>
-          {[0,40,80,120,160,200,240,280,320].map((angle,i)=>{
-            const rad=angle*Math.PI/180;
-            return <line key={i}
-              x1={262+Math.cos(rad)*26} y1={52+Math.sin(rad)*26}
-              x2={262+Math.cos(rad)*38} y2={52+Math.sin(rad)*38}
-              stroke="#fdd835" strokeWidth="3" strokeLinecap="round" opacity=".8"/>;
-          })}
+          {/* ── SKY ── */}
+          <rect width="320" height="590" fill="url(#skyG)"/>
 
           {/* Clouds */}
-          <g opacity=".9">
-            <ellipse cx="55" cy="75" rx="34" ry="13" fill="#fff"/>
-            <ellipse cx="43" cy="68" rx="18" ry="15" fill="#fff"/>
-            <ellipse cx="68" cy="67" rx="20" ry="14" fill="#fff"/>
-          </g>
-          <g opacity=".8">
-            <ellipse cx="175" cy="48" rx="28" ry="11" fill="#fff"/>
-            <ellipse cx="163" cy="42" rx="15" ry="13" fill="#fff"/>
-            <ellipse cx="186" cy="41" rx="16" ry="12" fill="#fff"/>
-          </g>
-          <g opacity=".75">
-            <ellipse cx="100" cy="115" rx="30" ry="12" fill="#fff"/>
-            <ellipse cx="88"  cy="108" rx="16" ry="14" fill="#fff"/>
-            <ellipse cx="112" cy="108" rx="18" ry="12" fill="#fff"/>
-          </g>
-
-          {/* Far mountains (pale blue-grey) */}
-          <polygon points="0,220 80,100 160,220"  fill="#90a4ae" opacity=".5"/>
-          <polygon points="80,220 170,90 260,220" fill="#78909c" opacity=".45"/>
-          <polygon points="160,220 250,105 320,220" fill="#90a4ae" opacity=".4"/>
-          {/* Far snow caps */}
-          <polygon points="80,100  68,138  92,138"  fill="#e0f7fa" opacity=".8"/>
-          <polygon points="170,90 157,130 183,130" fill="#e0f7fa" opacity=".8"/>
-
-          {/* Main mountain the castle sits on */}
-          <polygon points="30,290 160,52 290,290" fill="#546e7a"/>
-          <polygon points="30,290 160,52 290,290" fill="url(#mountainGrad)"/>
-          {/* Snow cap */}
-          <polygon points="160,52 140,105 180,105" fill="#fff" opacity=".95"/>
-          <polygon points="160,52 148,92  172,92"  fill="#e8f4fd"/>
-          {/* Mountain shading */}
-          <polygon points="160,52 30,290 120,290"  fill="#000" opacity=".08"/>
-
-          {/* Green rolling hills at bottom */}
-          <ellipse cx="160" cy="600" rx="240" ry="80" fill="#27ae60"/>
-          <rect y="565" width="320" height="50" fill="#27ae60"/>
-          <ellipse cx="40"  cy="578" rx="130" ry="42" fill="#2ecc71" opacity=".7"/>
-          <ellipse cx="280" cy="572" rx="120" ry="38" fill="#2ecc71" opacity=".6"/>
-
-          {/* Trees scattered around */}
-          {[[18,490],[295,470],[25,390],[300,365],[20,280],[300,255],[22,200],[295,180]].map(([tx,ty],i)=>(
-            <g key={i} transform={`translate(${tx},${ty})`}>
-              <rect x="-4" y="18" width="8" height="14" rx="2" fill="#8B4513"/>
-              <polygon points="0,-5 -12,18 12,18" fill={i%2===0?"#27ae60":"#2ecc71"}/>
-              <polygon points="0,-14 -8,8 8,8" fill={i%2===0?"#2ecc71":"#27ae60"}/>
+          {[[55,30,1],[160,18,.85],[250,42,.75],[110,65,.7],[285,25,.8]].map(([cx,cy,op],i)=>(
+            <g key={i} opacity={op}>
+              <ellipse cx={cx}    cy={cy}    rx={28+i*4} ry={10+i*2} fill="#fff"/>
+              <ellipse cx={cx-10} cy={cy-5}  rx={15+i*2} ry={12+i*2} fill="#fff"/>
+              <ellipse cx={cx+12} cy={cy-4}  rx={16+i*2} ry={10+i*1} fill="#fff"/>
             </g>
           ))}
 
-          {/* Dirt road path */}
-          <path d={pathD} fill="none" stroke="#8B6914" strokeWidth="14" strokeLinecap="round" opacity=".7"/>
-          <path d={pathD} fill="none" stroke="#d4a847" strokeWidth="10" strokeLinecap="round" opacity=".8"/>
-          <path d={pathD} fill="none" stroke="#f1c40f" strokeWidth="3" strokeLinecap="round" strokeDasharray="12,10" opacity=".5"/>
+          {/* Sun with warm glow */}
+          <circle cx="40" cy="45" r="28" fill="#fff9c4" opacity=".6" filter="url(#softglow)"/>
+          <circle cx="40" cy="45" r="20" fill="#ffee58" opacity=".9"/>
+          <circle cx="40" cy="45" r="14" fill="#fdd835"/>
 
-          {/* ── BUILDINGS ── */}
+          {/* ── FAR BACKGROUND MOUNTAINS ── */}
+          <polygon points="0,200 60,90 120,200"   fill="#90a4ae" opacity=".45"/>
+          <polygon points="50,200 140,75 230,200"  fill="#78909c" opacity=".4"/>
+          <polygon points="180,200 270,88 320,200" fill="#90a4ae" opacity=".38"/>
+          {/* Snow caps */}
+          <polygon points="60,90 50,125 70,125"   fill="#eceff1" opacity=".8"/>
+          <polygon points="140,75 128,114 152,114" fill="#eceff1" opacity=".85"/>
+          <polygon points="270,88 260,120 280,120" fill="#eceff1" opacity=".75"/>
+
+          {/* Mist at mountain base */}
+          <ellipse cx="160" cy="200" rx="200" ry="25" fill="#fff" opacity=".18"/>
+
+          {/* ── GRASSY TERRAIN ── */}
+          {/* Main ground layer */}
+          <rect x="0" y="190" width="320" height="400" fill="url(#grassG)" opacity=".7"/>
+          {/* Rolling hills */}
+          <ellipse cx="60"  cy="210" rx="100" ry="35" fill="#4caf50" opacity=".6"/>
+          <ellipse cx="260" cy="205" rx="100" ry="32" fill="#4caf50" opacity=".55"/>
+          <ellipse cx="160" cy="220" rx="140" ry="28" fill="#43a047" opacity=".5"/>
+
+          {/* ── CASTLE HILL ── */}
+          <ellipse cx="160" cy="110" rx="105" ry="60" fill="url(#hillG)"/>
+          <ellipse cx="160" cy="95"  rx="80"  ry="45" fill="#2e7d32"/>
+          {/* Rocky cliff face */}
+          <polygon points="80,115 100,75 125,110"  fill="#5d6e7a" opacity=".6"/>
+          <polygon points="200,115 220,70 240,110" fill="#546e7a" opacity=".55"/>
+
+          {/* ── CASTLE (on the hill) ── */}
+          <g transform="translate(95,18)" filter="url(#shadow)">
+            {/* Castle base wall */}
+            <rect x="5"  y="60" width="120" height="55" rx="2" fill="#b0bec5"/>
+            <rect x="5"  y="60" width="120" height="55" rx="2" fill="#cfd8dc" opacity=".4"/>
+            {/* Stone texture lines */}
+            {[0,1,2,3,4].map(row=>(
+              <rect key={row} x="5" y={60+row*11} width="120" height="1" fill="#90a4ae" opacity=".4"/>
+            ))}
+            {/* Left tower */}
+            <rect x="0"  y="35" width="30" height="82" rx="3" fill="#b0bec5"/>
+            <rect x="0"  y="35" width="30" height="82" rx="3" fill="#cfd8dc" opacity=".3"/>
+            {/* Right tower */}
+            <rect x="100" y="35" width="30" height="82" rx="3" fill="#b0bec5"/>
+            {/* Centre tower (tallest) */}
+            <rect x="45" y="15" width="40" height="102" rx="3" fill="#bdbdbd"/>
+            <rect x="45" y="15" width="40" height="102" rx="3" fill="#fff" opacity=".15"/>
+            {/* Battlements — left tower */}
+            {[1,7,13,21].map(bx=>(
+              <rect key={bx} x={bx} y="28" width="5" height="9" rx="1" fill="#90a4ae"/>
+            ))}
+            {/* Battlements — right tower */}
+            {[101,107,113,121].map(bx=>(
+              <rect key={bx} x={bx} y="28" width="5" height="9" rx="1" fill="#90a4ae"/>
+            ))}
+            {/* Battlements — centre */}
+            {[46,54,62,70,78].map(bx=>(
+              <rect key={bx} x={bx} y="8" width="5" height="9" rx="1" fill="#9e9e9e"/>
+            ))}
+            {/* Conical roofs */}
+            <polygon points="15,35 0,35 30,35 15,5"   fill="#546e7a"/>
+            <polygon points="115,35 100,35 130,35 115,5" fill="#546e7a"/>
+            <polygon points="65,15 45,15 85,15 65,-18"  fill="#455a64"/>
+            {/* Flags */}
+            <rect x="14" y="4"  width="2" height="12" fill="#fdd835"/>
+            <polygon points="16,4 26,7 16,10" fill="#e53935"/>
+            <rect x="64" y="-20" width="2" height="14" fill="#fdd835"/>
+            <polygon points="66,-20 78,-17 66,-14" fill="#e53935"/>
+            {/* Gate arch */}
+            <path d="M55,117 L55,95 Q65,84 75,95 L75,117" fill="#37474f"/>
+            {/* Gate portcullis */}
+            {[57,61,65,69,73].map(gx=>(
+              <rect key={gx} x={gx} y="90" width="1.5" height="26" fill="#78909c" opacity=".7"/>
+            ))}
+            {/* Windows */}
+            <rect x="8"  y="50" width="12" height="16" rx="6" fill="#ffd54f" opacity=".8"/>
+            <rect x="110" y="50" width="12" height="16" rx="6" fill="#ffd54f" opacity=".8"/>
+            <rect x="54" y="28" width="22" height="18" rx="4" fill="#ffd54f" opacity=".9"/>
+            {/* Wall connecting towers */}
+            <rect x="30" y="55" width="16" height="60" rx="1" fill="#b0bec5"/>
+            <rect x="84" y="55" width="16" height="60" rx="1" fill="#b0bec5"/>
+          </g>
+
+          {/* ── RIVER winding through village ── */}
+          {/* River bank / shadow */}
+          <path d="M290,360 C260,345 210,370 185,385 C160,400 170,415 145,420 C120,425 80,405 55,395 C30,385 10,370 0,360 L0,400 C15,415 45,435 75,445 C105,455 140,465 165,460 C190,455 205,445 230,440 C260,434 290,420 310,410 Z"
+            fill="#1565c0" opacity=".55"/>
+          {/* River main */}
+          <path d="M300,355 C270,340 215,365 188,382 C162,398 172,413 147,418 C122,423 82,402 57,392 C32,382 8,365 -5,355 L-5,390 C10,405 42,428 72,438 C102,448 138,458 163,453 C188,448 203,438 228,433 C258,427 285,412 300,400 Z"
+            fill="url(#riverG)" opacity=".8"/>
+          {/* River shimmer */}
+          {[[80,382],[130,395],[180,405],[220,390]].map(([rx,ry],i)=>(
+            <ellipse key={i} cx={rx} cy={ry} rx={12+i*3} ry={3} fill="#fff" opacity=".25"/>
+          ))}
+
+          {/* ── STONE BRIDGE ── */}
+          <g transform="translate(135,378)">
+            {/* Bridge arch */}
+            <path d="M0,30 L0,15 Q25,-5 50,15 L50,30" fill="#8d6e63"/>
+            {/* Bridge deck */}
+            <rect x="-5" y="26" width="60" height="10" rx="2" fill="#a1887f"/>
+            {/* Parapet */}
+            <rect x="-5" y="20" width="60" height="6" rx="1" fill="#8d6e63"/>
+            {/* Bridge pillars */}
+            {[0,12,24,36,48].map(px=>(
+              <rect key={px} x={px} y="20" width="3" height="8" rx="1" fill="#6d4c41"/>
+            ))}
+          </g>
+
+          {/* Small boats on river */}
+          <g transform="translate(90,395)">
+            <path d="M0,8 Q10,-2 20,8" fill="#8d6e63" stroke="#6d4c41" strokeWidth="1"/>
+            <rect x="8" y="0" width="2" height="10" fill="#a1887f"/>
+            <polygon points="10,1 18,5 10,9" fill="#ef9a9a" opacity=".8"/>
+          </g>
+          <g transform="translate(200,408)">
+            <path d="M0,7 Q8,-1 16,7" fill="#8d6e63" stroke="#6d4c41" strokeWidth="1"/>
+            <rect x="6" y="0" width="2" height="8" fill="#a1887f"/>
+            <polygon points="8,1 15,4 8,7" fill="#81d4fa" opacity=".8"/>
+          </g>
+
+          {/* ── ROAD / PATH ── */}
+          {/* Cobblestone road shadow */}
+          <path d={roadPath} fill="none" stroke="#5d4037" strokeWidth="13" strokeLinecap="round" opacity=".4"/>
+          {/* Main road */}
+          <path d={roadPath} fill="none" stroke="#bcaaa4" strokeWidth="10" strokeLinecap="round" opacity=".9"/>
+          {/* Road centre line */}
+          <path d={roadPath} fill="none" stroke="#d7ccc8" strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
+
+          {/* ── TREES ── */}
+          {[[15,300],[295,290],[22,420],[302,400],[18,480],[300,460],[14,540],[298,525]].map(([tx,ty],i)=>(
+            <g key={i} transform={`translate(${tx},${ty})`} opacity=".9">
+              <rect x="-3" y="14" width="6" height="12" rx="1" fill="#5d4037"/>
+              <circle cx="0" cy="8"  r="11" fill={i%3===0?"#2e7d32":i%3===1?"#388e3c":"#43a047"}/>
+              <circle cx="0" cy="2"  r="8"  fill={i%3===0?"#388e3c":i%3===1?"#43a047":"#4caf50"}/>
+              <circle cx="0" cy="-3" r="5"  fill="#66bb6a"/>
+            </g>
+          ))}
+
+          {/* Flower patches */}
+          {[[40,320],[280,330],[60,450],[260,460]].map(([fx,fy],i)=>(
+            <g key={i}>
+              {[0,5,10].map(d=>(
+                <circle key={d} cx={fx+d} cy={fy} r="2.5" fill={["#ef9a9a","#fff59d","#f48fb1","#80cbc4"][i]} opacity=".8"/>
+              ))}
+            </g>
+          ))}
+
+          {/* ── ZONE BUILDINGS ── */}
           {buildings.map((b,i)=>{
             const prevZone = i>0 ? ZONES[i-1] : null;
             const prevPuzzles = prevZone ? PUZZLES.filter(p=>p.zone===prevZone.id) : [];
@@ -2061,81 +1932,165 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const isHere = i===youAreHere;
             const pct = zonePuzzles.length ? (done/zonePuzzles.length)*100 : 0;
-            const col = ZONES[i]?.color || "#888";
+            const isComplete = done===zonePuzzles.length;
+            const zoneColor = ZONES[i]?.color || "#888";
+
+            // Skip zone 9 (rush/castle) — drawn separately above
+            if(b.zone==="rush") return null;
 
             return(
               <g key={b.zone} onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
 
-                {/* Pulse ring for current zone */}
-                {isHere&&<circle cx={b.x} cy={b.y} r="46" fill="rgba(241,196,15,.15)" stroke="#f1c40f" strokeWidth="2" opacity=".7" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
+                {/* Glow ring for current zone */}
+                {isHere&&<circle cx={b.x} cy={b.y} r="38" fill={`${zoneColor}33`} stroke={zoneColor} strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
 
-                {/* Ground patch under building */}
-                <ellipse cx={b.x} cy={b.y+18} rx="34" ry="8" fill="#1a6b32" opacity=".5"/>
-
-                {/* Building SVG — castle is taller so needs more offset */}
-                <g transform={`translate(${b.x-32},${b.zone==="rush"?b.y-52:b.y-42})`} filter="url(#bldgShadow)">
-                  <svg viewBox="0 0 64 64" width={b.zone==="rush"?72:64} height={b.zone==="rush"?72:64} overflow="visible">
-                    {b.draw(col, locked)}
+                {/* Medieval house */}
+                <g transform={`translate(${b.x-22},${b.y-42})`} filter="url(#shadow)">
+                  <svg viewBox="0 0 44 52" width="44" height="52" overflow="visible">
+                    {/* House base */}
+                    <rect x="4" y="22" width="36" height="28" rx="2"
+                      fill={locked?"#607d8b":"#a1887f"}/>
+                    {/* Timber frame */}
+                    {!locked&&<>
+                      <rect x="4" y="22" width="3" height="28" fill="#5d4037" opacity=".5"/>
+                      <rect x="37" y="22" width="3" height="28" fill="#5d4037" opacity=".5"/>
+                      <rect x="4" y="33" width="36" height="2" fill="#5d4037" opacity=".4"/>
+                      <line x1="4" y1="22" x2="22" y2="50" stroke="#5d4037" strokeWidth="1.5" opacity=".3"/>
+                      <line x1="40" y1="22" x2="22" y2="50" stroke="#5d4037" strokeWidth="1.5" opacity=".3"/>
+                    </>}
+                    {/* Steep roof */}
+                    <polygon points="0,24 22,2 44,24"
+                      fill={locked?"#455a64":zoneColor}/>
+                    <polygon points="3,24 22,5 41,24"
+                      fill={locked?"#546e7a":zoneColor} opacity=".7"/>
+                    {/* Windows */}
+                    <rect x="7" y="26" width="10" height="10" rx="2"
+                      fill={locked?"#37474f":"#ffd54f"} opacity={locked?.3:.9}/>
+                    <rect x="27" y="26" width="10" height="10" rx="2"
+                      fill={locked?"#37474f":"#ffd54f"} opacity={locked?.3:.9}/>
+                    {/* Window cross */}
+                    {!locked&&<>
+                      <rect x="11" y="26" width="1.5" height="10" fill="#a1887f" opacity=".5"/>
+                      <rect x="7"  y="30" width="10"  height="1.5" fill="#a1887f" opacity=".5"/>
+                      <rect x="31" y="26" width="1.5" height="10" fill="#a1887f" opacity=".5"/>
+                      <rect x="27" y="30" width="10"  height="1.5" fill="#a1887f" opacity=".5"/>
+                    </>}
+                    {/* Door */}
+                    <rect x="16" y="36" width="12" height="14" rx="4"
+                      fill={locked?"#263238":"#6d4c41"}/>
+                    {/* Door handle */}
+                    {!locked&&<circle cx="26" cy="43" r="1.5" fill="#fdd835"/>}
+                    {/* Chimney */}
+                    {!locked&&<>
+                      <rect x="30" y="6" width="6" height="12" rx="1" fill="#8d6e63"/>
+                      <ellipse cx="33" cy="6" rx="5" ry="3" fill="#616161"/>
+                    </>}
+                    {/* Lock */}
+                    {locked&&(
+                      <text x="22" y="40" textAnchor="middle" fontSize="14">🔒</text>
+                    )}
+                    {/* Zone emoji badge on roof */}
+                    {!locked&&(
+                      <text x="22" y="18" textAnchor="middle" fontSize="11">{b.emoji}</text>
+                    )}
                   </svg>
                 </g>
 
-                {/* Progress arc under building */}
+                {/* Progress arc */}
                 {!locked&&pct>0&&(
-                  <circle cx={b.x} cy={b.y+28} r="16" fill="none"
-                    stroke="#f1c40f" strokeWidth="4" strokeLinecap="round"
+                  <circle cx={b.x} cy={b.y+14} r="12" fill="none"
+                    stroke="#fdd835" strokeWidth="3" strokeLinecap="round"
                     strokeDasharray={`${pct} 100`}
-                    style={{transformOrigin:`${b.x}px ${b.y+28}px`,transform:"rotate(-90deg)"}}/>
+                    style={{transformOrigin:`${b.x}px ${b.y+14}px`,transform:"rotate(-90deg)"}}/>
                 )}
 
-                {/* Lock badge */}
-                {locked&&(
+                {/* Complete badge */}
+                {isComplete&&(
                   <g>
-                    <circle cx={b.x} cy={b.y+28} r="14" fill="#1a1a3a" stroke="#4a5568" strokeWidth="2"/>
-                    <text x={b.x} y={b.y+33} textAnchor="middle" fontSize="14">🔒</text>
+                    <circle cx={b.x+18} cy={b.y-36} r="9" fill="#43a047" stroke="#fff" strokeWidth="2"/>
+                    <text x={b.x+18} y={b.y-32} textAnchor="middle" fontSize="10" fill="#fff">✓</text>
                   </g>
                 )}
 
-                {/* Done badge */}
-                {!locked&&done===zonePuzzles.length&&(
-                  <g>
-                    <circle cx={b.x+24} cy={b.y-36} r="10" fill="#27ae60" stroke="#fff" strokeWidth="2"/>
-                    <text x={b.x+24} y={b.y-32} textAnchor="middle" fontSize="11">✓</text>
-                  </g>
-                )}
-
-                {/* Zone name label */}
-                <g>
-                  <rect x={b.x - (b.label.length*4)} y={b.y+40} width={b.label.length*8+8} height="16" rx="8"
-                    fill={locked?"rgba(30,30,60,.8)":col} opacity=".92"/>
-                  <text x={b.x} y={b.y+52} textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900" fontFamily="sans-serif">
-                    {b.label.toUpperCase()}
-                  </text>
-                </g>
+                {/* Label */}
+                <rect x={b.x-(b.label.length*3.6)} y={b.y+22} width={b.label.length*7.2+8} height="14" rx="7"
+                  fill={locked?"rgba(30,40,30,.7)":zoneColor} opacity=".92"/>
+                <text x={b.x} y={b.y+33} textAnchor="middle" fill="#fff" fontSize="8" fontWeight="900" fontFamily="sans-serif">
+                  {b.label.toUpperCase()}
+                </text>
 
                 {/* YOU ARE HERE pin */}
                 {isHere&&(
                   <g style={{animation:"mascotFloat 2s ease-in-out infinite"}}>
-                    <ellipse cx={b.x} cy={b.y-54} rx="13" ry="13" fill={playerColor||"#e74c3c"} stroke="#fff" strokeWidth="2.5"/>
-                    <text x={b.x} y={b.y-49} textAnchor="middle" fontSize="13">{playerAvatar||"♟️"}</text>
-                    <polygon points={`${b.x-6},${b.y-42} ${b.x+6},${b.y-42} ${b.x},${b.y-35}`} fill={playerColor||"#e74c3c"}/>
-                    <text x={b.x} y={b.y-68} textAnchor="middle" fill="#f1c40f" fontSize="8" fontWeight="900" fontFamily="sans-serif">YOU!</text>
+                    <ellipse cx={b.x} cy={b.y-50} rx="12" ry="12" fill={playerColor||"#e53935"} stroke="#fff" strokeWidth="2.5"/>
+                    <text x={b.x} y={b.y-46} textAnchor="middle" fontSize="12">{playerAvatar||"♟️"}</text>
+                    <polygon points={`${b.x-5},${b.y-40} ${b.x+5},${b.y-40} ${b.x},${b.y-34}`} fill={playerColor||"#e53935"}/>
+                    <text x={b.x} y={b.y-62} textAnchor="middle" fill="#fdd835" fontSize="7" fontWeight="900" fontFamily="sans-serif">YOU!</text>
                   </g>
                 )}
               </g>
             );
           })}
 
-          {/* Village sign at bottom */}
-          <g transform="translate(160,558)">
-            <rect x="-50" y="-14" width="100" height="22" rx="6" fill="#8B4513"/>
-            <rect x="-46" y="-11" width="92" height="16" rx="4" fill="#d4a847"/>
-            <text x="0" y="1" textAnchor="middle" fill="#5d2906" fontSize="9" fontWeight="900" fontFamily="sans-serif">⚔️ CHESS VILLAGE ⚔️</text>
+          {/* ── CASTLE ZONE (rush) — clickable overlay ── */}
+          {(()=>{
+            const i = 8; // rush is index 8
+            const b = buildings[i];
+            const prevZone = ZONES[i-1];
+            const prevPuzzles = PUZZLES.filter(p=>p.zone===prevZone.id);
+            const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+            const locked = prevDone < prevPuzzles.length;
+            const zonePuzzles = PUZZLES.filter(p=>p.zone===b.zone);
+            const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+            const isHere = i===youAreHere;
+            const isComplete = done===zonePuzzles.length;
+            return(
+              <g onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
+                {/* Clickable area over castle */}
+                <rect x="95" y="0" width="130" height="145" fill="transparent"/>
+                {/* Glow if current */}
+                {isHere&&<ellipse cx="160" cy="90" rx="65" ry="50" fill="#fdd83533" stroke="#fdd835" strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
+                {/* Lock overlay if locked */}
+                {locked&&(
+                  <g>
+                    <rect x="135" y="55" width="50" height="50" rx="8" fill="rgba(0,0,0,.4)"/>
+                    <text x="160" y="88" textAnchor="middle" fontSize="24">🔒</text>
+                  </g>
+                )}
+                {/* Complete badge */}
+                {isComplete&&(
+                  <g>
+                    <circle cx="210" cy="22" r="12" fill="#43a047" stroke="#fff" strokeWidth="2.5"/>
+                    <text x="210" y="27" textAnchor="middle" fontSize="12" fill="#fff">✓</text>
+                  </g>
+                )}
+                {/* Label */}
+                <rect x="120" y="140" width="80" height="16" rx="8" fill={locked?"rgba(30,40,30,.8)":"#e53935"} opacity=".95"/>
+                <text x="160" y="152" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900" fontFamily="sans-serif">PUZZLE RUSH ⚡</text>
+                {/* YOU ARE HERE on castle */}
+                {isHere&&(
+                  <g style={{animation:"mascotFloat 2s ease-in-out infinite"}}>
+                    <ellipse cx="160" cy="-8" rx="12" ry="12" fill={playerColor||"#e53935"} stroke="#fff" strokeWidth="2.5"/>
+                    <text x="160" y="-4" textAnchor="middle" fontSize="12">{playerAvatar||"♟️"}</text>
+                    <polygon points="155,3 165,3 160,9" fill={playerColor||"#e53935"}/>
+                    <text x="160" y="-20" textAnchor="middle" fill="#fdd835" fontSize="7" fontWeight="900" fontFamily="sans-serif">YOU!</text>
+                  </g>
+                )}
+              </g>
+            );
+          })()}
+
+          {/* ── VILLAGE NAME SIGN ── */}
+          <g transform="translate(160,572)">
+            <rect x="-55" y="-12" width="110" height="22" rx="5" fill="#5d4037"/>
+            <rect x="-52" y="-9"  width="104" height="16" rx="3" fill="#8d6e63"/>
+            <text x="0" y="2" textAnchor="middle" fill="#fff8e1" fontSize="9" fontWeight="900" fontFamily="sans-serif">🏰 CHESS VILLAGE 🏰</text>
           </g>
         </svg>
       </div>
 
       <style>{`
-        @keyframes mapPulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:.9;transform:scale(1.06)}}
+        @keyframes mapPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
       `}</style>
     </div>
   );
