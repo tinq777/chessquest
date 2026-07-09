@@ -282,7 +282,7 @@ const PUZZLES=[
   // wk=e1(7,4), wr=h1(7,7), clear squares f1,g1
   // Solution: king moves to g1 (castling — but we simplify as king side-step to safety)
   // Simpler: move king from e1 to f1 away from centre to demonstrate king safety
-  {id:8,zone:"openings",title:"King Safety!",desc:"Your King is safer away from the centre. Move it to safety!",emoji:"🏰",
+  {id:8,zone:"openings",title:"King Safety!",desc:"Tuck your King to f1 for safety — away from the centre!",emoji:"🏰",
     board:[
       ["br",null,"bb","bq","bk","bb",null,"br"],
       ["bp","bp","bp","bp",null,"bp","bp","bp"],
@@ -293,8 +293,8 @@ const PUZZLES=[
       ["wp","wp","wp","wp",null,"wp","wp","wp"],
       ["wr",null,"wb","wq","wk",null,null,"wr"]
     ],
-    solution:{from:{r:7,c:4},to:{r:7,c:6}},
-    hint:"Move your King to g1 — it hides in the corner away from danger!",xp:25},
+    solution:{from:{r:7,c:4},to:{r:7,c:5}},
+    hint:"Step your King to f1 — away from the centre and on the way to safety!",xp:25},
 
   // Puzzle 9: Pieces — bishop diagonal move
   // wb on c1(7,2), clear diagonal to h6(2,7), no pieces blocking
@@ -379,19 +379,19 @@ const PUZZLES=[
   // wn needs to jump to f7(1,5) — delivers check AND covers g8 and h8
   // From f7, knight attacks: d6,d8,e5,g5,h6,h8 — covers h8=king, so check
   // wk=a1(7,0) for legality
-  {id:13,zone:"master",title:"Smothered Mate!",desc:"The King is trapped by his own pieces! Jump your Knight in for checkmate!",emoji:"⚡",
+  {id:13,zone:"master",title:"Smothered Mate!",desc:"The King is trapped by its own pawns! Jump your Knight to f7 for checkmate!",emoji:"⚡",
     board:[
-      [null,null,null,null,null,null,null,"bk"],
+      [null,null,null,null,null,null,"bp","bk"],
       [null,null,null,null,null,null,"bp","bp"],
       [null,null,null,null,null,null,null,null],
+      [null,null,null,null,"wn",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wk",null,null,null,null,"wn",null,null]
+      ["wk",null,null,null,null,"wr",null,null]
     ],
-    solution:{from:{r:7,c:5},to:{r:1,c:6}},
-    hint:"Knights jump in an L — find the square where your knight attacks the trapped King!",xp:50},
+    solution:{from:{r:3,c:4},to:{r:1,c:5}},
+    hint:"Jump your Knight from e5 to f7 — the King is boxed in by its own pawns!",xp:50},
 
   // PR2: Double attack — queen fork hitting rook and knight simultaneously
   // wq=a1(7,0), br=d4(4,3), bn=g4(4,6), bk=e8(0,4), wk=h1(7,7)
