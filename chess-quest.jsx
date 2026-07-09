@@ -1,25 +1,20 @@
-// Chess Quest v2.2 — Firebase compat SDK edition
-// Switched to the same proven setup as Wavr: plain global <script> tags,
-// firebase-*-compat.js builds, v8-style API (firebase.auth(), firebase.firestore()).
-// No ES modules, no dynamic import() — avoids all the module/non-module
-// boundary issues that caused Firestore writes to hang indefinitely.
+// Chess Quest v3.0 — Local storage edition
+// All data saved to device localStorage. No login, no Firebase, no network needed.
 const { useState, useCallback, useRef, useEffect } = React;
 
-let fbAuth = null, fbDb = null, googleProvider = null;
+const STORAGE_KEY = "chess_quest_data";
 
-async function initFirebase(){
-  if(fbAuth) return true;
-  // Wait for the compat scripts + config in index.html to finish loading
-  let tries = 0;
-  while(!window.__firebase && tries < 100){
-    await new Promise(r=>setTimeout(r,50));
-    tries++;
-  }
-  if(!window.__fbAuth || !window.__fbDb){ console.error("Firebase failed to load"); return false; }
-  fbAuth = window.__fbAuth;
-  fbDb   = window.__fbDb;
-  googleProvider = new firebase.auth.GoogleAuthProvider();
-  return true;
+function loadLocal(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e){ return null; }
+}
+
+function saveLocal(data){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e){ /* storage full or unavailable */ }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2172,130 +2167,6 @@ function AwardsScreen({xp, completedPuzzles, streak}){
 
 
 // ═══════════════════════════════════════════════════════════
-// LOGIN SCREEN
-// ═══════════════════════════════════════════════════════════
-function LoginScreen({onLogin}){
-  const [mode, setMode]       = useState("choose"); // "choose" | "email"
-  const [isSignup, setIsSignup] = useState(false);
-  const [email, setEmail]     = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError]     = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleGoogle = async () => {
-    setLoading(true); setError("");
-    try {
-      await initFirebase();
-      const result = await fbAuth.signInWithPopup(googleProvider);
-      onLogin(result.user);
-    } catch(e) {
-      setError("Google sign-in failed. Try again.");
-    }
-    setLoading(false);
-  };
-
-  const handleEmail = async () => {
-    if(!email || !password){ setError("Please fill in all fields."); return; }
-    setLoading(true); setError("");
-    try {
-      const result = isSignup
-        ? await fbAuth.createUserWithEmailAndPassword(email, password)
-        : await fbAuth.signInWithEmailAndPassword(email, password);
-      onLogin(result.user);
-    } catch(e) {
-      if(e.code==="auth/email-already-in-use") setError("Email already registered. Try logging in.");
-      else if(e.code==="auth/wrong-password") setError("Wrong password. Try again.");
-      else if(e.code==="auth/user-not-found") setError("No account found. Sign up instead!");
-      else if(e.code==="auth/weak-password") setError("Password must be at least 6 characters.");
-      else setError((e.code||"") + " " + (e.message||"Something went wrong."));
-    }
-    setLoading(false);
-  };
-
-  return(
-    <div style={{height:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px",position:"relative",overflow:"hidden",fontFamily:'"Fredoka One","Nunito",-apple-system,sans-serif'}}>
-
-      {/* Background */}
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,#0d1b4b 0%,#1a2a6a 40%,#0f4c2a 100%)",zIndex:0}}/>
-
-      {/* Stars */}
-      {[...Array(18)].map((_,i)=>(
-        <div key={i} style={{position:"absolute",left:`${(i*53+7)%100}%`,top:`${(i*37+5)%60}%`,width:i%3===0?3:2,height:i%3===0?3:2,borderRadius:"50%",background:"#fff",opacity:.4+Math.sin(i)*.3,animation:`pulse ${1.5+i%3}s ease-in-out infinite`,animationDelay:`${i*.2}s`,zIndex:1}}/>
-      ))}
-
-      {/* Floating pieces */}
-      {["♟","♞","♝","♜","♛"].map((p,i)=>(
-        <div key={i} style={{position:"absolute",left:`${[8,80,15,68,88][i]}%`,top:`${[12,6,70,75,42][i]}%`,fontSize:30+i*3,opacity:.07,color:"#fff",animation:`mascotFloat ${3+i}s ease-in-out infinite`,animationDelay:`${i*.6}s`,zIndex:1,userSelect:"none"}}>{p}</div>
-      ))}
-
-      <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:340}}>
-
-        {/* Logo */}
-        <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{fontSize:72,display:"inline-block",filter:"drop-shadow(0 6px 24px rgba(241,196,15,.6))",animation:"logoBounce 2.5s ease-in-out infinite",lineHeight:1}}>♟️</div>
-          <div style={{fontFamily:'"Fredoka One",sans-serif',fontSize:46,fontWeight:900,fontStyle:"italic",background:"linear-gradient(180deg,#fff 0%,#ffe566 40%,#ffaa22 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1,lineHeight:1.1,filter:"drop-shadow(0 4px 0 rgba(0,0,0,.4))"}}>Chess Quest</div>
-          <div style={{fontSize:12,color:"rgba(255,255,255,.6)",fontWeight:700,letterSpacing:2,marginTop:4}}>LEARN · PLAY · MASTER</div>
-        </div>
-
-        {mode==="choose"&&(
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {/* Email — primary */}
-            <button onClick={()=>setMode("email")} style={{background:"linear-gradient(135deg,#f1c40f,#e67e22)",border:"none",borderRadius:18,padding:"18px",cursor:"pointer",boxShadow:"0 6px 0 #d4ac0d",fontSize:16,fontWeight:900,color:"#1a1a2e",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-              <span style={{fontSize:22}}>✉️</span> Sign In with Email
-            </button>
-
-            {/* Google — greyed out until enabled */}
-            <button disabled style={{background:"rgba(255,255,255,.07)",border:"2px solid rgba(255,255,255,.15)",borderRadius:18,padding:"16px",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"not-allowed",fontSize:14,fontWeight:800,color:"rgba(255,255,255,.35)"}}>
-              <svg width="18" height="18" viewBox="0 0 24 24" style={{opacity:.4}}><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-              Google Sign In (coming soon)
-            </button>
-
-            <div style={{textAlign:"center",fontSize:11,color:"rgba(255,255,255,.4)",fontWeight:700}}>
-              ☁️ Progress saves to the cloud automatically
-            </div>
-          </div>
-        )}
-
-        {mode==="email"&&(
-          <div style={{background:"rgba(255,255,255,.08)",borderRadius:24,padding:"20px",border:"2px solid rgba(255,255,255,.15)"}}>
-            <div style={{fontSize:17,fontWeight:900,color:"#fff",marginBottom:16,textAlign:"center"}}>{isSignup?"Create Account":"Welcome Back"}</div>
-
-            <input
-              value={email} onChange={e=>{setEmail(e.target.value);setError("");}}
-              placeholder="Email address"
-              type="email" autoComplete="email"
-              style={{width:"100%",padding:"13px 16px",borderRadius:14,border:"2px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.1)",color:"#fff",fontSize:15,fontWeight:700,marginBottom:10,outline:"none",fontFamily:"inherit",boxSizing:"border-box","::placeholder":{color:"rgba(255,255,255,.4)"}}}
-            />
-            <input
-              value={password} onChange={e=>{setPassword(e.target.value);setError("");}}
-              placeholder="Password"
-              type="password" autoComplete={isSignup?"new-password":"current-password"}
-              style={{width:"100%",padding:"13px 16px",borderRadius:14,border:"2px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.1)",color:"#fff",fontSize:15,fontWeight:700,marginBottom:12,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-            />
-
-            {error&&<div style={{background:"rgba(231,76,60,.2)",border:"2px solid #e74c3c",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#ff7675",fontWeight:700,marginBottom:12,textAlign:"center"}}>{error}</div>}
-
-            <button onClick={handleEmail} disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#f1c40f,#e67e22)",border:"none",borderRadius:14,padding:"14px",fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 0 #d4ac0d",color:"#1a1a2e",marginBottom:10}}>
-              {loading ? "Please wait…" : isSignup ? "Create Account 🎮" : "Log In ♟️"}
-            </button>
-
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>{setIsSignup(!isSignup);setError("");}} style={{flex:1,background:"rgba(255,255,255,.1)",border:"2px solid rgba(255,255,255,.2)",borderRadius:12,padding:"10px",fontSize:12,fontWeight:800,cursor:"pointer",color:"rgba(255,255,255,.8)"}}>
-                {isSignup?"Already have account?":"Create account"}
-              </button>
-              <button onClick={()=>{setMode("choose");setError("");}} style={{flex:1,background:"rgba(255,255,255,.1)",border:"2px solid rgba(255,255,255,.2)",borderRadius:12,padding:"10px",fontSize:12,fontWeight:800,cursor:"pointer",color:"rgba(255,255,255,.8)"}}>
-                ← Back
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-      <GlobalStyles/>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
 // PROFILE SYSTEM
 // ═══════════════════════════════════════════════════════════
 const AVATARS=["♟️","♞","♝","♜","♛","♚","🦁","🐯","🦊","🐸","🐧","🦄"];
@@ -2534,9 +2405,7 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
           <div style={{fontSize:11,color:"rgba(255,255,255,.4)",fontWeight:700,letterSpacing:1,marginBottom:12}}>
             🏆 LEARN CHESS · EARN GEMS · BECOME A MASTER
           </div>
-          <button onClick={async()=>{await fbAuth.signOut();}} style={{background:"rgba(255,255,255,.08)",border:"2px solid rgba(255,255,255,.15)",borderRadius:12,padding:"8px 20px",fontSize:12,fontWeight:800,color:"rgba(255,255,255,.5)",cursor:"pointer"}}>
-            Sign Out
-          </button>
+
         </div>
       </div>
 
@@ -2566,68 +2435,16 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
 }
 
 function ChessWorld(){
-  // ── Auth state ──
-  const [authUser,   setAuthUser]   = useState(undefined); // undefined=loading, null=not logged in
-  const [authLoading,setAuthLoading] = useState(true);
-  const [syncStatus, setSyncStatus]  = useState(""); // "saving" | "saved" | "error"
-
+  // ── Local storage — load saved profiles on mount ──
   useEffect(()=>{
-    let unsub = ()=>{};
-    initFirebase().then(ok=>{
-      if(!ok){ setAuthLoading(false); return; }
-      unsub = fbAuth.onAuthStateChanged(async user => {
-        setAuthUser(user);
-        setAuthLoading(false);
-        if(user){
-          try {
-            const snap = await fbDb.collection("users").doc(user.uid).get();
-            if(snap.exists && snap.data().profiles){
-              setProfiles(snap.data().profiles);
-            }
-          } catch(e){
-            const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
-            setSyncErrorDetail("LOAD: "+detail);
-          }
-        }
-      });
-    });
-    return ()=>unsub();
+    const saved = loadLocal();
+    if(saved && saved.profiles && saved.profiles.length > 0){
+      setProfiles(saved.profiles);
+    }
   },[]);
 
-  // Save profiles to Firestore whenever they change
-  const saveToCloud = async (updatedProfiles) => {
-    if(!authUser){
-      return;
-    }
-    if(!fbDb){
-      setSyncStatus("error");
-      setSyncErrorDetail("Firestore not initialized — fbDb missing");
-      return;
-    }
-    setSyncStatus("saving");
-    setSyncErrorDetail("");
-    try {
-      const now = new Date();
-      // Race the Firestore write against a 10s timeout so a hung connection
-      // shows a clear error instead of spinning forever
-      const writePromise = fbDb.collection("users").doc(authUser.uid).set({
-        profiles: updatedProfiles,
-        lastSaved: now.toISOString(),
-        email: authUser.email || "",
-        displayName: authUser.displayName || "",
-      }, {merge:true});
-      const timeoutPromise = new Promise((_,reject)=>
-        setTimeout(()=>reject(new Error("TIMEOUT: Firestore write took longer than 10s — check network/Firestore setup")),10000)
-      );
-      await Promise.race([writePromise, timeoutPromise]);
-      setSyncStatus("saved");
-      setLastSavedAt(now);
-      setTimeout(()=>setSyncStatus(""),3000);
-    } catch(e){
-      setSyncStatus("error");
-      const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
-      setSyncErrorDetail(detail);
-    }
+  const saveLocal_ = (updatedProfiles) => {
+    saveLocal({ profiles: updatedProfiles, lastSaved: new Date().toISOString() });
   };
 
   // Profile system
@@ -2643,13 +2460,13 @@ function ChessWorld(){
     const updated=[...profiles,p];
     setProfiles(updated);
     setActiveProfile(profiles.length);
-    saveToCloud(updated);
+    saveLocal_(updated);
   };
 
   const editProfile=(i,data)=>{
     const updated=profiles.map((p,idx)=>idx===i?{...p,...data}:p);
     setProfiles(updated);
-    saveToCloud(updated);
+    saveLocal_(updated);
   };
 
   const deleteProfile=i=>{
@@ -2657,14 +2474,14 @@ function ChessWorld(){
     setProfiles(updated);
     if(activeProfile===i) setActiveProfile(null);
     else if(activeProfile>i) setActiveProfile(activeProfile-1);
-    saveToCloud(updated);
+    saveLocal_(updated);
   };
 
   const updateProfile=updates=>{
     if(activeProfile===null)return;
     const updated=profiles.map((p,i)=>i===activeProfile?{...p,...updates}:p);
     setProfiles(updated);
-    saveToCloud(updated);
+    saveLocal_(updated);
   };
 
   // Game state — derived from active profile
@@ -2682,8 +2499,6 @@ function ChessWorld(){
 
   const [confirmLeavePlay,setConfirmLeavePlay]=useState(false);
   const [showSettings,setShowSettings]=useState(false);
-  const [lastSavedAt,setLastSavedAt]=useState(null);
-  const [syncErrorDetail,setSyncErrorDetail]=useState("");
 
   // Free play state — lifted here so game persists when switching tabs
   const [playBoard,setPlayBoard]=useState(INIT);
@@ -2697,18 +2512,6 @@ function ChessWorld(){
   const [playThinking,setPlayThinking]=useState(false);
   const [playMsg,setPlayMsg]=useState("You play White! Tap a piece to start! 🎮");
   const [playMood,setPlayMood]=useState("happy");
-
-  // Show loading spinner while checking auth
-  if(authLoading) return(
-    <div style={{height:"100dvh",background:"linear-gradient(180deg,#0d1b4b,#1a2a6a)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
-      <div style={{fontSize:64,animation:"logoBounce 1.5s ease-in-out infinite"}}>♟️</div>
-      <div style={{fontSize:16,fontWeight:900,color:"rgba(255,255,255,.7)",letterSpacing:2}}>LOADING…</div>
-      <GlobalStyles/>
-    </div>
-  );
-
-  // Show login screen if not authenticated
-  if(!authUser) return <LoginScreen onLogin={user=>{setAuthUser(user);}}/>;
 
   // Show profile select if no active profile
   if(activeProfile===null) return(
@@ -2937,46 +2740,12 @@ function ChessWorld(){
               👥 Switch Player
             </button>
 
-            {/* Account info */}
-            <div style={{background:"#f0f4ff",borderRadius:16,padding:14,marginBottom:14}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#636e72",letterSpacing:1,marginBottom:6}}>SIGNED IN AS</div>
-              <div style={{fontSize:14,fontWeight:800,color:"#2d3436",wordBreak:"break-all"}}>{authUser?.email || "Unknown"}</div>
+            {/* Saved locally info */}
+            <div style={{background:"#f0fff8",border:"2px solid #00d9a3",borderRadius:16,padding:14,marginBottom:14,textAlign:"center"}}>
+              <div style={{fontSize:24,marginBottom:4}}>📱</div>
+              <div style={{fontSize:13,fontWeight:800,color:"#2d3436",marginBottom:2}}>Saved on this device</div>
+              <div style={{fontSize:11,color:"#636e72",lineHeight:1.5}}>Progress saves automatically whenever you earn XP or complete a puzzle.</div>
             </div>
-
-            {/* Sync status — moved here from header */}
-            <div style={{background:syncStatus==="error"?"#fff0f0":"#f0fff8",border:`2px solid ${syncStatus==="error"?"#ff7675":"#00d9a3"}`,borderRadius:16,padding:14,marginBottom:14}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                <span style={{fontSize:18}}>{syncStatus==="error"?"⚠️":"☁️"}</span>
-                <span style={{fontSize:14,fontWeight:900,color:"#2d3436"}}>
-                  {syncStatus==="saving"?"Saving…":syncStatus==="error"?"Sync failed":"Cloud Sync"}
-                </span>
-              </div>
-              <div style={{fontSize:11,color:"#636e72",lineHeight:1.5}}>
-                {lastSavedAt
-                  ? `Last saved: ${lastSavedAt.toLocaleTimeString()}`
-                  : "No saves yet this session"}
-              </div>
-              {syncStatus==="error"&&(
-                <div style={{fontSize:11,color:"#e74c3c",marginTop:6,fontWeight:700}}>
-                  Check your internet connection or Firestore security rules.
-                </div>
-              )}
-              {syncErrorDetail&&(
-                <div style={{marginTop:8,background:"#2d3436",borderRadius:10,padding:10,fontFamily:"monospace",fontSize:10,color:"#ffeb3b",wordBreak:"break-word",lineHeight:1.5}}>
-                  {syncErrorDetail}
-                </div>
-              )}
-            </div>
-
-            {/* Manual sync button */}
-            <button onClick={()=>{SFX.tap();saveToCloud(profiles);}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
-              🔄 Sync Now
-            </button>
-
-            {/* Sign out */}
-            <button onClick={async()=>{SFX.tap();await fbAuth.signOut();setShowSettings(false);}} style={{width:"100%",background:"#fff0f0",border:"2px solid #ff7675",borderRadius:14,padding:"12px",fontSize:13,fontWeight:800,color:"#e74c3c",cursor:"pointer"}}>
-              🚪 Sign Out
-            </button>
           </div>
         </div>
       )}

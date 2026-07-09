@@ -28,27 +28,6 @@
   </div>
   <div id="root"></div>
 
-  <!-- Firebase — compat SDK (v8-style global API), same proven approach as Wavr.
-       Plain global scripts, no ES modules, no dynamic import() complexity. -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" integrity="sha384-KMPNHhcRNfsozA9rP+3f5HnRqDaCaJwI9ai1+A/SPSOyncUPMsU5oiuAZ5+YEDv3" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" integrity="sha384-KMPNHhcRNfsozA9rP+3f5HnRqDaCaJwI9ai1+A/SPSOyncUPMsU5oiuAZ5+YEDv3" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" integrity="sha384-KMPNHhcRNfsozA9rP+3f5HnRqDaCaJwI9ai1+A/SPSOyncUPMsU5oiuAZ5+YEDv3" crossorigin="anonymous"></script>
-  <script src="/config.js"></script>
-  <script>
-    var firebaseConfig = {
-      apiKey:            (window.__ENV && window.__ENV.CHESS_QUEST_API_KEY)        || "",
-      authDomain:        (window.__ENV && window.__ENV.CHESS_QUEST_AUTH_DOMAIN)    || "",
-      projectId:         (window.__ENV && window.__ENV.CHESS_QUEST_PROJECT_ID)     || "",
-      storageBucket:     (window.__ENV && window.__ENV.CHESS_QUEST_STORAGE_BUCKET) || "",
-      messagingSenderId: (window.__ENV && window.__ENV.CHESS_QUEST_SENDER_ID)      || "",
-      appId:             (window.__ENV && window.__ENV.CHESS_QUEST_APP_ID)         || "",
-    };
-    firebase.initializeApp(firebaseConfig);
-    window.__fbAuth = firebase.auth();
-    window.__fbDb = firebase.firestore();
-    window.__firebase = { ready: true }; // signal to chess-quest.jsx that Firebase is loaded
-  </script>
-
   <!-- React 18 -->
   <script crossorigin
     src="https://unpkg.com/react@18/umd/react.production.min.js"
