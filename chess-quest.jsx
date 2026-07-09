@@ -1699,12 +1699,12 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
   const buildings = [
     {x:240, y:530, zone:"pieces",    label:"Piece Power",    emoji:"♞"},
     {x:70,  y:470, zone:"pawns",     label:"Pawn Kingdom",   emoji:"♟️"},
-    {x:235, y:408, zone:"openings",  label:"Open Strong",    emoji:"🏰"},
+    {x:242, y:442, zone:"openings",  label:"Open Strong",    emoji:"🏰"},
     {x:68,  y:348, zone:"tactics",   label:"Tactics",        emoji:"⚔️"},
     {x:232, y:285, zone:"checkmate", label:"Checkmate Hunt", emoji:"🎯"},
     {x:72,  y:228, zone:"strategy",  label:"Strategy",       emoji:"🧠"},
     {x:228, y:172, zone:"endgame",   label:"Endgame",        emoji:"👑"},
-    {x:75,  y:118, zone:"master",    label:"Master Moves",   emoji:"🌟"},
+    {x:75,  y:152, zone:"master",    label:"Master Moves",   emoji:"🌟"},
     {x:160, y:58,  zone:"rush",      label:"Puzzle Rush",    emoji:"⚡"},
   ];
 
@@ -1758,6 +1758,10 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
               <feGaussianBlur stdDeviation="4" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
+            {/* Clip road — excludes castle hill area using evenodd rule */}
+            <clipPath id="roadClip" clipPathUnits="userSpaceOnUse">
+              <path fillRule="evenodd" d="M-10,-10 L330,-10 L330,600 L-10,600 Z M50,38 C50,38 80,15 160,15 C240,15 270,38 270,95 C270,152 230,175 160,175 C90,175 50,152 50,95 Z"/>
+            </clipPath>
           </defs>
 
           {/* ── SKY ── */}
@@ -1895,13 +1899,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             <polygon points="8,1 15,4 8,7" fill="#81d4fa" opacity=".8"/>
           </g>
 
-          {/* ── ROAD / PATH — clipped so it doesn't cross the castle hill ── */}
-          <defs>
-            <clipPath id="roadClip">
-              {/* Allow road everywhere EXCEPT inside the castle hill ellipse */}
-              <path d="M0,0 L320,0 L320,590 L0,590 Z M55,140 Q160,60 265,140 Q265,200 160,200 Q55,200 55,140"/>
-            </clipPath>
-          </defs>
+          {/* ── ROAD / PATH — clipped to avoid castle hill ── */}
           <g clipPath="url(#roadClip)">
             <path d={roadPath} fill="none" stroke="#5d4037" strokeWidth="13" strokeLinecap="round" opacity=".4"/>
             <path d={roadPath} fill="none" stroke="#bcaaa4" strokeWidth="10" strokeLinecap="round" opacity=".9"/>
@@ -1949,52 +1947,58 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                 {/* Glow ring for current zone */}
                 {isHere&&<circle cx={b.x} cy={b.y} r="38" fill={`${zoneColor}33`} stroke={zoneColor} strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
 
-                {/* Medieval house */}
-                <g transform={`translate(${b.x-22},${b.y-42})`} filter="url(#shadow)">
+                {/* Medieval house — full colour always, greyscale filter when locked */}
+                <g transform={`translate(${b.x-22},${b.y-42})`}
+                   filter={locked?"url(#shadow)":"url(#shadow)"}
+                   style={{filter:locked?"grayscale(1) brightness(0.55) url(#shadow)":undefined}}
+                   opacity={locked?.75:1}>
                   <svg viewBox="0 0 44 52" width="44" height="52" overflow="visible">
-                    {/* House base */}
-                    <rect x="4" y="22" width="36" height="28" rx="2"
-                      fill={locked?"#607d8b":"#a1887f"}/>
+                    {/* House base — always warm colour */}
+                    <rect x="4" y="22" width="36" height="28" rx="2" fill="#a1887f"/>
                     {/* Timber frame */}
-                    {!locked&&<>
-                      <rect x="4" y="22" width="3" height="28" fill="#5d4037" opacity=".5"/>
-                      <rect x="37" y="22" width="3" height="28" fill="#5d4037" opacity=".5"/>
-                      <rect x="4" y="33" width="36" height="2" fill="#5d4037" opacity=".4"/>
-                      <line x1="4" y1="22" x2="22" y2="50" stroke="#5d4037" strokeWidth="1.5" opacity=".3"/>
-                      <line x1="40" y1="22" x2="22" y2="50" stroke="#5d4037" strokeWidth="1.5" opacity=".3"/>
-                    </>}
-                    {/* Steep roof */}
-                    <polygon points="0,24 22,2 44,24"
-                      fill={locked?"#455a64":zoneColor}/>
-                    <polygon points="3,24 22,5 41,24"
-                      fill={locked?"#546e7a":zoneColor} opacity=".7"/>
+                    <rect x="4"  y="22" width="3"  height="28" fill="#5d4037" opacity=".5"/>
+                    <rect x="37" y="22" width="3"  height="28" fill="#5d4037" opacity=".5"/>
+                    <rect x="4"  y="33" width="36" height="2"  fill="#5d4037" opacity=".4"/>
+                    <line x1="4" y1="22" x2="22" y2="50" stroke="#5d4037" strokeWidth="1.5" opacity=".3"/>
+                    <line x1="40" y1="22" x2="22" y2="50" stroke="#5d4037" strokeWidth="1.5" opacity=".3"/>
+                    {/* Steep roof — zone colour */}
+                    <polygon points="0,24 22,2 44,24" fill={zoneColor}/>
+                    <polygon points="3,24 22,5 41,24" fill={zoneColor} opacity=".7"/>
                     {/* Windows */}
-                    <rect x="7" y="26" width="10" height="10" rx="2"
-                      fill={locked?"#37474f":"#ffd54f"} opacity={locked?.3:.9}/>
-                    <rect x="27" y="26" width="10" height="10" rx="2"
-                      fill={locked?"#37474f":"#ffd54f"} opacity={locked?.3:.9}/>
+                    <rect x="7"  y="26" width="10" height="10" rx="2" fill={locked?"#b0bec5":"#ffd54f"} opacity={locked?.5:.9}/>
+                    <rect x="27" y="26" width="10" height="10" rx="2" fill={locked?"#b0bec5":"#ffd54f"} opacity={locked?.5:.9}/>
                     {/* Window cross */}
-                    {!locked&&<>
-                      <rect x="11" y="26" width="1.5" height="10" fill="#a1887f" opacity=".5"/>
-                      <rect x="7"  y="30" width="10"  height="1.5" fill="#a1887f" opacity=".5"/>
-                      <rect x="31" y="26" width="1.5" height="10" fill="#a1887f" opacity=".5"/>
-                      <rect x="27" y="30" width="10"  height="1.5" fill="#a1887f" opacity=".5"/>
-                    </>}
+                    <rect x="11" y="26" width="1.5" height="10" fill="#a1887f" opacity=".5"/>
+                    <rect x="7"  y="30" width="10"  height="1.5" fill="#a1887f" opacity=".5"/>
+                    <rect x="31" y="26" width="1.5" height="10" fill="#a1887f" opacity=".5"/>
+                    <rect x="27" y="30" width="10"  height="1.5" fill="#a1887f" opacity=".5"/>
                     {/* Door */}
-                    <rect x="16" y="36" width="12" height="14" rx="4"
-                      fill={locked?"#263238":"#6d4c41"}/>
+                    <rect x="16" y="36" width="12" height="14" rx="4" fill="#6d4c41"/>
                     {/* Door handle */}
-                    {!locked&&<circle cx="26" cy="43" r="1.5" fill="#fdd835"/>}
+                    <circle cx="26" cy="43" r="1.5" fill="#fdd835" opacity={locked?.4:1}/>
                     {/* Chimney */}
+                    <rect x="30" y="6" width="6" height="12" rx="1" fill="#8d6e63"/>
+                    <ellipse cx="33" cy="6" rx="5" ry="3" fill="#616161"/>
+                    {/* Smoke only when unlocked */}
                     {!locked&&<>
-                      <rect x="30" y="6" width="6" height="12" rx="1" fill="#8d6e63"/>
-                      <ellipse cx="33" cy="6" rx="5" ry="3" fill="#616161"/>
+                      <ellipse cx="33" cy="2" rx="4" ry="3" fill="#cfd8dc" opacity=".6"/>
+                      <ellipse cx="35" cy="-2" rx="3" ry="2.5" fill="#cfd8dc" opacity=".4"/>
                     </>}
-                    {/* Lock */}
+                    {/* Dock posts for river building */}
+                    {b.zone==="openings"&&<>
+                      <rect x="6"  y="46" width="4" height="12" rx="1" fill="#5d4037" opacity=".8"/>
+                      <rect x="18" y="50" width="4" height="10" rx="1" fill="#5d4037" opacity=".8"/>
+                      <rect x="30" y="48" width="4" height="11" rx="1" fill="#5d4037" opacity=".8"/>
+                      <rect x="4"  y="55" width="36" height="3"  rx="1" fill="#8d6e63" opacity=".7"/>
+                    </>}
+                    {/* Lock badge */}
                     {locked&&(
-                      <text x="22" y="40" textAnchor="middle" fontSize="14">🔒</text>
+                      <g>
+                        <circle cx="22" cy="38" r="9" fill="rgba(0,0,0,.5)"/>
+                        <text x="22" y="42" textAnchor="middle" fontSize="12">🔒</text>
+                      </g>
                     )}
-                    {/* Zone emoji badge on roof */}
+                    {/* Zone emoji on roof — only when unlocked */}
                     {!locked&&(
                       <text x="22" y="18" textAnchor="middle" fontSize="11">{b.emoji}</text>
                     )}
