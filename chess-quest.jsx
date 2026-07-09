@@ -1139,27 +1139,37 @@ const PUZZLES=[
 // ═══════════════════════════════════════════════════════════
 // MASCOT — Knight character SVG, reacts to game state
 // ═══════════════════════════════════════════════════════════
-function KnightMascot({mood="happy", size=80, animate=false}){
-  const expressions = {
-    happy:      {eyes:"😊", bg:"#4a90e2", extra:""},
-    excited:    {eyes:"🤩", bg:"#e74c3c", extra:""},
-    thinking:   {eyes:"🤔", bg:"#8e44ad", extra:""},
-    celebrating:{eyes:"🎉", bg:"#f39c12", extra:""},
-    sad:        {eyes:"😢", bg:"#636e72", extra:""},
-    encouraging:{eyes:"💪", bg:"#27ae60", extra:""},
+function KnightMascot({mood="happy", size=80, animate=false, color=null}){
+  // color themes — pass a theme name for different armour colours
+  const themes = {
+    blue:   {helmet1:"#74b9ff", helmet2:"#2980b9", body1:"#2980b9", body2:"#3498db", dark:"#1a5276", plume1:"#e74c3c", plume2:"#ff6b6b"},
+    pink:   {helmet1:"#fd79a8", helmet2:"#e84393", body1:"#e84393", body2:"#fd79a8", dark:"#8c0044", plume1:"#fdcb6e", plume2:"#ffeaa7"},
+    purple: {helmet1:"#a29bfe", helmet2:"#6c5ce7", body1:"#6c5ce7", body2:"#a29bfe", dark:"#3d1f99", plume1:"#fd79a8", plume2:"#fdcb6e"},
+    green:  {helmet1:"#55efc4", helmet2:"#00b894", body1:"#00b894", body2:"#55efc4", dark:"#005c49", plume1:"#ffeaa7", plume2:"#fdcb6e"},
+    orange: {helmet1:"#ffeaa7", helmet2:"#fdcb6e", body1:"#e67e22", body2:"#f39c12", dark:"#784212", plume1:"#e74c3c", plume2:"#ff6b6b"},
+    red:    {helmet1:"#ff7675", helmet2:"#e74c3c", body1:"#e74c3c", body2:"#ff7675", dark:"#7b1a1a", plume1:"#ffeaa7", plume2:"#f1c40f"},
   };
-  const e = expressions[mood] || expressions.happy;
+  const t = themes[color] || themes.blue;
+
+  const expressions = {
+    happy:      {eyes:"😊", extra:""},
+    excited:    {eyes:"🤩", extra:""},
+    thinking:   {eyes:"🤔", extra:""},
+    celebrating:{eyes:"🎉", extra:""},
+    sad:        {eyes:"😢", extra:""},
+    encouraging:{eyes:"💪", extra:""},
+  };
+  const gid = `helmetG_${color||"blue"}_${mood}`;
   return (
     <div style={{
       width:size, height:size, position:"relative", flexShrink:0,
       animation: animate ? "mascotBounce 0.6s cubic-bezier(.34,1.56,.64,1)" : "mascotFloat 3s ease-in-out infinite",
     }}>
-      {/* Knight helmet body */}
       <svg viewBox="0 0 80 80" width={size} height={size}>
         <defs>
-          <radialGradient id="helmetG" cx="40%" cy="30%">
-            <stop offset="0%" stopColor="#74b9ff"/>
-            <stop offset="100%" stopColor="#2980b9"/>
+          <radialGradient id={gid} cx="40%" cy="30%">
+            <stop offset="0%" stopColor={t.helmet1}/>
+            <stop offset="100%" stopColor={t.helmet2}/>
           </radialGradient>
           <radialGradient id="faceG" cx="40%" cy="35%">
             <stop offset="0%" stopColor="#ffeaa7"/>
@@ -1167,15 +1177,15 @@ function KnightMascot({mood="happy", size=80, animate=false}){
           </radialGradient>
         </defs>
         {/* Body/armour */}
-        <ellipse cx="40" cy="68" rx="22" ry="14" fill="#1a5276" opacity=".5"/>
-        <rect x="22" y="52" width="36" height="22" rx="8" fill="#2980b9"/>
-        <rect x="26" y="52" width="28" height="8" fill="#3498db"/>
+        <ellipse cx="40" cy="68" rx="22" ry="14" fill={t.dark} opacity=".5"/>
+        <rect x="22" y="52" width="36" height="22" rx="8" fill={t.body1}/>
+        <rect x="26" y="52" width="28" height="8" fill={t.body2}/>
         {/* Armour details */}
-        <rect x="36" y="54" width="8" height="18" fill="#1a5276" opacity=".4" rx="2"/>
-        <rect x="22" y="58" width="36" height="2" fill="#1a5276" opacity=".3"/>
+        <rect x="36" y="54" width="8" height="18" fill={t.dark} opacity=".4" rx="2"/>
+        <rect x="22" y="58" width="36" height="2" fill={t.dark} opacity=".3"/>
         {/* Helmet */}
-        <ellipse cx="40" cy="36" rx="22" ry="24" fill="url(#helmetG)"/>
-        <rect x="18" y="28" width="44" height="20" rx="4" fill="url(#helmetG)"/>
+        <ellipse cx="40" cy="36" rx="22" ry="24" fill={`url(#${gid})`}/>
+        <rect x="18" y="28" width="44" height="20" rx="4" fill={`url(#${gid})`}/>
         {/* Visor opening - face */}
         <rect x="24" y="30" width="32" height="22" rx="10" fill="url(#faceG)"/>
         {/* Eyes */}
@@ -1188,11 +1198,11 @@ function KnightMascot({mood="happy", size=80, animate=false}){
         {/* Smile */}
         <path d={mood==="sad"?"M32 46 Q40 42 48 46":"M32 44 Q40 50 48 44"} fill="none" stroke="#e17055" strokeWidth="2.5" strokeLinecap="round"/>
         {/* Helmet plume */}
-        <ellipse cx="40" cy="14" rx="6" ry="14" fill="#e74c3c"/>
-        <ellipse cx="40" cy="14" rx="4" ry="12" fill="#ff6b6b"/>
+        <ellipse cx="40" cy="14" rx="6" ry="14" fill={t.plume1}/>
+        <ellipse cx="40" cy="14" rx="4" ry="12" fill={t.plume2}/>
         {/* Helmet top ridge */}
-        <rect x="34" y="12" width="12" height="8" rx="3" fill="#1a5276"/>
-        {/* Stars for excited */}
+        <rect x="34" y="12" width="12" height="8" rx="3" fill={t.dark}/>
+        {/* Stars for celebrating */}
         {mood==="celebrating"&&<>
           <text x="8" y="20" fontSize="12" style={{animation:"spin 1s linear infinite"}}>⭐</text>
           <text x="56" y="18" fontSize="10" style={{animation:"spin 1.5s linear infinite reverse"}}>✨</text>
@@ -2610,19 +2620,19 @@ function ChessWorld(){
         <div style={{fontFamily:'"Fredoka One",sans-serif',fontSize:56,fontWeight:900,fontStyle:"italic",background:"linear-gradient(180deg,#fff 0%,#ffe566 40%,#ffaa22 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1,lineHeight:1.1,filter:"drop-shadow(0 4px 0 rgba(0,0,0,.4))",marginBottom:8}}>Chess Quest</div>
         {/* Tagline */}
         <div style={{fontSize:14,color:"rgba(255,255,255,.7)",fontWeight:700,letterSpacing:1,marginBottom:32}}>🏰 LEARN · PLAY · MASTER ⚔️</div>
-        {/* Three characters — balanced trio */}
+        {/* Three characters — balanced colourful trio */}
         <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:12,marginBottom:32}}>
-          {/* Left character — sleepy/thinking */}
-          <div style={{animation:"mascotFloat 3.4s ease-in-out infinite",animationDelay:".4s",opacity:.85}}>
-            <KnightMascot mood="thinking" size={72} animate={true}/>
+          {/* Left — pink girl knight, thinking */}
+          <div style={{animation:"mascotFloat 3.4s ease-in-out infinite",animationDelay:".4s"}}>
+            <KnightMascot mood="thinking" size={72} animate={true} color="pink"/>
           </div>
-          {/* Centre — main hero, bigger */}
+          {/* Centre — blue knight, happy hero */}
           <div style={{animation:"mascotFloat 3s ease-in-out infinite"}}>
-            <KnightMascot mood="happy" size={100} animate={true}/>
+            <KnightMascot mood="happy" size={100} animate={true} color="blue"/>
           </div>
-          {/* Right character — celebrating */}
-          <div style={{animation:"mascotFloat 2.7s ease-in-out infinite",animationDelay:".7s",opacity:.85}}>
-            <KnightMascot mood="celebrating" size={72} animate={true}/>
+          {/* Right — purple knight, celebrating */}
+          <div style={{animation:"mascotFloat 2.7s ease-in-out infinite",animationDelay:".7s"}}>
+            <KnightMascot mood="celebrating" size={72} animate={true} color="purple"/>
           </div>
         </div>
         {/* Start button */}
