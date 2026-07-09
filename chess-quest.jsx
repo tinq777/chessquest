@@ -2207,7 +2207,7 @@ function LoginScreen({onLogin}){
       else if(e.code==="auth/wrong-password") setError("Wrong password. Try again.");
       else if(e.code==="auth/user-not-found") setError("No account found. Sign up instead!");
       else if(e.code==="auth/weak-password") setError("Password must be at least 6 characters.");
-      else setError("Something went wrong. Try again.");
+      else setError((e.code||"") + " " + (e.message||"Something went wrong."));
     }
     setLoading(false);
   };
