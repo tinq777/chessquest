@@ -2449,8 +2449,8 @@ function ChessWorld(){
 
   // Profile system
   const [profiles,setProfiles]=useState([
-    {name:"Alex",  avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0},
-    {name:"Sam",   avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0},
+    {name:"Player 1",avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0},
+    {name:"Player 2",avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0},
   ]);
   const [activeProfile,setActiveProfile]=useState(null); // null = profile select screen
 
@@ -2497,6 +2497,7 @@ function ChessWorld(){
   const [puzzleSource,setPuzzleSource]=useState("zones");
   const [zoneCompleteData,setZoneCompleteData]=useState(null);
 
+  const [showSplash,setShowSplash]=useState(true);
   const [confirmLeavePlay,setConfirmLeavePlay]=useState(false);
   const [showSettings,setShowSettings]=useState(false);
 
@@ -2512,6 +2513,58 @@ function ChessWorld(){
   const [playThinking,setPlayThinking]=useState(false);
   const [playMsg,setPlayMsg]=useState("You play White! Tap a piece to start! 🎮");
   const [playMood,setPlayMood]=useState("happy");
+
+  // Show splash screen on first visit
+  if(showSplash) return(
+    <div style={{height:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",position:"relative",overflow:"hidden",fontFamily:'"Fredoka One","Nunito",-apple-system,sans-serif'}}>
+      {/* Background */}
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,#0d1b4b 0%,#1a2a6a 40%,#0f4c2a 100%)",zIndex:0}}/>
+      {/* Stars */}
+      {[...Array(20)].map((_,i)=>(
+        <div key={i} style={{position:"absolute",left:`${(i*47+13)%100}%`,top:`${(i*31+7)%55}%`,width:i%4===0?4:2,height:i%4===0?4:2,borderRadius:"50%",background:"#fff",opacity:.4+Math.sin(i)*.4,animation:`pulse ${1.5+i%3}s ease-in-out infinite`,animationDelay:`${i*.15}s`,zIndex:1}}/>
+      ))}
+      {/* Floating pieces */}
+      {["♟","♞","♝","♜","♛"].map((p,i)=>(
+        <div key={i} style={{position:"absolute",left:`${[8,78,18,65,88][i]}%`,top:`${[15,8,72,78,45][i]}%`,fontSize:28+i*4,opacity:.08,color:"#fff",animation:`mascotFloat ${3+i}s ease-in-out infinite`,animationDelay:`${i*.6}s`,zIndex:1,userSelect:"none"}}>{p}</div>
+      ))}
+      {/* Content */}
+      <div style={{position:"relative",zIndex:2,textAlign:"center",maxWidth:320,width:"100%"}}>
+        {/* Animated logo */}
+        <div style={{marginBottom:8}}>
+          <div style={{position:"relative",display:"inline-block"}}>
+            <div style={{position:"absolute",inset:-16,borderRadius:"50%",background:"radial-gradient(circle,rgba(241,196,15,.4) 0%,transparent 70%)",animation:"pulse 2s ease-in-out infinite"}}/>
+            <div style={{fontSize:90,display:"inline-block",filter:"drop-shadow(0 6px 24px rgba(241,196,15,.7))",animation:"logoBounce 2.5s ease-in-out infinite",lineHeight:1}}>♟️</div>
+          </div>
+        </div>
+        {/* Title */}
+        <div style={{fontFamily:'"Fredoka One",sans-serif',fontSize:56,fontWeight:900,fontStyle:"italic",background:"linear-gradient(180deg,#fff 0%,#ffe566 40%,#ffaa22 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1,lineHeight:1.1,filter:"drop-shadow(0 4px 0 rgba(0,0,0,.4))",marginBottom:8}}>Chess Quest</div>
+        {/* Tagline */}
+        <div style={{fontSize:14,color:"rgba(255,255,255,.7)",fontWeight:700,letterSpacing:1,marginBottom:32}}>🏰 LEARN · PLAY · MASTER ⚔️</div>
+        {/* Knight mascot */}
+        <div style={{marginBottom:32,animation:"mascotFloat 3s ease-in-out infinite"}}>
+          <KnightMascot mood="happy" size={100} animate={true}/>
+        </div>
+        {/* Start button */}
+        <button
+          onClick={()=>{SFX.tap();setShowSplash(false);}}
+          style={{
+            background:"linear-gradient(135deg,#f1c40f,#e67e22)",
+            border:"none",borderRadius:24,padding:"18px 48px",
+            fontSize:20,fontWeight:900,color:"#1a1a2e",
+            boxShadow:"0 8px 0 #d4ac0d, 0 12px 32px rgba(241,196,15,.4)",
+            cursor:"pointer",letterSpacing:.5,
+            animation:"bounceIn .6s cubic-bezier(.34,1.56,.64,1) .3s both",
+            display:"inline-flex",alignItems:"center",gap:10,
+          }}>
+          <span>▶</span> Let's Play!
+        </button>
+        <div style={{fontSize:11,color:"rgba(255,255,255,.35)",marginTop:16,fontWeight:700}}>
+          Tap to begin your chess adventure
+        </div>
+      </div>
+      <GlobalStyles/>
+    </div>
+  );
 
   // Show profile select if no active profile
   if(activeProfile===null) return(
