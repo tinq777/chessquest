@@ -157,12 +157,15 @@ const getRank=xp=>[...RANKS].reverse().find(r=>xp>=r.min)||RANKS[0];
 const getNextRank=xp=>{const i=RANKS.findIndex(r=>r.min>xp);return i>=0?RANKS[i]:null;};
 
 const ZONES=[
-  {id:"pieces",  label:"Piece Power",  emoji:"♞",  color:"#e74c3c", light:"#ff6b6b", bg:"#c0392b", desc:"Learn how pieces move!",        stars:6},
-  {id:"openings",label:"Openings",     emoji:"🏰", color:"#27ae60", light:"#55efc4", bg:"#1e8449", desc:"Start the game like a champion!", stars:6},
-  {id:"tactics", label:"Tactics",      emoji:"⚔️",  color:"#f39c12", light:"#ffd93d", bg:"#e67e22", desc:"Win pieces for free!",           stars:8, locked:true},
-  {id:"strategy",label:"Strategy",     emoji:"🧠", color:"#2980b9", light:"#74b9ff", bg:"#1a5276", desc:"Think like a pro!",              stars:8, locked:true},
-  {id:"endgame", label:"Endgame",      emoji:"👑", color:"#8e44ad", light:"#a29bfe", bg:"#6c3483", desc:"How to finish and win!",         stars:6, locked:true},
-  {id:"rush",    label:"Puzzle Rush",  emoji:"⚡", color:"#e84393", light:"#fd79a8", bg:"#c0136e", desc:"Speed challenges — think fast!",  stars:6, locked:true},
+  {id:"pieces",  label:"Piece Power",  emoji:"♞", color:"#e74c3c", light:"#ff7675", bg:"#c0392b", desc:"Learn how each piece moves!",    locked:false},
+  {id:"pawns",   label:"Pawn Kingdom", emoji:"♟️", color:"#e67e22", light:"#ffd93d", bg:"#d35400", desc:"Pawns are mighty — use them!",    locked:true},
+  {id:"openings",label:"Open Strong",  emoji:"🏰", color:"#27ae60", light:"#55efc4", bg:"#1e8449", desc:"Start your game like a champ!",   locked:true},
+  {id:"tactics", label:"Tactics",      emoji:"⚔️",  color:"#f39c12", light:"#ffd93d", bg:"#e67e22", desc:"Win pieces for free!",           locked:true},
+  {id:"checkmate",label:"Checkmate Hunt",emoji:"🎯",color:"#8e44ad", light:"#a29bfe", bg:"#6c3483", desc:"Hunt down the King!",            locked:true},
+  {id:"strategy",label:"Strategy",     emoji:"🧠", color:"#2980b9", light:"#74b9ff", bg:"#1a5276", desc:"Think like a pro!",               locked:true},
+  {id:"endgame", label:"Endgame",      emoji:"👑", color:"#16a085", light:"#81ecec", bg:"#0e6655", desc:"Finish the game and win!",        locked:true},
+  {id:"master",  label:"Master Moves", emoji:"🌟", color:"#2c3e50", light:"#b2bec3", bg:"#1a252f", desc:"Elite chess challenges!",         locked:true},
+  {id:"rush",    label:"Puzzle Rush",  emoji:"⚡", color:"#e84393", light:"#fd79a8", bg:"#c0136e", desc:"Speed challenges — think fast!",  locked:true},
 ];
 
 const PUZZLES=[
@@ -243,7 +246,7 @@ const PUZZLES=[
     hint:"Knights move in an L: 2 squares one way, 1 square the other!",xp:20},
 
   // Puzzle 5: Centre control — move e2-e4
-  {id:5,zone:"openings",title:"Control the Centre!",desc:"Move your pawn two squares forward to take control of the centre!",emoji:"🏰",
+  {id:5,zone:"pawns",title:"Control the Centre!",desc:"Move your pawn two squares forward to take control of the centre!",emoji:"🏰",
     board:INIT(),
     solution:{from:{r:6,c:4},to:{r:4,c:4}},
     hint:"The best first moves go to the middle — e4 or d4!",xp:20},
@@ -320,7 +323,7 @@ const PUZZLES=[
   // Clean setup: bk=h8(0,7), black pawns on g7(1,6) and f7(1,5) blocking escape
   // wq=a8(0,0) moves to h8(0,7) — checkmate along rank!
   // wk=a1(7,0) to avoid stalemate. bk trapped by own pawns.
-  {id:10,zone:"tactics",title:"Back Rank Mate!",desc:"Slide your Queen along the back rank to checkmate the King!",emoji:"💥",
+  {id:10,zone:"checkmate",title:"Back Rank Mate!",desc:"Slide your Queen along the back rank to checkmate the King!",emoji:"💥",
     board:[
       ["wq",null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,"bp","bp","bp"],
@@ -376,7 +379,7 @@ const PUZZLES=[
   // wn needs to jump to f7(1,5) — delivers check AND covers g8 and h8
   // From f7, knight attacks: d6,d8,e5,g5,h6,h8 — covers h8=king, so check
   // wk=a1(7,0) for legality
-  {id:13,zone:"rush",title:"Smothered Mate!",desc:"The King is trapped by his own pieces! Jump your Knight in for checkmate!",emoji:"⚡",
+  {id:13,zone:"master",title:"Smothered Mate!",desc:"The King is trapped by his own pieces! Jump your Knight in for checkmate!",emoji:"⚡",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,"bp","bp"],
@@ -401,7 +404,7 @@ const PUZZLES=[
   // Can br take wq? br at d8 is 4 squares away, and the queen IS on d4 which is on d-file — yes br could take if unprotected
   // Protect wq: put wp at c3(5,2) — wait, we just need the queen to fork 2 pieces
   // The POINT is it's a fork regardless — black can only save one piece
-  {id:14,zone:"rush",title:"Queen Fork!",desc:"Move your Queen to attack TWO pieces at once — a fork!",emoji:"⚡",
+  {id:14,zone:"master",title:"Queen Fork!",desc:"Move your Queen to attack TWO pieces at once — a fork!",emoji:"⚡",
     board:[
       [null,null,null,"br",null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -431,7 +434,7 @@ const PUZZLES=[
   // e8(0,4): attacked by wq on f7? Diagonally yes. g8(0,6): attacked by wq on f7 diag yes
   // e7(1,4): attacked by wq on f7 along rank. g7(1,6): attacked by wq on f7 along rank
   // So ALL escape squares covered — CHECKMATE! Just need wk not in stalemate position
-  {id:15,zone:"rush",title:"File Mate!",desc:"Slide your Queen straight up the f-file for checkmate!",emoji:"⚡",
+  {id:15,zone:"master",title:"File Mate!",desc:"Slide your Queen straight up the f-file for checkmate!",emoji:"⚡",
     board:[
       [null,null,null,null,null,"bk",null,null],
       [null,null,null,null,null,null,null,null],
@@ -448,7 +451,7 @@ const PUZZLES=[
   // PR4: Knight outpost — move knight to dominant central square
   // wn=g1(7,6) moves to e5(3,4) — powerful central square
   // Show it attacks many squares from there
-  {id:16,zone:"rush",title:"Knight Outpost!",desc:"Plant your Knight in the centre — it controls the whole board from e5!",emoji:"⚡",
+  {id:16,zone:"master",title:"Knight Outpost!",desc:"Plant your Knight in the centre — it controls the whole board from e5!",emoji:"⚡",
     board:[
       [null,null,null,null,"bk",null,null,null],
       ["bp","bp","bp",null,"bp","bp","bp","bp"],
@@ -464,7 +467,7 @@ const PUZZLES=[
     hint:"Move the Knight toward the centre — it controls far more squares there!",xp:35},
 
   // ── PIECE POWER (additional) ──
-  {id:17,zone:"pieces",title:"Queen Captures!",desc:"Slide your Queen up the d-file to capture the enemy Queen!",emoji:"♛",
+  {id:17,zone:"checkmate",title:"Queen Captures!",desc:"Slide your Queen up the d-file to capture the enemy Queen!",emoji:"♛",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -478,7 +481,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:3},to:{r:3,c:3}},
     hint:"Queens move along files — slide straight up to d5!",xp:25},
 
-  {id:18,zone:"pieces",title:"Pawn Promotion!",desc:"Push your pawn all the way to the end to become a Queen!",emoji:"👑",
+  {id:18,zone:"pawns",title:"Pawn Promotion!",desc:"Push your pawn all the way to the end to become a Queen!",emoji:"👑",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,"wp",null,null,null],
@@ -492,7 +495,7 @@ const PUZZLES=[
     solution:{from:{r:1,c:4},to:{r:0,c:4}},
     hint:"Pawns that reach the other end become Queens — push to e8!",xp:25},
 
-  {id:19,zone:"pieces",title:"Rook Checkmate!",desc:"Slide your Rook along the back rank to checkmate the King!",emoji:"♖",
+  {id:19,zone:"checkmate",title:"Rook Checkmate!",desc:"Slide your Rook along the back rank to checkmate the King!",emoji:"♖",
     board:[
       ["bk",null,null,null,null,null,null,"wr"],
       ["bp","bn","wk",null,null,null,null,null],
@@ -549,7 +552,7 @@ const PUZZLES=[
     hint:"The Rook sweeps the whole rank — the King has nowhere to go!",xp:35},
 
   // ── OPENINGS (additional) ──
-  {id:23,zone:"openings",title:"d4 Opening!",desc:"Control the centre with your d-pawn — push it two squares forward!",emoji:"🏰",
+  {id:23,zone:"pawns",title:"d4 Opening!",desc:"Control the centre with your d-pawn — push it two squares forward!",emoji:"🏰",
     board:[
       ["br","bn","bb","bq","bk","bb","bn","br"],
       ["bp","bp","bp","bp","bp","bp","bp","bp"],
@@ -605,7 +608,7 @@ const PUZZLES=[
     solution:{from:{r:5,c:2},to:{r:3,c:3}},
     hint:"Knights are strongest in the centre — d5 is a great outpost!",xp:25},
 
-  {id:27,zone:"openings",title:"Central Capture!",desc:"Capture the pawn on d5 to control the centre!",emoji:"⚔️",
+  {id:27,zone:"pawns",title:"Central Capture!",desc:"Capture the pawn on d5 to control the centre!",emoji:"⚔️",
     board:[
       ["br","bn","bb","bq","bk","bb","bn","br"],
       ["bp","bp","bp",null,"bp","bp","bp","bp"],
@@ -690,7 +693,7 @@ const PUZZLES=[
     solution:{from:{r:4,c:3},to:{r:2,c:4}},
     hint:"Move the Knight out of the way — it uncovers your Bishop's attack on the King!",xp:40},
 
-  {id:33,zone:"tactics",title:"Capture with Check!",desc:"Take the Bishop AND give check at the same time!",emoji:"💥",
+  {id:33,zone:"checkmate",title:"Capture with Check!",desc:"Take the Bishop AND give check at the same time!",emoji:"💥",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,"bk",null],
@@ -704,7 +707,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:0},to:{r:3,c:4}},
     hint:"Your Queen can capture on e5 and attack the King in the same move!",xp:35},
 
-  {id:34,zone:"tactics",title:"Pin and Win!",desc:"The Rook is pinned to the King — capture it for free!",emoji:"📌",
+  {id:34,zone:"checkmate",title:"Pin and Win!",desc:"The Rook is pinned to the King — capture it for free!",emoji:"📌",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -719,7 +722,7 @@ const PUZZLES=[
     hint:"A pinned piece can't move — the Rook on e5 is stuck, take it!",xp:35},
 
   // ── ENDGAME ──
-  {id:35,zone:"endgame",title:"Queen and King Mate!",desc:"Slide your Queen to b7 — the King is trapped in the corner!",emoji:"👑",
+  {id:35,zone:"checkmate",title:"Queen and King Mate!",desc:"Slide your Queen to b7 — the King is trapped in the corner!",emoji:"👑",
     board:[
       ["bk",null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -733,7 +736,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:1},to:{r:1,c:1}},
     hint:"The Queen on b7 gives check — the King at a8 has nowhere to go!",xp:40},
 
-  {id:36,zone:"endgame",title:"Promote to Win!",desc:"Push the pawn to e8 and promote it to a Queen!",emoji:"♛",
+  {id:36,zone:"pawns",title:"Promote to Win!",desc:"Push the pawn to e8 and promote it to a Queen!",emoji:"♛",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,"wp",null,null,null],
@@ -747,7 +750,7 @@ const PUZZLES=[
     solution:{from:{r:1,c:4},to:{r:0,c:4}},
     hint:"The pawn is one step from queening — push it!",xp:35},
 
-  {id:37,zone:"endgame",title:"Rook to b8!",desc:"Slide your Rook along the back rank — the King is cornered!",emoji:"♖",
+  {id:37,zone:"checkmate",title:"Rook to b8!",desc:"Slide your Rook along the back rank — the King is cornered!",emoji:"♖",
     board:[
       ["bk",null,null,null,null,null,null,"wr"],
       ["bp","bn","wk",null,null,null,null,null],
@@ -775,7 +778,7 @@ const PUZZLES=[
     solution:{from:{r:3,c:2},to:{r:4,c:3}},
     hint:"Activate your King in the endgame — it belongs in the centre!",xp:25},
 
-  {id:39,zone:"endgame",title:"Unstoppable Pawn!",desc:"Push the pawn to e8 — nothing can stop it becoming a Queen!",emoji:"♟️",
+  {id:39,zone:"pawns",title:"Unstoppable Pawn!",desc:"Push the pawn to e8 — nothing can stop it becoming a Queen!",emoji:"♟️",
     board:[
       [null,null,null,"wk",null,null,null,"bk"],
       [null,null,null,null,"wp",null,null,null],
@@ -831,7 +834,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:0},to:{r:7,c:3}},
     hint:"The Rook slides along rank 1 to d1 — the King on d5 is in check!",xp:30},
 
-  {id:43,zone:"endgame",title:"Pawn to the 7th!",desc:"Advance your pawn to e7 — one step from queening!",emoji:"♟️",
+  {id:43,zone:"pawns",title:"Pawn to the 7th!",desc:"Advance your pawn to e7 — one step from queening!",emoji:"♟️",
     board:[
       [null,null,null,null,null,null,"bk",null],
       [null,null,null,null,null,null,null,null],
@@ -960,7 +963,7 @@ const PUZZLES=[
     solution:{from:{r:3,c:1},to:{r:2,c:2}},
     hint:"Capture on c6 to create an isolated or backward pawn in Black's camp!",xp:30},
 
-  {id:52,zone:"strategy",title:"Rook Behind Passer!",desc:"Place your Rook behind the passed pawn — it supports and pushes it!",emoji:"♖",
+  {id:52,zone:"endgame",title:"Rook Behind Passer!",desc:"Place your Rook behind the passed pawn — it supports and pushes it!",emoji:"♖",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,null],
@@ -975,7 +978,7 @@ const PUZZLES=[
     targetSq:{r:5,c:3},
     hint:"Rooks belong BEHIND passed pawns — they push them from behind!",xp:30},
 
-  {id:53,zone:"strategy",title:"Win Material!",desc:"Your Queen can capture the undefended Rook — take it!",emoji:"💎",
+  {id:53,zone:"master",title:"Win Material!",desc:"Your Queen can capture the undefended Rook — take it!",emoji:"💎",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -989,7 +992,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:4},to:{r:3,c:4}},
     hint:"The Rook on e5 is hanging — grab it with your Queen!",xp:30},
 
-  {id:54,zone:"strategy",title:"Centralise the King!",desc:"In the endgame the King is powerful — march it toward the centre!",emoji:"♔",
+  {id:54,zone:"endgame",title:"Centralise the King!",desc:"In the endgame the King is powerful — march it toward the centre!",emoji:"♔",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -1046,7 +1049,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:7},to:{r:3,c:7}},
     hint:"The Rook on h5 is undefended — slide your Queen straight up and grab it!",xp:40},
 
-  {id:58,zone:"rush",title:"Rook and Knight Mate!",desc:"Slide your Rook to h7 — the Knight and Rook deliver checkmate!",emoji:"⚡",
+  {id:58,zone:"master",title:"Rook and Knight Mate!",desc:"Slide your Rook to h7 — the Knight and Rook deliver checkmate!",emoji:"⚡",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,"bp","bp"],
@@ -1060,7 +1063,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:7},to:{r:1,c:7}},
     hint:"The Rook to h7 captures the pawn and gives checkmate — the Knight covers g8!",xp:50},
 
-  {id:59,zone:"rush",title:"Queen with Check!",desc:"Capture the Bishop AND give check in the same move!",emoji:"⚡",
+  {id:59,zone:"master",title:"Queen with Check!",desc:"Capture the Bishop AND give check in the same move!",emoji:"⚡",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,"bb"],
@@ -1087,6 +1090,49 @@ const PUZZLES=[
     ],
     solution:{from:{r:0,c:7},to:{r:0,c:1}},
     hint:"The Queen sweeps the back rank to b8 — the King is trapped in the corner!",xp:50},
+
+  // ── RUSH ZONE additional puzzles (completing 9 zones × 7 = 63 total) ──
+  {id:61,zone:"rush",title:"Queen Strikes!",desc:"Slide your Queen to b2 — the King is trapped in the corner!",emoji:"⚡",
+    board:[
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,"wq",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["wk",null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["bk",null,null,null,null,null,null,null]
+    ],
+    solution:{from:{r:3,c:4},to:{r:6,c:1}},
+    hint:"The Queen swoops to b2 — the King has nowhere to run!",xp:50},
+
+  {id:62,zone:"rush",title:"Rook and Knight!",desc:"Slide your Rook to h7 — the Knight covers the escape square!",emoji:"⚡",
+    board:[
+      [null,null,null,null,null,null,null,"bk"],
+      [null,null,null,null,null,null,"bp","bp"],
+      [null,null,null,null,null,"wn",null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["wk",null,null,null,null,null,null,"wr"]
+    ],
+    solution:{from:{r:7,c:7},to:{r:1,c:7}},
+    hint:"Rook to h7 gives check and the Knight on f6 covers g8!",xp:50},
+
+  {id:63,zone:"rush",title:"Back Rank Lightning!",desc:"Zoom your Queen to b8 — checkmate in a flash!",emoji:"⚡",
+    board:[
+      ["bk",null,null,null,null,null,null,"wq"],
+      ["bp","bn","wk",null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null]
+    ],
+    solution:{from:{r:0,c:7},to:{r:0,c:1}},
+    hint:"The Queen slides along the back rank to b8 — the King is cornered!",xp:50},
 ];
 
 
@@ -1443,7 +1489,7 @@ function ZoneIcon({zone, size=70}){
 // ═══════════════════════════════════════════════════════════
 // HOME SCREEN — Reading Eggs style
 // ═══════════════════════════════════════════════════════════
-function HomeScreen({xp, streak, completedPuzzles, onNav, gems, playerName, playerAvatar, playerColor}){
+function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, playerName, playerAvatar, playerColor}){
   const rank = getRank(xp);
   const next = getNextRank(xp);
   const xpPct = next ? ((xp-rank.min)/(next.min-rank.min))*100 : 100;
@@ -1546,11 +1592,17 @@ function HomeScreen({xp, streak, completedPuzzles, onNav, gems, playerName, play
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,justifyItems:"center"}}>
             {ZONES.map(z=>(
               <button key={z.id}
-                onClick={()=>!z.locked&&onNav("zone:"+z.id)}
-                style={{background:"none",border:"none",cursor:z.locked?"default":"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0,opacity:z.locked?.4:1,width:"100%"}}>
+                onClick={()=>{
+                  const prevZ = ZONES[ZONES.indexOf(z)-1];
+                  const prevPs = prevZ ? PUZZLES.filter(p=>p.zone===prevZ.id) : [];
+                  const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
+                  const isLocked = ZONES.indexOf(z)>0 && prevD<prevPs.length;
+                  if(!isLocked) onNav("zone:"+z.id);
+                }}
+                style={{background:"none",border:"none",cursor:(()=>{const prevZ=ZONES[ZONES.indexOf(z)-1];const prevPs=prevZ?PUZZLES.filter(p=>p.zone===prevZ.id):[];const prevD=prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;return ZONES.indexOf(z)>0&&prevD<prevPs.length?"default":"pointer";})(),display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0,opacity:(()=>{const prevZ=ZONES[ZONES.indexOf(z)-1];const prevPs=prevZ?PUZZLES.filter(p=>p.zone===prevZ.id):[];const prevD=prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;return ZONES.indexOf(z)>0&&prevD<prevPs.length?.4:1;})(),width:"100%"}}>
                 <div style={{position:"relative",width:56,height:56}}>
                   <ZoneIcon zone={z} size={56}/>
-                  {z.locked&&(
+                  {(()=>{const prevZ=ZONES[ZONES.indexOf(z)-1];const prevPs=prevZ?PUZZLES.filter(p=>p.zone===prevZ.id):[];const prevD=prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;return ZONES.indexOf(z)>0&&prevD<prevPs.length;})()&&(
                     <div style={{position:"absolute",inset:0,borderRadius:56*.28,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🔒</div>
                   )}
                 </div>
@@ -1567,30 +1619,36 @@ function HomeScreen({xp, streak, completedPuzzles, onNav, gems, playerName, play
 // ═══════════════════════════════════════════════════════════
 // MAP SCREEN — Reading Eggs adventure map style
 // ═══════════════════════════════════════════════════════════
-function MapScreen({xp, completedPuzzles, onStartPuzzle, playerAvatar, playerColor}){
+function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAvatar, playerColor}){
 
   const youAreHere = (() => {
     for(let i=0; i<ZONES.length; i++){
-      if(ZONES[i].locked) return Math.max(0,i-1);
+      const prevZ2 = i>0 ? ZONES[i-1] : null;
+      const prevPs2 = prevZ2 ? PUZZLES.filter(p=>p.zone===prevZ2.id) : [];
+      const prevD2 = prevPs2.filter(p=>(completedIds||[]).includes(p.id)).length;
+      if(i>0 && prevD2 < prevPs2.length) return Math.max(0,i-1);
       const zonePuzzles = PUZZLES.filter(p=>p.zone===ZONES[i].id);
-      const done = zonePuzzles.filter(p=>completedPuzzles>=p.id).length;
+      const done = zonePuzzles.filter(p=>completedIds.includes(p.id)).length;
       if(done < zonePuzzles.length) return i;
     }
-    return ZONES.filter(z=>!z.locked).length-1;
+    return ZONES.length-1;
   })();
 
   // 6 zone positions in a winding S-curve within 320x520 canvas
+  // 9 nodes in S-curve for 9 zones
   const nodes=[
-    {x:220,y:530},  // 1 Piece Power   — bottom right
-    {x: 90,y:450},  // 2 Openings      — mid-low left
-    {x:220,y:365},  // 3 Tactics       — mid right
-    {x: 90,y:278},  // 4 Strategy      — mid-high left
-    {x:220,y:192},  // 5 Endgame       — upper right
-    {x: 90,y:115},  // 6 Puzzle Rush   — upper left, well below castle
+    {x:220,y:545},  // 1 Piece Power
+    {x: 90,y:480},  // 2 Pawn Kingdom
+    {x:220,y:415},  // 3 Open Strong
+    {x: 90,y:350},  // 4 Tactics
+    {x:220,y:285},  // 5 Checkmate Hunt
+    {x: 90,y:220},  // 6 Strategy
+    {x:220,y:158},  // 7 Endgame
+    {x: 90,y: 98},  // 8 Master Moves
+    {x:210,y: 48},  // 9 Puzzle Rush — near castle
   ];
 
-  // Smooth bezier S-curve through all 6 nodes
-  const pathD = `M220,530 C165,505 130,475 90,450 C55,425 155,390 220,365 C275,340 110,305 90,278 C65,252 160,218 220,192 C275,168 130,138 90,115`;
+  const pathD = `M220,545 C165,520 130,500 90,480 C55,460 165,435 220,415 C275,395 110,368 90,350 C65,330 165,305 220,285 C275,265 110,238 90,220 C65,200 165,175 220,158 C275,140 120,115 90,98 C60,80 165,65 210,48`;
 
   return (
     <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -1740,10 +1798,14 @@ function MapScreen({xp, completedPuzzles, onStartPuzzle, playerAvatar, playerCol
             {/* ── ZONE NODES ── */}
             {ZONES.map((z,i)=>{
               const n=nodes[i];
-              const locked=z.locked;
+              // Zone is unlocked if it's the first zone, or previous zone is fully completed
+              const prevZone = i>0 ? ZONES[i-1] : null;
+              const prevPuzzles = prevZone ? PUZZLES.filter(p=>p.zone===prevZone.id) : [];
+              const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+              const locked = i===0 ? false : prevDone < prevPuzzles.length;
               const isHere=i===youAreHere;
               const zonePuzzles=PUZZLES.filter(p=>p.zone===z.id);
-              const done=zonePuzzles.filter(p=>completedPuzzles>=p.id).length;
+              const done=zonePuzzles.filter(p=>completedIds.includes(p.id)).length;
               const pct=zonePuzzles.length?(done/zonePuzzles.length)*100:0;
 
               return(
@@ -2036,7 +2098,7 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
 // ═══════════════════════════════════════════════════════════
 // AWARDS SCREEN
 // ═══════════════════════════════════════════════════════════
-function AwardsScreen({xp, completedPuzzles, streak}){
+function AwardsScreen({xp, completedPuzzles, completedIds, streak}){
   const rank=getRank(xp);
   const awards=[
     {title:"First Move!",   desc:"Complete your first puzzle", icon:"🎯", earned:completedPuzzles>=1, color:"#e74c3c", shadow:"#c0392b"},
@@ -2172,7 +2234,7 @@ function AwardsScreen({xp, completedPuzzles, streak}){
 const AVATARS=["♟️","♞","♝","♜","♛","♚","🦁","🐯","🦊","🐸","🐧","🦄"];
 const PROFILE_COLORS=["#e74c3c","#3498db","#27ae60","#f39c12","#8e44ad","#e91e63"];
 
-const DEFAULT_PROFILE={name:"",avatar:"♟️",color:"#3498db",xp:0,gems:0,streak:0,completed:0};
+const DEFAULT_PROFILE={name:"",avatar:"♟️",color:"#3498db",xp:0,gems:0,streak:0,completedIds:[]};
 
 // Shared form used for both Add and Edit
 function ProfileForm({title, initial, onSave, onCancel, onDelete}){
@@ -2449,8 +2511,8 @@ function ChessWorld(){
 
   // Profile system
   const [profiles,setProfiles]=useState([
-    {name:"Player 1",avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0},
-    {name:"Player 2",avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0},
+    {name:"Player 1",avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completedIds:[]},
+    {name:"Player 2",avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completedIds:[]},
   ]);
   const [activeProfile,setActiveProfile]=useState(null); // null = profile select screen
 
@@ -2488,7 +2550,8 @@ function ChessWorld(){
   const xp        = profile?.xp        ?? 0;
   const gems      = profile?.gems       ?? 0;
   const streak    = profile?.streak     ?? 0;
-  const completed = profile?.completed  ?? 0;
+  const completedIds = profile?.completedIds ?? [];
+  const completed    = completedIds.length; // total count for display
 
   const [tab,setTab]=useState("home");
   const [activePuzzle,setActivePuzzle]=useState(null);
@@ -2496,6 +2559,7 @@ function ChessWorld(){
   const [xpPop,setXpPop]=useState(null);
   const [puzzleSource,setPuzzleSource]=useState("zones");
   const [zoneCompleteData,setZoneCompleteData]=useState(null);
+  const [showGameComplete,setShowGameComplete]=useState(false);
 
   const [showSplash,setShowSplash]=useState(true);
   const [confirmLeavePlay,setConfirmLeavePlay]=useState(false);
@@ -2587,8 +2651,11 @@ function ChessWorld(){
     }
   };
 
-  const earnXp=amount=>{
-    updateProfile({xp:xp+amount, gems:gems+amount, completed:completed+1});
+  const earnXp=(amount, puzzleId)=>{
+    const newIds = puzzleId && !completedIds.includes(puzzleId)
+      ? [...completedIds, puzzleId]
+      : completedIds;
+    updateProfile({xp:xp+amount, gems:gems+amount, completedIds:newIds});
     setXpPop(amount);
     setTimeout(()=>setXpPop(null),2500);
   };
@@ -2597,7 +2664,7 @@ function ChessWorld(){
     const zp=PUZZLES.filter(p=>p.zone===zoneId);
     if(!zp.length) return;
     // Pick first puzzle the player hasn't completed yet; fall back to first
-    const next = zp.find(p=>p.id>completed) || zp[0];
+    const next = zp.find(p=>!completedIds.includes(p.id)) || zp[0];
     setActivePuzzle(next);
     setPuzzleSource(source);
   };
@@ -2705,7 +2772,7 @@ function ChessWorld(){
               puzzle={activePuzzle}
               onBack={()=>{setActivePuzzle(null);setTab(puzzleSource);}}
               onComplete={earned=>{
-                earnXp(earned);
+                earnXp(earned, activePuzzle?.id);
                 const zonePuzzles=PUZZLES.filter(p=>p.zone===activePuzzle.zone);
                 const currentIdx=zonePuzzles.findIndex(p=>p.id===activePuzzle.id);
                 const nextPuzzle=zonePuzzles[currentIdx+1];
@@ -2714,8 +2781,15 @@ function ChessWorld(){
                 } else {
                   SFX.zoneComplete();
                   const zone = ZONES.find(z=>z.id===activePuzzle.zone);
-                  setZoneCompleteData({zoneName:zone?.label||"Zone", emoji:zone?.emoji||"🏆"});
-                  setActivePuzzle(null);
+                  const lastZone = ZONES[ZONES.length-1];
+                  if(zone?.id === lastZone?.id){
+                    // Last puzzle of the whole game!
+                    setActivePuzzle(null);
+                    setTimeout(()=>setShowGameComplete(true), 600);
+                  } else {
+                    setZoneCompleteData({zoneName:zone?.label||"Zone", emoji:zone?.emoji||"🏆"});
+                    setActivePuzzle(null);
+                  }
                 }
               }}
             />
@@ -2734,9 +2808,9 @@ function ChessWorld(){
               msg={playMsg} setMsg={setPlayMsg}
               mood={playMood} setMood={setPlayMood}
             />
-          : tab==="home"   ? <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color}/>
-          : tab==="zones"  ? <MapScreen  xp={xp} completedPuzzles={completed} onStartPuzzle={startZone} playerAvatar={profile.avatar} playerColor={profile.color}/>
-          : tab==="awards" ? <AwardsScreen xp={xp} completedPuzzles={completed} streak={streak}/>
+          : tab==="home"   ? <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} completedIds={completedIds} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color}/>
+          : tab==="zones"  ? <MapScreen  xp={xp} completedPuzzles={completed} completedIds={completedIds} onStartPuzzle={startZone} playerAvatar={profile.avatar} playerColor={profile.color}/>
+          : tab==="awards" ? <AwardsScreen xp={xp} completedPuzzles={completed} completedIds={completedIds} streak={streak}/>
           : null
         }
       </div>
@@ -2770,6 +2844,101 @@ function ChessWorld(){
           );
         })}
       </div>
+
+      {/* ── GAME COMPLETE OVERLAY ── */}
+      {showGameComplete&&(
+        <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          {/* Dark backdrop */}
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.85)"}}/>
+
+          {/* Confetti rain */}
+          {Array.from({length:40}).map((_,i)=>(
+            <div key={i} style={{
+              position:"absolute",
+              left:`${(i*7+3)%100}%`,
+              top:`-${10+Math.random()*10}%`,
+              fontSize:16+Math.floor(Math.random()*14),
+              animation:`confettiFall ${1.5+Math.random()*2}s ease-in forwards`,
+              animationDelay:`${Math.random()*2}s`,
+              pointerEvents:"none",
+              zIndex:501,
+            }}>{["⭐","🎉","✨","💎","🏆","🌟","🎊","⚡","♟️","♛","♞","🎯"][i%12]}</div>
+          ))}
+
+          {/* Card */}
+          <div style={{
+            position:"relative",zIndex:502,
+            background:"linear-gradient(145deg,#1a1040,#2d1b69)",
+            borderRadius:32,padding:"32px 24px",
+            maxWidth:340,width:"100%",textAlign:"center",
+            border:"4px solid #f1c40f",
+            boxShadow:"0 0 60px rgba(241,196,15,.4), 0 20px 0 rgba(0,0,0,.4)",
+            animation:"bounceIn .6s cubic-bezier(.34,1.56,.64,1)",
+          }}>
+            {/* Stars */}
+            {[["10%","8%"],["85%","6%"],["5%","80%"],["90%","75%"],["50%","3%"]].map(([l,t],i)=>(
+              <div key={i} style={{position:"absolute",left:l,top:t,fontSize:14,animation:`pulse ${1+i*.3}s ease-in-out infinite`,animationDelay:`${i*.2}s`,opacity:.6}}>✨</div>
+            ))}
+
+            {/* Bouncing trophy */}
+            <div style={{fontSize:80,display:"inline-block",animation:"trophyBounce .8s ease-in-out infinite",filter:"drop-shadow(0 0 30px rgba(241,196,15,.8))"}}>🏆</div>
+
+            {/* Title */}
+            <div style={{
+              fontFamily:'"Fredoka One",sans-serif',
+              fontSize:36,fontWeight:900,
+              background:"linear-gradient(180deg,#fff 0%,#ffe566 50%,#ffaa22 100%)",
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+              marginTop:8,marginBottom:4,lineHeight:1.1,
+              filter:"drop-shadow(0 3px 0 rgba(0,0,0,.4))",
+            }}>GRAND MASTER!</div>
+
+            <div style={{fontSize:16,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:16,lineHeight:1.5}}>
+              You completed ALL 60 puzzles!<br/>You're a true Chess Quest champion! ⚔️
+            </div>
+
+            {/* Stats */}
+            <div style={{display:"flex",gap:10,marginBottom:20,justifyContent:"center"}}>
+              <div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"10px 16px",textAlign:"center"}}>
+                <div style={{fontSize:22,fontWeight:900,color:"#f1c40f"}}>{xp}</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.6)",fontWeight:700}}>TOTAL XP</div>
+              </div>
+              <div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"10px 16px",textAlign:"center"}}>
+                <div style={{fontSize:22,fontWeight:900,color:"#74b9ff"}}>60</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.6)",fontWeight:700}}>PUZZLES</div>
+              </div>
+              <div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"10px 16px",textAlign:"center"}}>
+                <div style={{fontSize:22,fontWeight:900,color:"#00d9a3"}}>♔</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.6)",fontWeight:700}}>RANK: KING</div>
+              </div>
+            </div>
+
+            {/* Rank icons */}
+            <div style={{fontSize:24,letterSpacing:8,marginBottom:20,filter:"drop-shadow(0 2px 8px rgba(255,215,0,.6))"}}>♙♘♗♖♕♔</div>
+
+            {/* Knight mascot */}
+            <div style={{marginBottom:20}}>
+              <KnightMascot mood="celebrating" size={80} animate={true}/>
+            </div>
+
+            {/* Buttons */}
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>{SFX.tap();setShowGameComplete(false);setTab("awards");}} style={{
+                flex:1,background:"linear-gradient(135deg,#f1c40f,#e67e22)",
+                border:"none",borderRadius:16,padding:"14px",
+                fontSize:14,fontWeight:900,color:"#1a1a2e",cursor:"pointer",
+                boxShadow:"0 5px 0 #d4ac0d",
+              }}>🏆 Awards</button>
+              <button onClick={()=>{SFX.tap();setShowGameComplete(false);setTab("home");}} style={{
+                flex:1,background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",
+                border:"none",borderRadius:16,padding:"14px",
+                fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",
+                boxShadow:"0 5px 0 #4a3ab5",
+              }}>🏠 Home</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── SETTINGS PANEL ── */}
       {showSettings&&(
