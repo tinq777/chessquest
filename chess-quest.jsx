@@ -2101,14 +2101,20 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
 function AwardsScreen({xp, completedPuzzles, completedIds, streak}){
   const rank=getRank(xp);
   const awards=[
-    {title:"First Move!",   desc:"Complete your first puzzle", icon:"🎯", earned:completedPuzzles>=1, color:"#e74c3c", shadow:"#c0392b"},
-    {title:"Puzzle Solver", desc:"Complete 3 puzzles",         icon:"🧩", earned:completedPuzzles>=3, color:"#e67e22", shadow:"#ba6b09"},
-    {title:"On Fire!",      desc:"3 day streak",               icon:"🔥", earned:streak>=3,           color:"#f39c12", shadow:"#d4890a"},
-    {title:"Star Collector",desc:"Earn 100 XP",               icon:"⭐", earned:xp>=100,             color:"#f1c40f", shadow:"#d4ac0d"},
-    {title:"Knight Power",  desc:"Earn 250 XP",               icon:"♘", earned:xp>=250,             color:"#27ae60", shadow:"#1e8449"},
-    {title:"Tactics Ace",   desc:"Complete 4 puzzles",         icon:"⚔️", earned:completedPuzzles>=4, color:"#00b894", shadow:"#00896e"},
-    {title:"Champion!",     desc:"Earn 500 XP",               icon:"♖", earned:xp>=500,             color:"#8e44ad", shadow:"#6c3483"},
-    {title:"Grand Master",  desc:"Earn 1000 XP",              icon:"👑", earned:xp>=1000,            color:"#2980b9", shadow:"#1a5276"},
+    // Zone completion achievements (1 per zone = 9 total)
+    {title:"First Move!",     desc:"Complete your first puzzle",     icon:"🎯", earned:completedPuzzles>=1,  color:"#e74c3c", shadow:"#c0392b"},
+    {title:"Piece Master",    desc:"Complete Piece Power zone",      icon:"♞", earned:completedPuzzles>=7,  color:"#e67e22", shadow:"#ba6b09"},
+    {title:"Pawn Power",      desc:"Complete Pawn Kingdom zone",     icon:"♟️", earned:completedPuzzles>=14, color:"#f39c12", shadow:"#d4890a"},
+    {title:"Opening Expert",  desc:"Complete Open Strong zone",      icon:"🏰", earned:completedPuzzles>=21, color:"#27ae60", shadow:"#1e8449"},
+    {title:"Tactics Ace",     desc:"Complete Tactics zone",          icon:"⚔️", earned:completedPuzzles>=28, color:"#00b894", shadow:"#00896e"},
+    {title:"Checkmate Hunter",desc:"Complete Checkmate Hunt zone",   icon:"🎯", earned:completedPuzzles>=35, color:"#8e44ad", shadow:"#6c3483"},
+    {title:"Strategist",      desc:"Complete Strategy zone",         icon:"🧠", earned:completedPuzzles>=42, color:"#2980b9", shadow:"#1a5276"},
+    {title:"Endgame Pro",     desc:"Complete Endgame zone",          icon:"👑", earned:completedPuzzles>=49, color:"#16a085", shadow:"#0e6655"},
+    {title:"Master Class",    desc:"Complete Master Moves zone",     icon:"🌟", earned:completedPuzzles>=56, color:"#2c3e50", shadow:"#1a252f"},
+    {title:"Grand Master!",   desc:"Complete ALL 63 puzzles!",       icon:"🏆", earned:completedPuzzles>=63, color:"#f1c40f", shadow:"#d4ac0d"},
+    // XP milestones
+    {title:"Star Collector",  desc:"Earn 300 XP",                   icon:"⭐", earned:xp>=300,             color:"#f39c12", shadow:"#d4890a"},
+    {title:"Champion!",       desc:"Earn 1000 XP",                  icon:"♕", earned:xp>=1000,            color:"#8e44ad", shadow:"#6c3483"},
   ];
 
   const nextRank = getNextRank(xp);
@@ -2604,9 +2610,20 @@ function ChessWorld(){
         <div style={{fontFamily:'"Fredoka One",sans-serif',fontSize:56,fontWeight:900,fontStyle:"italic",background:"linear-gradient(180deg,#fff 0%,#ffe566 40%,#ffaa22 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1,lineHeight:1.1,filter:"drop-shadow(0 4px 0 rgba(0,0,0,.4))",marginBottom:8}}>Chess Quest</div>
         {/* Tagline */}
         <div style={{fontSize:14,color:"rgba(255,255,255,.7)",fontWeight:700,letterSpacing:1,marginBottom:32}}>🏰 LEARN · PLAY · MASTER ⚔️</div>
-        {/* Knight mascot */}
-        <div style={{marginBottom:32,animation:"mascotFloat 3s ease-in-out infinite"}}>
-          <KnightMascot mood="happy" size={100} animate={true}/>
+        {/* Three characters — balanced trio */}
+        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:12,marginBottom:32}}>
+          {/* Left character — sleepy/thinking */}
+          <div style={{animation:"mascotFloat 3.4s ease-in-out infinite",animationDelay:".4s",opacity:.85}}>
+            <KnightMascot mood="thinking" size={72} animate={true}/>
+          </div>
+          {/* Centre — main hero, bigger */}
+          <div style={{animation:"mascotFloat 3s ease-in-out infinite"}}>
+            <KnightMascot mood="happy" size={100} animate={true}/>
+          </div>
+          {/* Right character — celebrating */}
+          <div style={{animation:"mascotFloat 2.7s ease-in-out infinite",animationDelay:".7s",opacity:.85}}>
+            <KnightMascot mood="celebrating" size={72} animate={true}/>
+          </div>
         </div>
         {/* Start button */}
         <button
