@@ -1709,7 +1709,10 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
   ];
 
   // Stone road winding through the village
-  const roadPath = "M240,545 C200,525 140,510 70,490 C30,475 50,445 90,428 C150,408 240,400 240,400 C270,385 255,360 210,348 C160,335 60,340 65,340 C30,328 42,300 80,288 C130,272 235,278 235,278 C268,265 252,238 210,228 C165,218 60,222 70,222 C35,210 48,185 88,174 C138,160 228,165 228,165 C258,153 248,128 208,118 C170,108 68,112 75,112 C50,102 80,72 160,58";
+  // Road split into two segments — bottom village + short approach to castle gate
+  // The gap in the middle is hidden behind the castle hill
+  const roadBottom = "M240,545 C200,525 140,510 70,490 C30,475 50,445 90,428 C150,408 240,400 240,400 C270,385 255,360 210,348 C160,335 60,340 65,340 C30,328 42,300 80,288 C130,272 235,278 235,278 C268,265 252,238 210,228 C165,218 60,222 70,222 C35,210 48,190 85,178";
+  const roadTop    = "M228,170 C258,158 245,140 200,130";
 
   return(
     <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -1758,10 +1761,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
               <feGaussianBlur stdDeviation="4" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
-            {/* Clip road — excludes castle hill area using evenodd rule */}
-            <clipPath id="roadClip" clipPathUnits="userSpaceOnUse">
-              <path fillRule="evenodd" d="M-10,-10 L330,-10 L330,600 L-10,600 Z M50,38 C50,38 80,15 160,15 C240,15 270,38 270,95 C270,152 230,175 160,175 C90,175 50,152 50,95 Z"/>
-            </clipPath>
+
           </defs>
 
           {/* ── SKY ── */}
@@ -1899,12 +1899,14 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             <polygon points="8,1 15,4 8,7" fill="#81d4fa" opacity=".8"/>
           </g>
 
-          {/* ── ROAD / PATH — clipped to avoid castle hill ── */}
-          <g clipPath="url(#roadClip)">
-            <path d={roadPath} fill="none" stroke="#5d4037" strokeWidth="13" strokeLinecap="round" opacity=".4"/>
-            <path d={roadPath} fill="none" stroke="#bcaaa4" strokeWidth="10" strokeLinecap="round" opacity=".9"/>
-            <path d={roadPath} fill="none" stroke="#d7ccc8" strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
-          </g>
+          {/* ── ROAD / PATH — two segments, hill area left blank ── */}
+          {[roadBottom, roadTop].map((seg,i)=>(
+            <g key={i}>
+              <path d={seg} fill="none" stroke="#5d4037" strokeWidth="13" strokeLinecap="round" opacity=".4"/>
+              <path d={seg} fill="none" stroke="#bcaaa4" strokeWidth="10" strokeLinecap="round" opacity=".9"/>
+              <path d={seg} fill="none" stroke="#d7ccc8" strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
+            </g>
+          ))}
 
           {/* ── TREES ── */}
           {[[15,300],[295,290],[22,420],[302,400],[18,480],[300,460],[14,540],[298,525]].map(([tx,ty],i)=>(
@@ -1947,63 +1949,151 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                 {/* Glow ring for current zone */}
                 {isHere&&<circle cx={b.x} cy={b.y} r="38" fill={`${zoneColor}33`} stroke={zoneColor} strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
 
-                {/* Medieval house — full colour always, greyscale filter when locked */}
-                <g transform={`translate(${b.x-22},${b.y-42})`}
-                   filter={locked?"url(#shadow)":"url(#shadow)"}
-                   style={{filter:locked?"grayscale(1) brightness(0.55) url(#shadow)":undefined}}
-                   opacity={locked?.75:1}>
-                  <svg viewBox="0 0 44 52" width="44" height="52" overflow="visible">
-                    {/* House base — always warm colour */}
-                    <rect x="4" y="22" width="36" height="28" rx="2" fill="#a1887f"/>
-                    {/* Timber frame */}
-                    <rect x="4"  y="22" width="3"  height="28" fill="#5d4037" opacity=".5"/>
-                    <rect x="37" y="22" width="3"  height="28" fill="#5d4037" opacity=".5"/>
-                    <rect x="4"  y="33" width="36" height="2"  fill="#5d4037" opacity=".4"/>
-                    <line x1="4" y1="22" x2="22" y2="50" stroke="#5d4037" strokeWidth="1.5" opacity=".3"/>
-                    <line x1="40" y1="22" x2="22" y2="50" stroke="#5d4037" strokeWidth="1.5" opacity=".3"/>
-                    {/* Steep roof — zone colour */}
-                    <polygon points="0,24 22,2 44,24" fill={zoneColor}/>
-                    <polygon points="3,24 22,5 41,24" fill={zoneColor} opacity=".7"/>
-                    {/* Windows */}
-                    <rect x="7"  y="26" width="10" height="10" rx="2" fill={locked?"#b0bec5":"#ffd54f"} opacity={locked?.5:.9}/>
-                    <rect x="27" y="26" width="10" height="10" rx="2" fill={locked?"#b0bec5":"#ffd54f"} opacity={locked?.5:.9}/>
-                    {/* Window cross */}
-                    <rect x="11" y="26" width="1.5" height="10" fill="#a1887f" opacity=".5"/>
-                    <rect x="7"  y="30" width="10"  height="1.5" fill="#a1887f" opacity=".5"/>
-                    <rect x="31" y="26" width="1.5" height="10" fill="#a1887f" opacity=".5"/>
-                    <rect x="27" y="30" width="10"  height="1.5" fill="#a1887f" opacity=".5"/>
-                    {/* Door */}
-                    <rect x="16" y="36" width="12" height="14" rx="4" fill="#6d4c41"/>
-                    {/* Door handle */}
-                    <circle cx="26" cy="43" r="1.5" fill="#fdd835" opacity={locked?.4:1}/>
-                    {/* Chimney */}
-                    <rect x="30" y="6" width="6" height="12" rx="1" fill="#8d6e63"/>
-                    <ellipse cx="33" cy="6" rx="5" ry="3" fill="#616161"/>
-                    {/* Smoke only when unlocked */}
-                    {!locked&&<>
-                      <ellipse cx="33" cy="2" rx="4" ry="3" fill="#cfd8dc" opacity=".6"/>
-                      <ellipse cx="35" cy="-2" rx="3" ry="2.5" fill="#cfd8dc" opacity=".4"/>
-                    </>}
-                    {/* Dock posts for river building */}
-                    {b.zone==="openings"&&<>
-                      <rect x="6"  y="46" width="4" height="12" rx="1" fill="#5d4037" opacity=".8"/>
-                      <rect x="18" y="50" width="4" height="10" rx="1" fill="#5d4037" opacity=".8"/>
-                      <rect x="30" y="48" width="4" height="11" rx="1" fill="#5d4037" opacity=".8"/>
-                      <rect x="4"  y="55" width="36" height="3"  rx="1" fill="#8d6e63" opacity=".7"/>
-                    </>}
-                    {/* Lock badge */}
-                    {locked&&(
+                {/* Unique building per zone */}
+                {(()=>{
+                  const bw=52, bh=58; // building canvas size
+                  const bx_=b.x-bw/2, by_=b.y-bh+8;
+                  const col=zoneColor;
+                  const lo=locked;
+
+                  const drawBuilding=()=>{
+                    if(b.zone==="pieces") return( // Cozy thatched cottage
                       <g>
-                        <circle cx="22" cy="38" r="9" fill="rgba(0,0,0,.5)"/>
-                        <text x="22" y="42" textAnchor="middle" fontSize="12">🔒</text>
+                        <rect x="8" y="28" width="38" height="26" rx="3" fill={lo?"#78909c":"#d4a96a"}/>
+                        <polygon points="4,30 27,8 50,30" fill={lo?"#546e7a":"#e74c3c"}/>
+                        <polygon points="8,30 27,11 46,30" fill={lo?"#607d8b":"#ff6b6b"} opacity=".7"/>
+                        <rect x="10" y="32" width="10" height="10" rx="2" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.4:.9}/>
+                        <rect x="34" y="32" width="10" height="10" rx="2" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.4:.9}/>
+                        <rect x="20" y="38" width="14" height="16" rx="4" fill={lo?"#37474f":"#8B4513"}/>
+                        <rect x="38" y="14" width="6" height="14" rx="2" fill={lo?"#455a64":"#8B4513"}/>
+                        {!lo&&<><ellipse cx="41" cy="12" rx="5" ry="3" fill="#90a4ae" opacity=".7"/>
+                        <ellipse cx="43" cy="9" rx="3" ry="2" fill="#b0bec5" opacity=".5"/></>}
+                        <text x="27" y="26" textAnchor="middle" fontSize="10">{lo?"🔒":"🏠"}</text>
                       </g>
-                    )}
-                    {/* Zone emoji on roof — only when unlocked */}
-                    {!locked&&(
-                      <text x="22" y="18" textAnchor="middle" fontSize="11">{b.emoji}</text>
-                    )}
-                  </svg>
-                </g>
+                    );
+                    if(b.zone==="pawns") return( // Red barn
+                      <g>
+                        <rect x="6" y="26" width="42" height="28" rx="2" fill={lo?"#78909c":"#d4a96a"}/>
+                        <polygon points="2,28 27,4 52,28" fill={lo?"#546e7a":"#c0392b"}/>
+                        <rect x="22" y="12" width="10" height="18" rx="2" fill={lo?"#607d8b":"#c0392b"}/>
+                        <rect x="10" y="36" width="13" height="18" rx="2" fill={lo?"#37474f":"#8B4513"}/>
+                        <rect x="31" y="36" width="13" height="18" rx="2" fill={lo?"#37474f":"#7a3b10"}/>
+                        <line x1="27" y1="36" x2="27" y2="54" stroke={lo?"#546e7a":"#5d2906"} strokeWidth="1.5"/>
+                        <rect x="24" y="18" width="6" height="10" rx="1" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.3:.9}/>
+                        {!lo&&[0,8,16,24,32,40].map(fx=>(
+                          <g key={fx}><rect x={fx+3} y="50" width="3" height="8" rx="1" fill="#deb887"/>
+                          <rect x={fx+2} y="53" width="5" height="1.5" fill="#d2a679"/></g>
+                        ))}
+                        <text x="27" y="24" textAnchor="middle" fontSize="10">{lo?"🔒":"🌾"}</text>
+                      </g>
+                    );
+                    if(b.zone==="openings") return( // Tavern/Inn on river
+                      <g>
+                        <rect x="6" y="22" width="42" height="32" rx="3" fill={lo?"#78909c":"#d4a96a"}/>
+                        <rect x="6" y="22" width="42" height="16" rx="3" fill={lo?"#607d8b":"#c49152"}/>
+                        <polygon points="2,24 27,4 52,24" fill={lo?"#546e7a":"#8B4513"}/>
+                        <rect x="0" y="22" width="54" height="4" rx="1" fill={lo?"#455a64":"#7a3b10"}/>
+                        <rect x="10" y="26" width="10" height="10" rx="2" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.3:.9}/>
+                        <rect x="34" y="26" width="10" height="10" rx="2" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.3:.9}/>
+                        {!lo&&<><rect x="17" y="36" width="20" height="9" rx="3" fill="#8B4513"/>
+                        <text x="27" y="43" textAnchor="middle" fill="#f1c40f" fontSize="6" fontWeight="900">INN</text></>}
+                        <rect x="20" y="44" width="14" height="12" rx="4" fill={lo?"#37474f":"#8B4513"}/>
+                        {/* Dock */}
+                        {[6,14,22,30,38,46].map(dx=>(
+                          <rect key={dx} x={dx} y="52" width="3" height="8" rx="1" fill="#5d4037" opacity=".7"/>
+                        ))}
+                        <rect x="4" y="57" width="48" height="2" rx="1" fill="#8d6e63" opacity=".6"/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🍺"}</text>
+                      </g>
+                    );
+                    if(b.zone==="tactics") return( // Blacksmith forge
+                      <g>
+                        <rect x="8" y="26" width="38" height="28" rx="3" fill={lo?"#546e7a":"#718096"}/>
+                        {!lo&&[0,1,2].map(row=>[0,1,2].map(c2=>(
+                          <rect key={`${row}${c2}`} x={10+c2*12} y={28+row*8} width="10" height="6" rx="1" fill="#636e72" opacity=".4"/>
+                        )))}
+                        <polygon points="4,28 27,6 50,28" fill={lo?"#455a64":"#2d3748"}/>
+                        <rect x="34" y="10" width="9" height="16" rx="2" fill={lo?"#37474f":"#4a5568"}/>
+                        {!lo&&<text x="38" y="12" textAnchor="middle" fontSize="10">🔥</text>}
+                        <rect x="19" y="38" width="16" height="16" rx="3" fill={lo?"#37474f":"#4a5568"}/>
+                        {!lo&&<ellipse cx="27" cy="52" rx="16" ry="3" fill="#e67e22" opacity=".3"/>}
+                        <text x="27" y="30" textAnchor="middle" fontSize="10">{lo?"🔒":"⚔️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="checkmate") return( // Wizard tower
+                      <g>
+                        <rect x="14" y="20" width="26" height="36" rx="4" fill={lo?"#546e7a":"#553c7b"}/>
+                        <polygon points="6,22 27,2 48,22" fill={lo?"#37474f":"#8e44ad"}/>
+                        <rect x="18" y="26" width="9" height="9" rx="4" fill={lo?"#37474f":"#ffeaa7"} opacity={lo?.3:.9}/>
+                        <rect x="31" y="26" width="9" height="9" rx="4" fill={lo?"#37474f":"#ffeaa7"} opacity={lo?.3:.9}/>
+                        {!lo&&<><text x="22" y="34" textAnchor="middle" fontSize="7">✨</text>
+                        <text x="35" y="34" textAnchor="middle" fontSize="7">⭐</text>
+                        <ellipse cx="27" cy="21" rx="12" ry="7" fill="#a29bfe" opacity=".3"/></>}
+                        <path d="M18,56 L18,44 Q27,36 36,44 L36,56" fill={lo?"#37474f":"#4a3060"}/>
+                        {[14,19,24,29,34,39].map(bx=>(
+                          <rect key={bx} x={bx} y="14" width="3" height="6" rx="1" fill={lo?"#455a64":"#6c5ce7"}/>
+                        ))}
+                        <text x="27" y="14" textAnchor="middle" fontSize="10">{lo?"🔒":"🔮"}</text>
+                      </g>
+                    );
+                    if(b.zone==="strategy") return( // Library
+                      <g>
+                        <rect x="6" y="22" width="42" height="32" rx="3" fill={lo?"#546e7a":"#2c5f8e"}/>
+                        {!lo&&[12,22,32,42].map(cx=>(
+                          <rect key={cx} x={cx} y="22" width="4" height="32" rx="1" fill="#1a4971" opacity=".7"/>
+                        ))}
+                        <polygon points="2,24 27,4 52,24" fill={lo?"#455a64":"#1a4971"}/>
+                        <rect x="16" y="26" width="22" height="14" rx="3" fill={lo?"#37474f":"#ffd54f"} opacity={lo?.3:.9}/>
+                        {!lo&&<text x="27" y="36" textAnchor="middle" fontSize="10">📚</text>}
+                        <rect x="20" y="40" width="14" height="14" rx="2" fill={lo?"#37474f":"#1a3a5c"}/>
+                        <rect x="14" y="52" width="26" height="2" rx="1" fill={lo?"#546e7a":"#2c5f8e"}/>
+                        <rect x="10" y="54" width="34" height="2" rx="1" fill={lo?"#455a64":"#1a4971"}/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"📚"}</text>
+                      </g>
+                    );
+                    if(b.zone==="endgame") return( // Cathedral
+                      <g>
+                        <rect x="10" y="28" width="34" height="26" rx="3" fill={lo?"#546e7a":"#5d4e6b"}/>
+                        <rect x="20" y="14" width="14" height="18" rx="2" fill={lo?"#455a64":"#4a3d58"}/>
+                        <polygon points="20,16 27,2 34,16" fill={lo?"#37474f":"#8e44ad"}/>
+                        {!lo&&<><rect x="25" y="3" width="4" height="11" rx="1" fill="#f1c40f"/>
+                        <rect x="22" y="7" width="10" height="3" rx="1" fill="#f1c40f"/></>}
+                        <rect x="14" y="32" width="9" height="13" rx="5" fill={lo?"#37474f":"#ffd54f"} opacity={lo?.3:.9}/>
+                        <rect x="31" y="32" width="9" height="13" rx="5" fill={lo?"#37474f":"#ffd54f"} opacity={lo?.3:.9}/>
+                        <rect x="21" y="42" width="12" height="12" rx="6" fill={lo?"#37474f":"#3d2d4a"}/>
+                        {!lo&&<text x="27" y="32" textAnchor="middle" fontSize="7">✨</text>}
+                        <text x="27" y="14" textAnchor="middle" fontSize="10">{lo?"🔒":"⛪"}</text>
+                      </g>
+                    );
+                    if(b.zone==="master") return( // Grand manor
+                      <g>
+                        <rect x="4"  y="24" width="46" height="28" rx="3" fill={lo?"#546e7a":"#8B4513"}/>
+                        <rect x="0"  y="30" width="12" height="22" rx="2" fill={lo?"#455a64":"#7a3b10"}/>
+                        <rect x="42" y="30" width="12" height="22" rx="2" fill={lo?"#455a64":"#7a3b10"}/>
+                        <polygon points="0,26 27,4 54,26" fill={lo?"#37474f":"#5d2906"}/>
+                        {!lo&&[8,18,28,38].map(wx=>(
+                          <rect key={wx} x={wx} y="28" width="7" height="9" rx="1" fill="#ffd54f" opacity=".9"/>
+                        ))}
+                        <rect x="20" y="40" width="14" height="12" rx="5" fill={lo?"#37474f":"#5d2906"}/>
+                        {!lo&&<><rect x="26" y="3" width="2" height="10" fill="#f1c40f"/>
+                        <polygon points="28,3 38,6 28,9" fill="#e53935"/></>}
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🌟"}</text>
+                      </g>
+                    );
+                    return null;
+                  };
+
+                  return(
+                    <g transform={`translate(${bx_},${by_})`}
+                       style={{filter:lo?"grayscale(0.8) brightness(0.6)":undefined}}
+                       opacity={lo?.8:1}
+                       filter="url(#shadow)">
+                      <svg viewBox="0 0 54 58" width={54} height={58} overflow="visible">
+                        {drawBuilding()}
+                      </svg>
+                    </g>
+                  );
+                })()}
 
                 {/* Progress arc */}
                 {!locked&&pct>0&&(
@@ -2926,7 +3016,7 @@ function ChessWorld(){
             {/* Title */}
             <div style={{fontSize:28,fontWeight:900,color:"#6c5ce7",marginBottom:6,letterSpacing:-1}}>Zone Complete!</div>
             <div style={{fontSize:18,fontWeight:800,color:"#2d3436",marginBottom:4}}>{zoneCompleteData.zoneName}</div>
-            <div style={{fontSize:14,color:"#636e72",marginBottom:20}}>You mastered this realm! 🗡️</div>
+            <div style={{fontSize:14,color:"#636e72",marginBottom:20}}>You conquered this village zone! ⚔️</div>
             {/* Stars row */}
             <div style={{fontSize:32,marginBottom:20,letterSpacing:4}}>{"⭐".repeat(3)}</div>
             {/* Buttons */}
