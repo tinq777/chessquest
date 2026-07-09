@@ -7,35 +7,6 @@ const { useState, useCallback, useRef, useEffect } = React;
 
 let fbAuth = null, fbDb = null, googleProvider = null;
 
-const CQ_STORAGE_KEY = "chessQuestProfiles:v1";
-
-function cqLoadLocalProfiles(){
-  try{
-    const raw = localStorage.getItem(CQ_STORAGE_KEY);
-    if(!raw) return null;
-    const parsed = JSON.parse(raw);
-    if(Array.isArray(parsed)) return {profiles: parsed, updatedAt: ""};
-    if(parsed && Array.isArray(parsed.profiles)) return parsed;
-  }catch(e){ console.warn("[ChessQuest] Local profile load failed", e); }
-  return null;
-}
-
-function cqSaveLocalProfiles(profiles, updatedAt){
-  try{
-    localStorage.setItem(CQ_STORAGE_KEY, JSON.stringify({
-      profiles,
-      updatedAt: updatedAt || new Date().toISOString()
-    }));
-  }catch(e){ console.warn("[ChessQuest] Local profile save failed", e); }
-}
-
-function cqDefaultProfiles(){
-  return [
-    {name:"Alex",  avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0},
-    {name:"Sam",   avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0},
-  ];
-}
-
 async function initFirebase(){
   if(fbAuth) return true;
   // Wait for the compat scripts + config in index.html to finish loading
@@ -49,196 +20,6 @@ async function initFirebase(){
   fbDb   = window.__fbDb;
   googleProvider = new firebase.auth.GoogleAuthProvider();
   return true;
-}
-
-function cqWithTimeout(promise, ms, label){
-  let timer;
-  const timeout = new Promise((_, reject)=>{
-    timer = setTimeout(()=>reject(new Error((label||"Operation")+" timed out after "+ms+"ms")), ms);
-  });
-  return Promise.race([promise, timeout]).finally(()=>clearTimeout(timer));
-}
-
-function cqFirestoreValue(value){
-  if(value === null || value === undefined) return {nullValue:null};
-  if(Array.isArray(value)) return {arrayValue:{values:value.map(cqFirestoreValue)}};
-  if(typeof value === "object"){
-    const fields = {};
-    Object.keys(value).forEach(k=>{ fields[k] = cqFirestoreValue(value[k]); });
-    return {mapValue:{fields}};
-  }
-  if(typeof value === "boolean") return {booleanValue:value};
-  if(typeof value === "number") return Number.isInteger(value) ? {integerValue:String(value)} : {doubleValue:value};
-  return {stringValue:String(value)};
-}
-
-function cqFromFirestoreValue(v){
-  if(!v || typeof v !== "object") return undefined;
-  if("nullValue" in v) return null;
-  if("stringValue" in v) return v.stringValue;
-  if("booleanValue" in v) return !!v.booleanValue;
-  if("integerValue" in v) return Number(v.integerValue);
-  if("doubleValue" in v) return Number(v.doubleValue);
-  if("timestampValue" in v) return v.timestampValue;
-  if("arrayValue" in v) return (v.arrayValue.values || []).map(cqFromFirestoreValue);
-  if("mapValue" in v){
-    const out = {};
-    const fields = v.mapValue.fields || {};
-    Object.keys(fields).forEach(k=>{ out[k] = cqFromFirestoreValue(fields[k]); });
-    return out;
-  }
-  return undefined;
-}
-
-function cqFromFirestoreFields(fields){
-  const out = {};
-  Object.keys(fields || {}).forEach(k=>{ out[k] = cqFromFirestoreValue(fields[k]); });
-  return out;
-}
-
-function cqProjectId(){
-  return (window.__ENV && window.__ENV.CHESS_QUEST_PROJECT_ID) || (window.firebase && window.firebase.app && window.firebase.app().options && window.firebase.app().options.projectId) || "";
-}
-
-async function cqFetchJsonWithTimeout(url, opts={}, ms=12000, label="Firestore REST"){
-  const controller = new AbortController();
-  const timer = setTimeout(()=>controller.abort(), ms);
-  try{
-    const res = await fetch(url, {...opts, signal:controller.signal});
-    const text = await res.text();
-    let json = null;
-    try{ json = text ? JSON.parse(text) : null; }catch(e){ json = {raw:text}; }
-    if(!res.ok){
-      const msg = json?.error?.message || json?.raw || res.statusText || "Request failed";
-      const err = new Error(`${label} failed ${res.status}: ${msg}`);
-      err.status = res.status;
-      err.response = json;
-      throw err;
-    }
-    return json;
-  }catch(e){
-    if(e && e.name === "AbortError") throw new Error(`${label} timed out after ${ms}ms`);
-    throw e;
-  }finally{ clearTimeout(timer); }
-}
-
-async function cqFirestoreRestSet(user, payload){
-  if(!user || !user.uid) throw new Error("No signed-in Firebase user");
-  const projectId = cqProjectId();
-  if(!projectId) throw new Error("Missing Firebase projectId");
-  const token = await cqWithTimeout(user.getIdToken(true), 10000, "Auth token");
-  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/users/${encodeURIComponent(user.uid)}`;
-  const fields = {};
-  Object.keys(payload).forEach(k=>{ fields[k] = cqFirestoreValue(payload[k]); });
-  return cqFetchJsonWithTimeout(url, {
-    method:"PATCH",
-    headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-    body:JSON.stringify({fields})
-  }, 15000, "Cloud save REST");
-}
-
-async function cqFirestoreRestGet(user){
-  if(!user || !user.uid) throw new Error("No signed-in Firebase user");
-  const projectId = cqProjectId();
-  if(!projectId) throw new Error("Missing Firebase projectId");
-  const token = await cqWithTimeout(user.getIdToken(), 10000, "Auth token");
-  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/users/${encodeURIComponent(user.uid)}`;
-  try{
-    const json = await cqFetchJsonWithTimeout(url, {headers:{"Authorization":"Bearer "+token}}, 10000, "Cloud restore REST");
-    return cqFromFirestoreFields(json.fields || {});
-  }catch(e){
-    if(e && e.status === 404) return null;
-    throw e;
-  }
-}
-
-async function cqCloudProxySet(user, payload){
-  if(!user || !user.uid) throw new Error("No signed-in Firebase user");
-  const token = await cqWithTimeout(user.getIdToken(false), 10000, "Auth token");
-  return cqFetchJsonWithTimeout(`/api/cloud-sync?uid=${encodeURIComponent(user.uid)}`, {
-    method:"PATCH",
-    headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-    body:JSON.stringify({fields:payload})
-  }, 20000, "Cloud save proxy");
-}
-
-async function cqCloudProxyGet(user){
-  if(!user || !user.uid) throw new Error("No signed-in Firebase user");
-  const token = await cqWithTimeout(user.getIdToken(false), 10000, "Auth token");
-  try{
-    const json = await cqFetchJsonWithTimeout(`/api/cloud-sync?uid=${encodeURIComponent(user.uid)}`, {
-      headers:{"Authorization":"Bearer "+token}
-    }, 15000, "Cloud restore proxy");
-    if(json && json.notFound) return null;
-    return json && json.data ? json.data : null;
-  }catch(e){
-    if(e && e.status === 404) return null;
-    throw e;
-  }
-}
-
-function cqUserDocRef(user){
-  if(!fbDb || !user || !user.uid) return null;
-  return fbDb.collection("users").doc(user.uid);
-}
-
-
-async function cqFirestoreSdkSet(user, payload){
-  const ref = cqUserDocRef(user);
-  if(!ref) throw new Error("Firestore SDK is not ready");
-  await cqWithTimeout(ref.set(payload, {merge:true}), 45000, "Cloud save SDK");
-  return {ok:true};
-}
-
-async function cqFirestoreSdkGet(user, ms=25000){
-  const ref = cqUserDocRef(user);
-  if(!ref) throw new Error("Firestore SDK is not ready");
-  const snap = await cqWithTimeout(ref.get({source:"server"}), ms, "Cloud restore SDK server");
-  if(!snap || !snap.exists) return null;
-  return snap.data() || null;
-}
-
-function cqProfilesEqual(a,b){
-  try { return JSON.stringify(a||[]) === JSON.stringify(b||[]); }
-  catch(e){ return false; }
-}
-
-async function cqVerifyCloudSave(user, updatedProfiles, updatedAt){
-  // Verify using the authenticated Firestore SDK. The REST/proxy path can be
-  // rejected by Firestore security rules in projects that only allow SDK auth.
-  const data = await cqFirestoreSdkGet(user, 30000);
-  if(!data) throw new Error("Cloud verify failed: document was not found on server");
-  if(!Array.isArray(data.profiles)) throw new Error("Cloud verify failed: profiles missing from server document");
-  if(data.updatedAt !== updatedAt){
-    console.warn("[ChessQuest] Cloud verify updatedAt mismatch", {expected:updatedAt, actual:data.updatedAt});
-  }
-  if(!cqProfilesEqual(data.profiles, updatedProfiles)){
-    throw new Error("Cloud verify failed: server profiles did not match this device");
-  }
-  return data;
-}
-
-async function cqFetchCloudProfiles(user){
-  if(!user) return null;
-
-  // Restore from the authenticated Firestore SDK first. This is the path that
-  // matches normal Firebase security rules: allow read/write when request.auth.uid == uid.
-  try{
-    const data = await cqFirestoreSdkGet(user, 30000);
-    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} SDK server`};
-    if(data === null) return null;
-  }catch(sdkErr){
-    console.warn("[ChessQuest] SDK restore failed, trying proxy restore", sdkErr);
-  }
-
-  try{
-    const data = await cqCloudProxyGet(user);
-    if(data && Array.isArray(data.profiles)) return {...data, _restorePath:`users/${user.uid} proxy`};
-  }catch(proxyErr){
-    console.warn("[ChessQuest] Proxy restore failed", proxyErr);
-  }
-
-  return null;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2065,7 +1846,7 @@ function BoardContainer({children}){
   );
 }
 
-function PuzzleScreen({puzzle, onComplete, onBack, onProgressChange}){
+function PuzzleScreen({puzzle, onComplete, onBack}){
   const [board,setBoard]=useState(puzzle.board.map(r=>r.slice()));
   const [selected,setSelected]=useState(null);
   const [targets,setTargets]=useState([]);
@@ -2073,24 +1854,7 @@ function PuzzleScreen({puzzle, onComplete, onBack, onProgressChange}){
   const [hintUsed,setHintUsed]=useState(false);
   const [lastMove,setLastMove]=useState(null);
   const [tries,setTries]=useState(0);
-  const [hasProgress,setHasProgress]=useState(false);
   const earned=hintUsed?Math.floor(puzzle.xp*.7):puzzle.xp;
-
-  useEffect(()=>{
-    setBoard(puzzle.board.map(r=>r.slice()));
-    setSelected(null);
-    setTargets([]);
-    setPhase("play");
-    setHintUsed(false);
-    setLastMove(null);
-    setTries(0);
-    setHasProgress(false);
-    onProgressChange?.(false);
-  },[puzzle.id]);
-
-  useEffect(()=>{
-    onProgressChange?.(hasProgress && phase!=="correct");
-  },[hasProgress, phase]);
 
   const msgs={
     play: puzzle.desc,
@@ -2110,9 +1874,8 @@ function PuzzleScreen({puzzle, onComplete, onBack, onProgressChange}){
     const sol=puzzle.solution;
     const ok=move.from.r===sol.from.r&&move.from.c===sol.from.c&&move.to.r===sol.to.r&&move.to.c===sol.to.c;
     const nb=applyM(board,move);
-    setHasProgress(true);
     setBoard(nb);setLastMove({from:move.from,to:move.to});setSelected(null);setTargets([]);
-    if(ok){ SFX.correct(); setHasProgress(false); setPhase("correct"); }
+    if(ok){ SFX.correct(); setPhase("correct"); }
     else{ SFX.wrong(); setTries(t=>t+1);setPhase("wrong");setTimeout(()=>{setBoard(puzzle.board.map(r=>r.slice()));setLastMove(null);setPhase("play");},1800);}
   };
 
@@ -2126,7 +1889,7 @@ function PuzzleScreen({puzzle, onComplete, onBack, onProgressChange}){
           <div style={{fontSize:15,fontWeight:900,color:"#fff"}}><span style={{display:"inline-block",animation:"puzzleWiggle 2s ease-in-out infinite"}}>{puzzle.emoji}</span> {puzzle.title}</div>
           <div style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:700}}>+{puzzle.xp} 💎 gems</div>
         </div>
-        <button onClick={()=>{SFX.hint();setHasProgress(true);setHintUsed(true);setPhase("hint");setTimeout(()=>setPhase("play"),3000);}}
+        <button onClick={()=>{SFX.hint();setHintUsed(true);setPhase("hint");setTimeout(()=>setPhase("play"),3000);}}
           style={{background:"linear-gradient(145deg,#f1c40f,#f39c12)",border:"none",borderRadius:14,padding:"8px 12px",color:"#1a1a2e",fontSize:13,fontWeight:900,boxShadow:"0 4px 0 #d4ac0d"}}>
           💡 Hint
         </button>
@@ -2426,7 +2189,6 @@ function LoginScreen({onLogin}){
       const result = await fbAuth.signInWithPopup(googleProvider);
       onLogin(result.user);
     } catch(e) {
-      console.error(e);
       setError("Google sign-in failed. Try again.");
     }
     setLoading(false);
@@ -2804,178 +2566,75 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
 }
 
 function ChessWorld(){
-  const hadLocalProfilesAtStart = useRef(!!cqLoadLocalProfiles());
-
   // ── Auth state ──
   const [authUser,   setAuthUser]   = useState(undefined); // undefined=loading, null=not logged in
   const [authLoading,setAuthLoading] = useState(true);
   const [syncStatus, setSyncStatus]  = useState(""); // "saving" | "saved" | "error"
-  const [cloudRestoreDone,setCloudRestoreDone] = useState(false);
 
   useEffect(()=>{
     let unsub = ()=>{};
-    let cancelled = false;
-
-    // Never let Firebase startup trap the app on a loading screen.
-    const authFallback = setTimeout(()=>{
-      if(!cancelled && authLoading){
-        console.warn("[ChessQuest] Auth check is slow — opening app/login anyway");
-        setAuthLoading(false);
-      }
-    }, 3500);
-
     initFirebase().then(ok=>{
-      if(cancelled) return;
-      if(!ok){ clearTimeout(authFallback); setAuthLoading(false); setCloudRestoreDone(true); return; }
-      unsub = fbAuth.onAuthStateChanged(user => {
-        if(cancelled) return;
+      if(!ok){ setAuthLoading(false); return; }
+      unsub = fbAuth.onAuthStateChanged(async user => {
         setAuthUser(user);
         setAuthLoading(false);
-        clearTimeout(authFallback);
-        setCloudDebug(d=>({...d, uid:user?.uid||"", email:user?.email||"", docPath:user?`users/${user.uid}`:"", lastAction:user?"Signed in":"Signed out"}));
-
-        if(!user){
-          setCloudRestoreDone(true);
-          return;
-        }
-
-        // Cloud restore runs in the background. If local cache was cleared,
-        // briefly hold the profile picker so defaults don't appear as progress.
-        setCloudRestoreDone(false);
         if(user){
-          setSyncStatus("checking");
-          cqFetchCloudProfiles(user)
-            .then(data=>{
-              if(cancelled) return;
-              if(data && Array.isArray(data.profiles)){
-                const cloudUpdatedAt = data.updatedAt || data.lastSaved || new Date().toISOString();
-                const local = cqLoadLocalProfiles();
-                const localUpdatedAt = local?.updatedAt || "";
-                // If local cache was cleared or is older, restore from Firestore.
-                if(!local || !localUpdatedAt || !cloudUpdatedAt || cloudUpdatedAt >= localUpdatedAt){
-                  setProfiles(data.profiles);
-                  profilesRef.current = data.profiles;
-                  cqSaveLocalProfiles(data.profiles, cloudUpdatedAt);
-                  if(data.lastSaved || cloudUpdatedAt) setLastSavedAt(new Date(data.lastSaved || cloudUpdatedAt));
-                  setCloudDebug(d=>({...d,lastRestore:`Restored ${data.profiles.length} profile(s) from ${data._restorePath||"cloud"} at ${new Date().toLocaleTimeString()}`,lastError:""}));
-                  setSyncStatus("restored");
-                  setCloudRestoreDone(true);
-                  setTimeout(()=>setSyncStatus(""),2500);
-                }else{
-                  setSyncStatus("");
-                  setCloudRestoreDone(true);
-                }
-              }else{
-                setCloudDebug(d=>({...d,lastRestore:`No cloud profiles found at ${new Date().toLocaleTimeString()}`}));
-                setSyncStatus("");
-                setCloudRestoreDone(true);
-              }
-            })
-            .catch(e=>{
-              const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
-              setSyncErrorDetail("LOAD: "+detail);
-              setCloudDebug(d=>({...d,lastError:"LOAD: "+detail,lastRestore:`Restore failed at ${new Date().toLocaleTimeString()}`}));
-              console.error("[ChessQuest] Cloud restore failed; using local data:", detail);
-              setSyncStatus("");
-              setCloudRestoreDone(true);
-            });
+          try {
+            const snap = await fbDb.collection("users").doc(user.uid).get();
+            if(snap.exists && snap.data().profiles){
+              setProfiles(snap.data().profiles);
+            }
+          } catch(e){
+            const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
+            setSyncErrorDetail("LOAD: "+detail);
+          }
         }
       });
     });
-    return ()=>{cancelled=true; clearTimeout(authFallback); unsub();};
+    return ()=>unsub();
   },[]);
 
-  // Save profiles locally immediately, then push the same data to Firestore.
-  // The UI only says "saved" after Firestore confirms the write.
-  const saveToCloud = async (updatedProfiles, opts={}) => {
-    const now = new Date();
-    const updatedAt = now.toISOString();
-    const profilesToSave = Array.isArray(updatedProfiles) ? updatedProfiles : profilesRef.current;
-    cqSaveLocalProfiles(profilesToSave, updatedAt);
-
+  // Save profiles to Firestore whenever they change
+  const saveToCloud = async (updatedProfiles) => {
     if(!authUser){
-      console.warn("[ChessQuest] Saved locally only — no authenticated user");
-      setSyncStatus("error");
-      setSyncErrorDetail("Not signed in — progress saved on this device only. Sign in before clearing cache or changing devices.");
-      setCloudDebug(d=>({...d,lastAction:"Local-only save",lastError:"No authenticated user",lastWrite:""}));
-      return false;
+      return;
     }
-    // Cloud sync uses a same-origin Cloudflare proxy first, so it does not require
-    // the Firestore SDK object to be ready.
+    if(!fbDb){
+      setSyncStatus("error");
+      setSyncErrorDetail("Firestore not initialized — fbDb missing");
+      return;
+    }
     setSyncStatus("saving");
     setSyncErrorDetail("");
-    setCloudDebug(d=>({...d,projectId:(window.__ENV&&window.__ENV.CHESS_QUEST_PROJECT_ID)||d.projectId,uid:authUser.uid,email:authUser.email||"",docPath:`users/${authUser.uid}`,lastAction:"Saving to Firestore…",lastError:""}));
     try {
-      const payload = {
-        profiles: profilesToSave,
-        updatedAt,
-        lastSaved: updatedAt,
+      const now = new Date();
+      // Race the Firestore write against a 10s timeout so a hung connection
+      // shows a clear error instead of spinning forever
+      const writePromise = fbDb.collection("users").doc(authUser.uid).set({
+        profiles: updatedProfiles,
+        lastSaved: now.toISOString(),
         email: authUser.email || "",
         displayName: authUser.displayName || "",
-        app: "chess-quest",
-        schemaVersion: 3
-      };
-
-      // Use the authenticated Firebase SDK for writes. Your Firestore rules
-      // are rejecting the REST/proxy path with 403, but SDK auth matches the
-      // signed-in user and the users/{uid} document path.
-      await cqFirestoreSdkSet(authUser, payload);
-
-      // Only claim cloud success after a server read-back confirms the same data.
-      await cqVerifyCloudSave(authUser, profilesToSave, updatedAt);
-
+      }, {merge:true});
+      const timeoutPromise = new Promise((_,reject)=>
+        setTimeout(()=>reject(new Error("TIMEOUT: Firestore write took longer than 10s — check network/Firestore setup")),10000)
+      );
+      await Promise.race([writePromise, timeoutPromise]);
       setSyncStatus("saved");
       setLastSavedAt(now);
-      setCloudDebug(d=>({...d,lastAction:"Cloud save verified",lastWrite:`Verified ${profilesToSave.length} profile(s) on server at ${now.toLocaleTimeString()}`,lastError:""}));
-      console.log("[ChessQuest] Saved + verified Firestore at", now.toLocaleTimeString());
-      setTimeout(()=>setSyncStatus(""),2500);
-      return true;
+      setTimeout(()=>setSyncStatus(""),3000);
     } catch(e){
       setSyncStatus("error");
       const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
       setSyncErrorDetail(detail);
-      setCloudDebug(d=>({...d,lastAction:"Cloud save failed",lastError:detail,lastWrite:`Local save only at ${now.toLocaleTimeString()}`}));
-      console.error("[ChessQuest] Cloud save failed, but local save is safe:", detail);
-      return false;
     }
   };
-
-  const restoreFromCloudNow = async () => {
-    if(!authUser){
-      setSyncStatus("error");
-      setSyncErrorDetail("Cannot restore — not signed in.");
-      return;
-    }
-    setSyncStatus("checking");
-    setSyncErrorDetail("");
-    setCloudDebug(d=>({...d,lastAction:"Manual cloud restore…",lastError:""}));
-    try{
-      const data = await cqFetchCloudProfiles(authUser);
-      if(data && Array.isArray(data.profiles)){
-        const cloudUpdatedAt = data.updatedAt || data.lastSaved || new Date().toISOString();
-        setProfiles(data.profiles);
-        profilesRef.current = data.profiles;
-        cqSaveLocalProfiles(data.profiles, cloudUpdatedAt);
-        setLastSavedAt(new Date(data.lastSaved || cloudUpdatedAt));
-        setSyncStatus("restored");
-        setCloudDebug(d=>({...d,lastAction:"Manual restore complete",lastRestore:`Restored ${data.profiles.length} profile(s) from ${data._restorePath||`users/${authUser.uid}`} at ${new Date().toLocaleTimeString()}`,lastError:""}));
-        setTimeout(()=>setSyncStatus(""),2500);
-      }else{
-        setSyncStatus("error");
-        setSyncErrorDetail("No cloud save found for this signed-in account.");
-        setCloudDebug(d=>({...d,lastAction:"Manual restore found nothing",lastRestore:`No server document at users/${authUser.uid}`}));
-      }
-    }catch(e){
-      const detail = (e && (e.code || e.message)) ? `${e.code||""} ${e.message||""}`.trim() : String(e);
-      setSyncStatus("error");
-      setSyncErrorDetail("RESTORE: "+detail);
-      setCloudDebug(d=>({...d,lastAction:"Manual restore failed",lastError:"RESTORE: "+detail}));
-    }
-  };
-
 
   // Profile system
-  const [profiles,setProfiles]=useState(()=>cqLoadLocalProfiles()?.profiles || cqDefaultProfiles());
+  const [profiles,setProfiles]=useState([
+    {name:"Alex",  avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0},
+    {name:"Sam",   avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0},
+  ]);
   const [activeProfile,setActiveProfile]=useState(null); // null = profile select screen
 
   const profile = activeProfile!==null ? profiles[activeProfile] : null;
@@ -3022,18 +2681,9 @@ function ChessWorld(){
   const [zoneCompleteData,setZoneCompleteData]=useState(null);
 
   const [confirmLeavePlay,setConfirmLeavePlay]=useState(false);
-  const [confirmLeavePuzzle,setConfirmLeavePuzzle]=useState(false);
-  const [puzzleInProgress,setPuzzleInProgress]=useState(false);
   const [showSettings,setShowSettings]=useState(false);
   const [lastSavedAt,setLastSavedAt]=useState(null);
   const [syncErrorDetail,setSyncErrorDetail]=useState("");
-  const [cloudDebug,setCloudDebug]=useState({
-    projectId: (window.__ENV && window.__ENV.CHESS_QUEST_PROJECT_ID) || "",
-    uid: "", email: "", docPath: "",
-    lastAction: "", lastWrite: "", lastRestore: "", lastError: ""
-  });
-  const profilesRef = useRef(profiles);
-  useEffect(()=>{ profilesRef.current = profiles; }, [profiles]);
 
   // Free play state — lifted here so game persists when switching tabs
   const [playBoard,setPlayBoard]=useState(INIT);
@@ -3060,9 +2710,6 @@ function ChessWorld(){
   // Show login screen if not authenticated
   if(!authUser) return <LoginScreen onLogin={user=>{setAuthUser(user);}}/>;
 
-  // Never block app entry on cloud restore. If cache was cleared, the app opens
-  // immediately and cloud profiles replace defaults as soon as restore completes.
-
   // Show profile select if no active profile
   if(activeProfile===null) return(
     <ProfileSelect
@@ -3084,16 +2731,6 @@ function ChessWorld(){
     }
   };
 
-  const tryLeavePuzzle = (onConfirm) => {
-    // Any open puzzle should ask before leaving. Previously this only asked
-    // after a move/hint, so tapping Back immediately left without a prompt.
-    if(activePuzzle){
-      setConfirmLeavePuzzle({cb: onConfirm}); // wrap in object so useState doesn't invoke it
-    } else {
-      onConfirm();
-    }
-  };
-
   const earnXp=amount=>{
     updateProfile({xp:xp+amount, gems:gems+amount, completed:completed+1});
     setXpPop(amount);
@@ -3105,7 +2742,6 @@ function ChessWorld(){
     if(!zp.length) return;
     // Pick first puzzle the player hasn't completed yet; fall back to first
     const next = zp.find(p=>p.id>completed) || zp[0];
-    setPuzzleInProgress(false);
     setActivePuzzle(next);
     setPuzzleSource(source);
   };
@@ -3211,22 +2847,18 @@ function ChessWorld(){
           ? <PuzzleScreen
               key={activePuzzle.id}
               puzzle={activePuzzle}
-              onBack={()=>tryLeavePuzzle(()=>{setActivePuzzle(null);setPuzzleInProgress(false);setTab(puzzleSource);})}
-              onProgressChange={setPuzzleInProgress}
+              onBack={()=>{setActivePuzzle(null);setTab(puzzleSource);}}
               onComplete={earned=>{
-                setPuzzleInProgress(false);
                 earnXp(earned);
                 const zonePuzzles=PUZZLES.filter(p=>p.zone===activePuzzle.zone);
                 const currentIdx=zonePuzzles.findIndex(p=>p.id===activePuzzle.id);
                 const nextPuzzle=zonePuzzles[currentIdx+1];
                 if(nextPuzzle){
-                  setPuzzleInProgress(false);
                   setActivePuzzle(nextPuzzle);
                 } else {
                   SFX.zoneComplete();
                   const zone = ZONES.find(z=>z.id===activePuzzle.zone);
                   setZoneCompleteData({zoneName:zone?.label||"Zone", emoji:zone?.emoji||"🏆"});
-                  setPuzzleInProgress(false);
                   setActivePuzzle(null);
                 }
               }}
@@ -3260,19 +2892,10 @@ function ChessWorld(){
           return(
             <button key={id} onClick={()=>{
               SFX.tap();
-              if(id==="play"){
-                if(activePuzzle){
-                  tryLeavePuzzle(()=>{ setShowPlay(true); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null); });
-                } else {
-                  setShowPlay(true); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null);
-                }
-              }
-              else if(activePuzzle){
-                tryLeavePuzzle(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null); });
-              }
+              if(id==="play"){ setShowPlay(true); setActivePuzzle(null); setZoneCompleteData(null); }
               else if(showPlay && id!=="play"){
-                tryLeavePlay(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null); });
-              } else { setTab(id); setShowPlay(false); setActivePuzzle(null); setPuzzleInProgress(false); setZoneCompleteData(null); }
+                tryLeavePlay(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); });
+              } else { setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); }
             }}
               style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px 0"}}>
               <div style={{
@@ -3325,14 +2948,13 @@ function ChessWorld(){
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
                 <span style={{fontSize:18}}>{syncStatus==="error"?"⚠️":"☁️"}</span>
                 <span style={{fontSize:14,fontWeight:900,color:"#2d3436"}}>
-                  {syncStatus==="saving"?"Saving…":syncStatus==="checking"?"Checking cloud…":syncStatus==="restored"?"Restored from cloud":syncStatus==="error"?"Sync failed":"Cloud Sync"}
+                  {syncStatus==="saving"?"Saving…":syncStatus==="error"?"Sync failed":"Cloud Sync"}
                 </span>
               </div>
               <div style={{fontSize:11,color:"#636e72",lineHeight:1.5}}>
                 {lastSavedAt
                   ? `Last saved: ${lastSavedAt.toLocaleTimeString()}`
-                  : syncStatus==="checking" ? "Opening app while cloud restore checks in background"
-                  : "Local progress is ready"}
+                  : "No saves yet this session"}
               </div>
               {syncStatus==="error"&&(
                 <div style={{fontSize:11,color:"#e74c3c",marginTop:6,fontWeight:700}}>
@@ -3347,62 +2969,14 @@ function ChessWorld(){
             </div>
 
             {/* Manual sync button */}
-            <button onClick={async()=>{SFX.tap();await saveToCloud(profilesRef.current,{manual:true});}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
+            <button onClick={()=>{SFX.tap();saveToCloud(profiles);}} style={{width:"100%",background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",boxShadow:"0 4px 0 #4a3ab5",marginBottom:10}}>
               🔄 Sync Now
             </button>
-
-            <button onClick={async()=>{SFX.tap();await restoreFromCloudNow();}} style={{width:"100%",background:"#eaf8ff",border:"2px solid #74b9ff",borderRadius:14,padding:"12px",fontSize:13,fontWeight:900,color:"#0984e3",cursor:"pointer",marginBottom:10}}>
-              ☁️ Restore From Cloud
-            </button>
-
-
-            <details style={{background:"#f7f7f7",border:"2px solid #dfe6e9",borderRadius:14,padding:12,marginBottom:10}}>
-              <summary style={{fontSize:12,fontWeight:900,color:"#2d3436",cursor:"pointer"}}>Cloud diagnostics</summary>
-              <div style={{marginTop:10,fontFamily:"monospace",fontSize:10,lineHeight:1.6,color:"#2d3436",wordBreak:"break-word"}}>
-                <div>Project: {cloudDebug.projectId || "missing"}</div>
-                <div>UID: {cloudDebug.uid || "not signed in"}</div>
-                <div>Email: {cloudDebug.email || "none"}</div>
-                <div>Doc: {cloudDebug.docPath || "none"}</div>
-                <div>Action: {cloudDebug.lastAction || "none"}</div>
-                <div>Write: {cloudDebug.lastWrite || "none"}</div>
-                <div>Restore: {cloudDebug.lastRestore || "none"}</div>
-                <div>Error: {cloudDebug.lastError || "none"}</div>
-              </div>
-            </details>
 
             {/* Sign out */}
             <button onClick={async()=>{SFX.tap();await fbAuth.signOut();setShowSettings(false);}} style={{width:"100%",background:"#fff0f0",border:"2px solid #ff7675",borderRadius:14,padding:"12px",fontSize:13,fontWeight:800,color:"#e74c3c",cursor:"pointer"}}>
               🚪 Sign Out
             </button>
-          </div>
-        </div>
-      )}
-
-
-
-      {/* ── LEAVE PUZZLE CONFIRMATION ── */}
-      {confirmLeavePuzzle&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24,animation:"fadeIn .2s ease"}}>
-          <div style={{background:"#fff",borderRadius:28,padding:"28px 24px",maxWidth:310,width:"100%",textAlign:"center",boxShadow:"0 20px 0 rgba(0,0,0,.2)",border:"4px solid #6c5ce7"}}>
-            <div style={{fontSize:48,marginBottom:8,animation:"puzzleWiggle 1s ease-in-out infinite"}}>🧩</div>
-            <div style={{fontSize:20,fontWeight:900,color:"#2d3436",marginBottom:6}}>Leave this puzzle?</div>
-            <div style={{fontSize:14,color:"#636e72",marginBottom:20,lineHeight:1.5}}>You have a puzzle in progress. Keep playing, or leave and lose this puzzle attempt.</div>
-            <div style={{display:"flex",gap:10}}>
-              <button
-                onClick={()=>setConfirmLeavePuzzle(false)}
-                style={{flex:1,background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:"14px",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 0 #4a3ab5",color:"#fff"}}>
-                ▶️ Continue
-              </button>
-              <button
-                onClick={()=>{
-                  setConfirmLeavePuzzle(false);
-                  setPuzzleInProgress(false);
-                  confirmLeavePuzzle.cb();
-                }}
-                style={{flex:1,background:"linear-gradient(135deg,#e74c3c,#c0392b)",border:"none",borderRadius:14,padding:"14px",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 0 #922b21",color:"#fff"}}>
-                🚪 Leave
-              </button>
-            </div>
           </div>
         </div>
       )}

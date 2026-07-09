@@ -30,9 +30,9 @@
 
   <!-- Firebase — compat SDK (v8-style global API), same proven approach as Wavr.
        Plain global scripts, no ES modules, no dynamic import() complexity. -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" integrity="sha384-KMPNHhcRNfsozA9rP+3f5HnRqDaCaJwI9ai1+A/SPSOyncUPMsU5oiuAZ5+YEDv3" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" integrity="sha384-KMPNHhcRNfsozA9rP+3f5HnRqDaCaJwI9ai1+A/SPSOyncUPMsU5oiuAZ5+YEDv3" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" integrity="sha384-KMPNHhcRNfsozA9rP+3f5HnRqDaCaJwI9ai1+A/SPSOyncUPMsU5oiuAZ5+YEDv3" crossorigin="anonymous"></script>
   <script src="/config.js"></script>
   <script>
     var firebaseConfig = {
@@ -46,10 +46,6 @@
     firebase.initializeApp(firebaseConfig);
     window.__fbAuth = firebase.auth();
     window.__fbDb = firebase.firestore();
-    try {
-      // Helps iPhone/Safari/Cloudflare Pages connections that can hang on streaming transport.
-      window.__fbDb.settings({ experimentalAutoDetectLongPolling: true, useFetchStreams: false, merge: true });
-    } catch (e) { console.warn("Firestore settings already locked", e); }
     window.__firebase = { ready: true }; // signal to chess-quest.jsx that Firebase is loaded
   </script>
 
