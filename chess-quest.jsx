@@ -3461,7 +3461,18 @@ function GlobalStyles(){
   );
 }
 
-const APP={height:"100dvh",maxHeight:"100dvh",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:'"Fredoka One","Nunito","SF Pro Rounded",-apple-system,BlinkMacSystemFont,sans-serif',WebkitOverflowScrolling:"touch"};
+const APP={
+  height:"100dvh",maxHeight:"100dvh",
+  display:"flex",flexDirection:"column",overflow:"hidden",
+  fontFamily:'"Fredoka One","Nunito","SF Pro Rounded",-apple-system,BlinkMacSystemFont,sans-serif',
+  WebkitOverflowScrolling:"touch",
+  // Push content below Dynamic Island / notch on iPhone
+  paddingTop:"env(safe-area-inset-top)",
+  paddingBottom:"env(safe-area-inset-bottom)",
+  paddingLeft:"env(safe-area-inset-left)",
+  paddingRight:"env(safe-area-inset-right)",
+  boxSizing:"border-box",
+};
 
 
 // Mount the app
