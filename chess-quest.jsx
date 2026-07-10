@@ -516,35 +516,33 @@ const PUZZLES=[
   // PR4: Knight outpost — move knight to dominant central square
   // wn=g1(7,6) moves to e5(3,4) — powerful central square
   // Show it attacks many squares from there
-  {id:16,zone:"master",title:"Knight Outpost!",desc:"Plant your Knight in the centre — it controls the whole board from e5!",emoji:"⚡",
+  {id:16,zone:"master",title:"Diagonal Domination!",desc:"Your Bishop can slice across to g7 and deliver a powerful check!",emoji:"🌟",
     board:[
       [null,null,null,null,"bk",null,null,null],
-      ["bp","bp","bp",null,"bp","bp","bp","bp"],
+      [null,null,null,null,null,null,"bp","bp"],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
+      [null,"wb",null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,"wk",null,null,null,null,"wn",null]
+      [null,null,null,null,"wk",null,null,null]
     ],
-    solution:{from:{r:7,c:6},to:{r:5,c:5}},
-    targetSq:{r:5,c:5},
-    hint:"Move the Knight toward the centre — it controls far more squares there!",xp:35},
+    solution:{from:{r:4,c:1},to:{r:1,c:4}},
+    hint:"The Bishop sweeps from b4 to e7 — blocking any escape and threatening checkmate!",xp:35},
 
-  // ── PIECE POWER (additional) ──
-  {id:17,zone:"checkmate",title:"Queen Captures!",desc:"Slide your Queen up the d-file to capture the enemy Queen!",emoji:"♛",
+  {id:17,zone:"checkmate",title:"Queen Smothers the King!",desc:"The King is trapped by its own pawns — move your Queen to g7 for checkmate!",emoji:"🎯",
     board:[
-      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,"bp","bk"],
+      [null,null,null,null,null,null,null,"bp"],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,"bq",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,"wq",null,null,null,"wk"]
+      ["wk",null,null,null,null,null,"wq",null]
     ],
-    solution:{from:{r:7,c:3},to:{r:3,c:3}},
-    hint:"Queens move along files — slide straight up to d5!",xp:25},
+    solution:{from:{r:7,c:6},to:{r:1,c:6}},
+    hint:"Slide your Queen from g1 straight up to g7 — the King is cornered!",xp:30},
 
   {id:18,zone:"pawns",title:"Pawn Promotion!",desc:"Push your pawn all the way to the end to become a Queen!",emoji:"👑",
     board:[
@@ -602,22 +600,20 @@ const PUZZLES=[
     solution:{from:{r:4,c:2},to:{r:1,c:5}},
     hint:"Count the diagonal squares — your Bishop on c4 can reach f7!",xp:25},
 
-  {id:22,zone:"pieces",title:"Back Rank Crush!",desc:"Slide your Rook along the back rank — the King is trapped!",emoji:"♜",
+  {id:22,zone:"pieces",title:"Discovered Check!",desc:"Move your Knight and reveal a hidden Rook attack on the King!",emoji:"♞",
     board:[
-      ["bk",null,null,null,null,null,null,"wr"],
-      ["bp","bn","wk",null,null,null,null,null],
+      [null,null,null,"bk",null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,"wn",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
+      [null,null,null,"wr",null,null,"wk",null]
     ],
-    solution:{from:{r:0,c:7},to:{r:0,c:1}},
-    hint:"The Rook sweeps the whole rank — the King has nowhere to go!",xp:35},
-
-  // ── OPENINGS (additional) ──
-  {id:23,zone:"pawns",title:"d4 Opening!",desc:"Control the centre with your d-pawn — push it two squares forward!",emoji:"🏰",
+    solution:{from:{r:3,c:3},to:{r:4,c:5}},
+    hint:"Move the Knight away from d5 — it reveals the Rook's attack on the King!",xp:25},
+{id:23,zone:"pawns",title:"d4 Opening!",desc:"Control the centre with your d-pawn — push it two squares forward!",emoji:"🏰",
     board:[
       ["br","bn","bb","bq","bk","bb","bn","br"],
       ["bp","bp","bp","bp","bp","bp","bp","bp"],
@@ -801,35 +797,33 @@ const PUZZLES=[
     solution:{from:{r:7,c:1},to:{r:1,c:1}},
     hint:"The Queen on b7 gives check — the King at a8 has nowhere to go!",xp:40},
 
-  {id:36,zone:"pawns",title:"Promote to Win!",desc:"Push the pawn to e8 and promote it to a Queen!",emoji:"♛",
+  {id:36,zone:"pawns",title:"A-File Promotion!",desc:"Your a-pawn is one step from becoming a Queen — push it!",emoji:"♟️",
     board:[
-      [null,null,null,null,null,null,null,"bk"],
-      [null,null,null,null,"wp",null,null,null],
-      [null,null,null,null,"wk",null,null,null],
+      [null,null,null,null,"bk",null,null,null],
+      ["wp",null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,"wk"]
     ],
-    solution:{from:{r:1,c:4},to:{r:0,c:4}},
-    hint:"The pawn is one step from queening — push it!",xp:35},
-
-  {id:37,zone:"checkmate",title:"Rook to b8!",desc:"Slide your Rook along the back rank — the King is cornered!",emoji:"♖",
+    solution:{from:{r:1,c:0},to:{r:0,c:0}},
+    hint:"Push the pawn from a7 to a8 — it becomes a Queen and wins the game!",xp:25},
+{id:37,zone:"checkmate",title:"Queen Swap!",desc:"Win the enemy Queen by capturing it on d5!",emoji:"🎯",
     board:[
-      ["bk",null,null,null,null,null,null,"wr"],
-      ["bp","bn","wk",null,null,null,null,null],
+      [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
+      [null,null,null,"bq",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
+      ["wq",null,null,null,null,null,null,null],
+      [null,null,null,null,"wk",null,null,null]
     ],
-    solution:{from:{r:0,c:7},to:{r:0,c:1}},
-    hint:"The Rook slides to b8 giving check — the King can't escape!",xp:40},
-
-  {id:38,zone:"endgame",title:"King Marches!",desc:"In endgames the King is a fighter — march it toward the centre!",emoji:"♔",
+    solution:{from:{r:6,c:0},to:{r:3,c:3}},
+    hint:"Your Queen swoops diagonally from a2 to capture the enemy Queen on d5!",xp:30},
+{id:38,zone:"endgame",title:"King Marches!",desc:"In endgames the King is a fighter — march it toward the centre!",emoji:"♔",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,"bk",null,null,null],
@@ -843,21 +837,20 @@ const PUZZLES=[
     solution:{from:{r:3,c:2},to:{r:4,c:3}},
     hint:"Activate your King in the endgame — it belongs in the centre!",xp:25},
 
-  {id:39,zone:"pawns",title:"Unstoppable Pawn!",desc:"Push the pawn to e8 — nothing can stop it becoming a Queen!",emoji:"♟️",
+  {id:39,zone:"pawns",title:"C-File Promotion!",desc:"Your c-pawn is one step from glory — advance it to become a Queen!",emoji:"♟️",
     board:[
-      [null,null,null,"wk",null,null,null,"bk"],
-      [null,null,null,null,"wp",null,null,null],
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,"wp",null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
+      ["wk",null,null,null,null,null,null,null]
     ],
-    solution:{from:{r:1,c:4},to:{r:0,c:4}},
-    hint:"The pawn is safe and the King is close — promote!",xp:35},
-
-  {id:40,zone:"endgame",title:"Stop the Passer!",desc:"Slide your Rook to a7 to block the dangerous passed pawn!",emoji:"🛡️",
+    solution:{from:{r:1,c:2},to:{r:0,c:2}},
+    hint:"Push the c-pawn from c7 to c8 — it becomes a brand new Queen!",xp:25},
+{id:40,zone:"endgame",title:"Stop the Passer!",desc:"Slide your Rook to a7 to block the dangerous passed pawn!",emoji:"🛡️",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,"wr"],
@@ -958,49 +951,46 @@ const PUZZLES=[
     targetSq:{r:7,c:4},
     hint:"Rooks are strongest on open files with no pawns blocking them!",xp:25},
 
-  {id:47,zone:"strategy",title:"Rook Invasion!",desc:"Send your Rook to the 8th rank — it invades the enemy position!",emoji:"⚔️",
+  {id:47,zone:"strategy",title:"Rook Grabs Material!",desc:"Your Rook can capture the undefended enemy Rook — take it!",emoji:"🧠",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
+      [null,null,null,"br",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,"wr",null,null,null],
-      ["wr",null,null,null,null,null,null,"wk"]
+      [null,null,null,"wr",null,null,null,"wk"]
     ],
-    solution:{from:{r:7,c:0},to:{r:0,c:0}},
-    hint:"Two Rooks on the 7th and 8th ranks are devastating — invade!",xp:35},
-
-  {id:48,zone:"strategy",title:"Target Weakness!",desc:"The isolated pawn on d5 is weak — capture it with your Queen!",emoji:"🎯",
+    solution:{from:{r:7,c:3},to:{r:4,c:3}},
+    hint:"Slide your Rook from d1 to d4 — it captures the enemy Rook for free!",xp:30},
+{id:48,zone:"strategy",title:"Long Diagonal Strike!",desc:"Your Bishop controls the long diagonal — move it to g7 to pressure the King!",emoji:"🧠",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,"bp",null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wk",null,null,"wq",null,null,null,null]
-    ],
-    solution:{from:{r:7,c:3},to:{r:3,c:3}},
-    hint:"Isolated pawns can't be defended by other pawns — attack them!",xp:30},
-
-  {id:49,zone:"strategy",title:"Eliminate the Defender!",desc:"Take the Knight that defends your opponent's position!",emoji:"♗",
-    board:[
-      [null,null,null,null,null,null,null,"bk"],
-      [null,null,null,null,null,"bn",null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,"wb",null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,"wk"]
+      [null,null,null,null,"wk",null,null,null]
     ],
-    solution:{from:{r:4,c:2},to:{r:1,c:5}},
-    hint:"The Knight on f6 defends important squares — capture it with your Bishop!",xp:30},
-
-  {id:50,zone:"strategy",title:"King Safety First!",desc:"Move your King to f1 — away from the centre and the danger!",emoji:"🛡️",
+    solution:{from:{r:5,c:2},to:{r:1,c:6}},
+    hint:"The Bishop slides from c3 all the way to g7 — it attacks the King's position!",xp:30},
+{id:49,zone:"strategy",title:"Bishop Forks!",desc:"Your Bishop can attack two pieces at once — find the fork square!",emoji:"🧠",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,"br"],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,"wb",null,null,null,null],
+      [null,null,null,null,null,null,null,"br"],
+      [null,null,null,null,"wk",null,null,null]
+    ],
+    solution:{from:{r:5,c:3},to:{r:3,c:5}},
+    hint:"The Bishop jumps to f5 — it attacks both Rooks on h7 and h1 at the same time!",xp:30},
+{id:50,zone:"strategy",title:"King Safety First!",desc:"Move your King to f1 — away from the centre and the danger!",emoji:"🛡️",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,null],
@@ -1043,21 +1033,20 @@ const PUZZLES=[
     targetSq:{r:5,c:3},
     hint:"Rooks belong BEHIND passed pawns — they push them from behind!",xp:30},
 
-  {id:53,zone:"master",title:"Win Material!",desc:"Your Queen can capture the undefended Rook — take it!",emoji:"💎",
+  {id:53,zone:"master",title:"Bishop Wins the Queen!",desc:"Your Bishop can capture the enemy Queen — spot the winning move!",emoji:"🌟",
     board:[
-      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,"bk"],
+      [null,null,null,null,null,null,"bq",null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,"br",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      ["wk",null,null,null,"wq",null,null,null]
+      ["wb",null,null,null,null,null,null,"wk"]
     ],
-    solution:{from:{r:7,c:4},to:{r:3,c:4}},
-    hint:"The Rook on e5 is hanging — grab it with your Queen!",xp:30},
-
-  {id:54,zone:"endgame",title:"Centralise the King!",desc:"In the endgame the King is powerful — march it toward the centre!",emoji:"♔",
+    solution:{from:{r:7,c:0},to:{r:1,c:6}},
+    hint:"The Bishop slices from a1 all the way to g7 — capturing the Queen in one move!",xp:40},
+{id:54,zone:"endgame",title:"Centralise the King!",desc:"In the endgame the King is powerful — march it toward the centre!",emoji:"♔",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -1100,9 +1089,9 @@ const PUZZLES=[
     solution:{from:{r:7,c:1},to:{r:1,c:7}},
     hint:"The Queen on h7 is check and the Rook on h1 protects it — checkmate!",xp:50},
 
-  {id:57,zone:"rush",title:"Speed Grab!",desc:"Spot the hanging piece and capture it instantly!",emoji:"⚡",
+  {id:57,zone:"rush",title:"Speed Grab!",desc:"The Rook is sitting on h8 undefended — slide your Queen up and take it!",emoji:"⚡",
     board:[
-      [null,null,null,null,"bk",null,"br",null],
+      [null,null,null,null,"bk",null,null,"br"],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -1111,7 +1100,7 @@ const PUZZLES=[
       [null,null,null,null,null,null,null,null],
       ["wk",null,null,null,null,null,null,"wq"]
     ],
-    solution:{from:{r:7,c:7},to:{r:3,c:7}},
+    solution:{from:{r:7,c:7},to:{r:0,c:7}},
     hint:"The Rook on h5 is undefended — slide your Queen straight up and grab it!",xp:40},
 
   {id:58,zone:"master",title:"Rook and Knight Mate!",desc:"Slide your Rook to h7 — the Knight and Rook deliver checkmate!",emoji:"⚡",
@@ -1171,201 +1160,35 @@ const PUZZLES=[
     solution:{from:{r:3,c:4},to:{r:6,c:1}},
     hint:"The Queen swoops to b2 — the King has nowhere to run!",xp:50},
 
-  {id:62,zone:"rush",title:"Rook and Knight!",desc:"Slide your Rook to h7 — the Knight covers the escape square!",emoji:"⚡",
+  {id:62,zone:"rush",title:"Queen Diagonal Snipe!",desc:"Spot the undefended Rook and capture it with your Queen in one move!",emoji:"⚡",
     board:[
-      [null,null,null,null,null,null,null,"bk"],
-      [null,null,null,null,null,null,"bp","bp"],
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,"br",null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,"wq",null],
+      [null,null,null,null,"wk",null,null,null]
+    ],
+    solution:{from:{r:6,c:6},to:{r:3,c:3}},
+    hint:"Your Queen sweeps diagonally from g2 to d5 — snapping up the free Rook!",xp:50},
+{id:63,zone:"rush",title:"Royal Fork!",desc:"Your Knight can attack the King AND Queen at the same time — find the square!",emoji:"⚡",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,"bq",null,null,null,null],
       [null,null,null,null,null,"wn",null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wk",null,null,null,null,null,null,"wr"]
+      [null,null,"wk",null,null,null,null,null]
     ],
-    solution:{from:{r:7,c:7},to:{r:1,c:7}},
-    hint:"Rook to h7 gives check and the Knight on f6 covers g8!",xp:50},
-
-  {id:63,zone:"rush",title:"Back Rank Lightning!",desc:"Zoom your Queen to b8 — checkmate in a flash!",emoji:"⚡",
-    board:[
-      ["bk",null,null,null,null,null,null,"wq"],
-      ["bp","bn","wk",null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
-    ],
-    solution:{from:{r:0,c:7},to:{r:0,c:1}},
-    hint:"The Queen slides along the back rank to b8 — the King is cornered!",xp:50},
+    solution:{from:{r:3,c:5},to:{r:1,c:4}},
+    hint:"Jump your Knight to e7 — it forks the King on e8 AND the Queen on d6!",xp:50},
 ];
 
 
-// ═══════════════════════════════════════════════════════════
-// MASCOT — Knight character SVG, reacts to game state
-// ═══════════════════════════════════════════════════════════
-function KnightMascot({mood="happy", size=80, animate=false, color=null}){
-  // color themes — pass a theme name for different armour colours
-  const themes = {
-    blue:   {helmet1:"#74b9ff", helmet2:"#2980b9", body1:"#2980b9", body2:"#3498db", dark:"#1a5276", plume1:"#e74c3c", plume2:"#ff6b6b"},
-    pink:   {helmet1:"#fd79a8", helmet2:"#e84393", body1:"#e84393", body2:"#fd79a8", dark:"#8c0044", plume1:"#fdcb6e", plume2:"#ffeaa7"},
-    purple: {helmet1:"#a29bfe", helmet2:"#6c5ce7", body1:"#6c5ce7", body2:"#a29bfe", dark:"#3d1f99", plume1:"#fd79a8", plume2:"#fdcb6e"},
-    green:  {helmet1:"#55efc4", helmet2:"#00b894", body1:"#00b894", body2:"#55efc4", dark:"#005c49", plume1:"#ffeaa7", plume2:"#fdcb6e"},
-    orange: {helmet1:"#ffeaa7", helmet2:"#fdcb6e", body1:"#e67e22", body2:"#f39c12", dark:"#784212", plume1:"#e74c3c", plume2:"#ff6b6b"},
-    red:    {helmet1:"#ff7675", helmet2:"#e74c3c", body1:"#e74c3c", body2:"#ff7675", dark:"#7b1a1a", plume1:"#ffeaa7", plume2:"#f1c40f"},
-  };
-  const t = themes[color] || themes.blue;
-
-  const expressions = {
-    happy:      {eyes:"😊", extra:""},
-    excited:    {eyes:"🤩", extra:""},
-    thinking:   {eyes:"🤔", extra:""},
-    celebrating:{eyes:"🎉", extra:""},
-    sad:        {eyes:"😢", extra:""},
-    encouraging:{eyes:"💪", extra:""},
-  };
-  const gid = `helmetG_${color||"blue"}_${mood}`;
-  return (
-    <div style={{
-      width:size, height:size, position:"relative", flexShrink:0,
-      animation: animate ? "mascotBounce 0.6s cubic-bezier(.34,1.56,.64,1)" : "mascotFloat 3s ease-in-out infinite",
-    }}>
-      <svg viewBox="0 0 80 80" width={size} height={size}>
-        <defs>
-          <radialGradient id={gid} cx="40%" cy="30%">
-            <stop offset="0%" stopColor={t.helmet1}/>
-            <stop offset="100%" stopColor={t.helmet2}/>
-          </radialGradient>
-          <radialGradient id="faceG" cx="40%" cy="35%">
-            <stop offset="0%" stopColor="#ffeaa7"/>
-            <stop offset="100%" stopColor="#fdcb6e"/>
-          </radialGradient>
-        </defs>
-        {/* Body/armour */}
-        <ellipse cx="40" cy="68" rx="22" ry="14" fill={t.dark} opacity=".5"/>
-        <rect x="22" y="52" width="36" height="22" rx="8" fill={t.body1}/>
-        <rect x="26" y="52" width="28" height="8" fill={t.body2}/>
-        {/* Armour details */}
-        <rect x="36" y="54" width="8" height="18" fill={t.dark} opacity=".4" rx="2"/>
-        <rect x="22" y="58" width="36" height="2" fill={t.dark} opacity=".3"/>
-        {/* Helmet */}
-        <ellipse cx="40" cy="36" rx="22" ry="24" fill={`url(#${gid})`}/>
-        <rect x="18" y="28" width="44" height="20" rx="4" fill={`url(#${gid})`}/>
-        {/* Visor opening - face */}
-        <rect x="24" y="30" width="32" height="22" rx="10" fill="url(#faceG)"/>
-        {/* Eyes */}
-        <circle cx="32" cy="38" r="5" fill="#fff"/>
-        <circle cx="48" cy="38" r="5" fill="#fff"/>
-        <circle cx="33" cy="39" r="3" fill="#2d3436"/>
-        <circle cx="49" cy="39" r="3" fill="#2d3436"/>
-        <circle cx="34" cy="38" r="1" fill="#fff"/>
-        <circle cx="50" cy="38" r="1" fill="#fff"/>
-        {/* Smile */}
-        <path d={mood==="sad"?"M32 46 Q40 42 48 46":"M32 44 Q40 50 48 44"} fill="none" stroke="#e17055" strokeWidth="2.5" strokeLinecap="round"/>
-        {/* Helmet plume */}
-        <ellipse cx="40" cy="14" rx="6" ry="14" fill={t.plume1}/>
-        <ellipse cx="40" cy="14" rx="4" ry="12" fill={t.plume2}/>
-        {/* Helmet top ridge */}
-        <rect x="34" y="12" width="12" height="8" rx="3" fill={t.dark}/>
-        {/* Stars for celebrating */}
-        {mood==="celebrating"&&<>
-          <text x="8" y="20" fontSize="12" style={{animation:"spin 1s linear infinite"}}>⭐</text>
-          <text x="56" y="18" fontSize="10" style={{animation:"spin 1.5s linear infinite reverse"}}>✨</text>
-        </>}
-      </svg>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
-// SPEECH BUBBLE
-// ═══════════════════════════════════════════════════════════
-function speak(text){
-  if(!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.85;   // slightly slower for kids
-  u.pitch = 1.1;   // slightly higher, friendlier
-  u.volume = 1;
-  // Prefer a friendly voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v=>v.name.includes("Samantha")||v.name.includes("Karen")||v.name.includes("Daniel")||v.lang==="en-GB"||v.lang==="en-US");
-  if(preferred) u.voice = preferred;
-  window.speechSynthesis.speak(u);
-}
-
-function SpeechBubble({msg, mood="happy", showSpeaker=false}){
-  const [speaking, setSpeaking] = useState(false);
-  const bubbleColors = {
-    happy:"#fff", excited:"#fff9e6", thinking:"#f0f0ff",
-    celebrating:"#fff9e6", sad:"#fff0f0", encouraging:"#f0fff4"
-  };
-  const borderColors = {
-    happy:"#74b9ff", excited:"#f1c40f", thinking:"#a29bfe",
-    celebrating:"#f1c40f", sad:"#ff7675", encouraging:"#00b894"
-  };
-
-  const handleSpeak = () => {
-    SFX.tap();
-    setSpeaking(true);
-    speak(msg);
-    // Reset icon after estimated speech duration
-    const ms = Math.max(1500, msg.length * 60);
-    setTimeout(() => setSpeaking(false), ms);
-  };
-
-  return (
-    <div style={{display:"flex", alignItems:"flex-start", gap:10}}>
-      <KnightMascot mood={mood} size={64}/>
-      <div style={{flex:1, position:"relative"}}>
-        {/* Tail of bubble */}
-        <div style={{
-          position:"absolute", left:-10, top:16,
-          width:0, height:0,
-          borderTop:"8px solid transparent",
-          borderBottom:"8px solid transparent",
-          borderRight:`10px solid ${borderColors[mood]||"#74b9ff"}`,
-        }}/>
-        <div style={{
-          background: bubbleColors[mood]||"#fff",
-          border:`3px solid ${borderColors[mood]||"#74b9ff"}`,
-          borderRadius:"18px 18px 18px 4px",
-          padding:"10px 14px 10px 12px",
-          boxShadow:"0 4px 0 rgba(0,0,0,.08)",
-          fontSize:14, lineHeight:1.5, color:"#2d3436", fontWeight:600,
-          display:"flex", alignItems:"flex-start", gap:8,
-        }}>
-          <span style={{flex:1}}>{msg}</span>
-          {/* Speaker button */}
-          <button
-            onClick={handleSpeak}
-            title="Tap to hear instructions"
-            style={{
-              flexShrink:0,
-              width:34, height:34, borderRadius:"50%",
-              background: speaking
-                ? "linear-gradient(145deg,#6c5ce7,#a29bfe)"
-                : "linear-gradient(145deg,#74b9ff,#0984e3)",
-              border:"2px solid rgba(255,255,255,.6)",
-              boxShadow: speaking ? "0 0 0 3px rgba(108,92,231,.35)" : "0 3px 0 rgba(0,0,0,.15)",
-              cursor:"pointer",
-              display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:16,
-              animation: speaking ? "pulse .6s ease-in-out infinite" : "none",
-              transition:"all .2s ease",
-              marginTop:2,
-            }}>
-            {speaking ? "🔊" : "🔈"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
-// MINI BOARD
-// ═══════════════════════════════════════════════════════════
 function MiniBoard({board,onTap,selected,targets,lastMove,highlightSq}){
   const cells=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)cells.push({r,c});
   const files=["a","b","c","d","e","f","g","h"];
@@ -1519,6 +1342,10 @@ function MiniBoard({board,onTap,selected,targets,lastMove,highlightSq}){
     </div>
   );
 }
+
+// ═══════════════════════════════════════════════════════════
+// ZONE ILLUSTRATED ICON
+// ═══════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════
 // ZONE ILLUSTRATED ICON
