@@ -147,19 +147,70 @@ function hangingFor(board,side){const ot=opp(side),res=[];for(let r=0;r<8;r++)fo
 function threatsFor(board,side){const ot=opp(side),res=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=board[r][c];if(!mine(p,side))continue;const atts=[];for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++)if(mine(board[rr][cc],ot)&&pMoves(board,rr,cc,ot).some(m=>m.to.r===r&&m.to.c===c))atts.push(board[rr][cc]);if(!atts.length)continue;if(!isAttBy(board,r,c,side)||Math.min(...atts.map(a=>VALS[typ(a)]))<VALS[typ(p)])res.push({r,c,piece:p});}return res;}
 function findForks(board,side){const ot=opp(side),forks=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++){if(!mine(board[r][c],side))continue;for(const m of legalFor(board,r,c,side)){const nb=applyM(board,m);const att=[];for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++){if(!mine(nb[rr][cc],ot)||VALS[typ(nb[rr][cc])]<3)continue;if(pMoves(nb,m.to.r,m.to.c,side).some(mv=>mv.to.r===rr&&mv.to.c===cc))att.push(nb[rr][cc]);}if(att.length>=2)forks.push({move:m,targets:att});}}return forks;}
 function scoreBlack(board,m){let s=0;if(m.captured)s+=VALS[typ(m.captured)]*10;if(["bn","bb"].includes(m.piece)&&m.from.r===0)s+=7;if(m.piece==="bp"&&(m.to.c===3||m.to.c===4))s+=4;if(inCheck(applyM(board,m),"w"))s+=8;return s+Math.random()*3;}
+
+// Static board evaluation for minimax (positive = good for black)
+function evalBoard(board){
+  let score=0;
+  const centerBonus=[[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,1,1,1,1,0,0],[0,0,1,2,2,1,0,0],[0,0,1,2,2,1,0,0],[0,0,1,1,1,1,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=board[r][c]; if(!p) continue;
+    const val=VALS[typ(p)]*10;
+    const cb=centerBonus[r][c];
+    if(p[0]==="b") score+=val+cb;
+    else score-=val+cb;
+  }
+  return score;
+}
+
+// Minimax with alpha-beta pruning (depth 2 = looks 2 moves ahead)
+function minimax(board,depth,alpha,beta,isBlack){
+  if(depth===0) return evalBoard(board);
+  const side=isBlack?"b":"w";
+  const moves=allLegal(board,side);
+  if(!moves.length) return isBlack?-9999:9999; // checkmate/stalemate
+  if(isBlack){
+    let best=-Infinity;
+    for(const m of moves){
+      const nb=applyM(board,m);
+      best=Math.max(best,minimax(nb,depth-1,alpha,beta,false));
+      alpha=Math.max(alpha,best);
+      if(beta<=alpha) break;
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(const m of moves){
+      const nb=applyM(board,m);
+      best=Math.min(best,minimax(nb,depth-1,alpha,beta,true));
+      beta=Math.min(beta,best);
+      if(beta<=alpha) break;
+    }
+    return best;
+  }
+}
+
 function pickBlack(board, difficulty="medium"){
   const moves=allLegal(board,"b");
-  if(!moves.length)return null;
+  if(!moves.length) return null;
+
   if(difficulty==="easy"){
-    // Easy: picks randomly from ALL moves, ignoring strategy
+    // Easy: picks randomly, sometimes blunders on purpose
     return moves[Math.floor(Math.random()*moves.length)];
   }
-  moves.sort((a,b)=>scoreBlack(board,b)-scoreBlack(board,a));
+
   if(difficulty==="hard"){
-    // Hard: always picks the best move
-    return moves[0];
+    // Hard: minimax depth 3 — looks 3 moves ahead, plays near-perfectly
+    let best=-Infinity, bestMove=moves[0];
+    for(const m of moves){
+      const nb=applyM(board,m);
+      const score=minimax(nb,2,-Infinity,Infinity,false);
+      if(score>best){best=score;bestMove=m;}
+    }
+    return bestMove;
   }
-  // Medium: picks from top 6 (original behaviour)
+
+  // Medium: top-6 with some randomness (original)
+  moves.sort((a,b)=>scoreBlack(board,b)-scoreBlack(board,a));
   return moves.slice(0,Math.min(6,moves.length))[Math.floor(Math.random()*Math.min(6,moves.length))];
 }
 
