@@ -147,7 +147,21 @@ function hangingFor(board,side){const ot=opp(side),res=[];for(let r=0;r<8;r++)fo
 function threatsFor(board,side){const ot=opp(side),res=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=board[r][c];if(!mine(p,side))continue;const atts=[];for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++)if(mine(board[rr][cc],ot)&&pMoves(board,rr,cc,ot).some(m=>m.to.r===r&&m.to.c===c))atts.push(board[rr][cc]);if(!atts.length)continue;if(!isAttBy(board,r,c,side)||Math.min(...atts.map(a=>VALS[typ(a)]))<VALS[typ(p)])res.push({r,c,piece:p});}return res;}
 function findForks(board,side){const ot=opp(side),forks=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++){if(!mine(board[r][c],side))continue;for(const m of legalFor(board,r,c,side)){const nb=applyM(board,m);const att=[];for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++){if(!mine(nb[rr][cc],ot)||VALS[typ(nb[rr][cc])]<3)continue;if(pMoves(nb,m.to.r,m.to.c,side).some(mv=>mv.to.r===rr&&mv.to.c===cc))att.push(nb[rr][cc]);}if(att.length>=2)forks.push({move:m,targets:att});}}return forks;}
 function scoreBlack(board,m){let s=0;if(m.captured)s+=VALS[typ(m.captured)]*10;if(["bn","bb"].includes(m.piece)&&m.from.r===0)s+=7;if(m.piece==="bp"&&(m.to.c===3||m.to.c===4))s+=4;if(inCheck(applyM(board,m),"w"))s+=8;return s+Math.random()*3;}
-function pickBlack(board){const moves=allLegal(board,"b");if(!moves.length)return null;moves.sort((a,b)=>scoreBlack(board,b)-scoreBlack(board,a));return moves.slice(0,Math.min(6,moves.length))[Math.floor(Math.random()*Math.min(6,moves.length))];}
+function pickBlack(board, difficulty="medium"){
+  const moves=allLegal(board,"b");
+  if(!moves.length)return null;
+  if(difficulty==="easy"){
+    // Easy: picks randomly from ALL moves, ignoring strategy
+    return moves[Math.floor(Math.random()*moves.length)];
+  }
+  moves.sort((a,b)=>scoreBlack(board,b)-scoreBlack(board,a));
+  if(difficulty==="hard"){
+    // Hard: always picks the best move
+    return moves[0];
+  }
+  // Medium: picks from top 6 (original behaviour)
+  return moves.slice(0,Math.min(6,moves.length))[Math.floor(Math.random()*Math.min(6,moves.length))];
+}
 
 // ═══════════════════════════════════════════════════════════
 // DATA
@@ -2312,6 +2326,7 @@ function PuzzleScreen({puzzle, onComplete, onBack}){
 function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,hist,setHist,snaps,setSnaps,lastMove,setLastMove,over,setOver,thinking,setThinking,msg,setMsg,mood,setMood}){
   const PNAMES={p:"pawn",n:"knight",b:"bishop",r:"rook",q:"queen",k:"king"};
   const say=(m,mo="happy")=>{setMsg(m);setMood(mo);};
+  const [difficulty,setDifficulty]=useState("medium");
 
   const afterMove=(nb,move,isMine)=>{
     if(isMine){
@@ -2350,7 +2365,7 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
     if(!allLegal(nb,"b").length){setOver(true);if(inCheck(nb,"b"))say("CHECKMATE! YOU WIN! 🏆🎉","celebrating");else say("Stalemate — a draw! 🤝","happy");return;}
     setTurn("b");setThinking(true);
     setTimeout(()=>{
-      const bm=pickBlack(nb);if(!bm)return;
+      const bm=pickBlack(nb,difficulty);if(!bm)return;
       const nb2=applyM(nb,bm);
       setBoard(nb2);setLastMove({from:bm.from,to:bm.to});
       setHist(h=>[...h,notation(bm)]);setThinking(false);
@@ -2381,9 +2396,35 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
         <button onClick={newGame} style={{background:"linear-gradient(145deg,#e74c3c,#c0392b)",border:"none",borderRadius:14,padding:"8px 14px",color:"#fff",fontSize:16,fontWeight:900,boxShadow:"0 4px 0 #922b21"}}>{"✦"}</button>
       </div>
       {/* Speech bubble */}
-      <div style={{padding:"10px 14px 8px",flexShrink:0}}>
+      <div style={{padding:"10px 14px 4px",flexShrink:0}}>
         <SpeechBubble msg={msg} mood={mood} showSpeaker={true}/>
       </div>
+
+      {/* Difficulty selector */}
+      <div style={{padding:"0 14px 8px",flexShrink:0,display:"flex",alignItems:"center",gap:6}}>
+        <span style={{fontSize:11,fontWeight:800,color:"#636e72",letterSpacing:.5}}>LEVEL:</span>
+        {[
+          {key:"easy",  label:"😊 Easy",  color:"#27ae60", shadow:"#1e8449"},
+          {key:"medium",label:"🔥 Medium",color:"#e67e22", shadow:"#d35400"},
+          {key:"hard",  label:"💀 Hard",  color:"#e74c3c", shadow:"#c0392b"},
+        ].map(d=>(
+          <button key={d.key} onClick={()=>{setDifficulty(d.key);newGame();}}
+            style={{
+              flex:1,padding:"7px 4px",borderRadius:12,border:"none",
+              background:difficulty===d.key
+                ?`linear-gradient(145deg,${d.color},${d.shadow})`
+                :"rgba(0,0,0,.06)",
+              color:difficulty===d.key?"#fff":"#636e72",
+              fontSize:11,fontWeight:900,
+              boxShadow:difficulty===d.key?`0 3px 0 ${d.shadow}`:"none",
+              transform:difficulty===d.key?"translateY(-1px)":"none",
+              transition:"all .15s",
+            }}>
+            {d.label}
+          </button>
+        ))}
+      </div>
+
       {/* Board */}
       <BoardContainer>
         {()=><MiniBoard board={board} onTap={tap} selected={sel} targets={tgts} lastMove={lastMove}/>}
