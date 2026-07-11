@@ -1189,6 +1189,159 @@ const PUZZLES=[
 ];
 
 
+
+function SpeechBubble({msg, mood="happy", showSpeaker=false}){
+  const [speaking, setSpeaking] = useState(false);
+  const bubbleColors = {
+    happy:"#fff", excited:"#fff9e6", thinking:"#f0f0ff",
+    celebrating:"#fff9e6", sad:"#fff0f0", encouraging:"#f0fff4"
+  };
+  const borderColors = {
+    happy:"#74b9ff", excited:"#f1c40f", thinking:"#a29bfe",
+    celebrating:"#f1c40f", sad:"#ff7675", encouraging:"#00b894"
+  };
+
+  const handleSpeak = () => {
+    SFX.tap();
+    setSpeaking(true);
+    speak(msg);
+    // Reset icon after estimated speech duration
+    const ms = Math.max(1500, msg.length * 60);
+    setTimeout(() => setSpeaking(false), ms);
+  };
+
+  return (
+    <div style={{display:"flex", alignItems:"flex-start", gap:10}}>
+      <KnightMascot mood={mood} size={64}/>
+      <div style={{flex:1, position:"relative"}}>
+        {/* Tail of bubble */}
+        <div style={{
+          position:"absolute", left:-10, top:16,
+          width:0, height:0,
+          borderTop:"8px solid transparent",
+          borderBottom:"8px solid transparent",
+          borderRight:`10px solid ${borderColors[mood]||"#74b9ff"}`,
+        }}/>
+        <div style={{
+          background: bubbleColors[mood]||"#fff",
+          border:`3px solid ${borderColors[mood]||"#74b9ff"}`,
+          borderRadius:"18px 18px 18px 4px",
+          padding:"10px 14px 10px 12px",
+          boxShadow:"0 4px 0 rgba(0,0,0,.08)",
+          fontSize:14, lineHeight:1.5, color:"#2d3436", fontWeight:600,
+          display:"flex", alignItems:"flex-start", gap:8,
+        }}>
+          <span style={{flex:1}}>{msg}</span>
+          {/* Speaker button */}
+          <button
+            onClick={handleSpeak}
+            title="Tap to hear instructions"
+            style={{
+              flexShrink:0,
+              width:34, height:34, borderRadius:"50%",
+              background: speaking
+                ? "linear-gradient(145deg,#6c5ce7,#a29bfe)"
+                : "linear-gradient(145deg,#74b9ff,#0984e3)",
+              border:"2px solid rgba(255,255,255,.6)",
+              boxShadow: speaking ? "0 0 0 3px rgba(108,92,231,.35)" : "0 3px 0 rgba(0,0,0,.15)",
+              cursor:"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:16,
+              animation: speaking ? "pulse .6s ease-in-out infinite" : "none",
+              transition:"all .2s ease",
+              marginTop:2,
+            }}>
+            {speaking ? "🔊" : "🔈"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// MINI BOARD
+// ═══════════════════════════════════════════════════════════
+function KnightMascot({mood="happy", size=80, animate=false}){
+  const expressions = {
+    happy:      {eyes:"😊", bg:"#4a90e2", extra:""},
+    excited:    {eyes:"🤩", bg:"#e74c3c", extra:""},
+    thinking:   {eyes:"🤔", bg:"#8e44ad", extra:""},
+    celebrating:{eyes:"🎉", bg:"#f39c12", extra:""},
+    sad:        {eyes:"😢", bg:"#636e72", extra:""},
+    encouraging:{eyes:"💪", bg:"#27ae60", extra:""},
+  };
+  const e = expressions[mood] || expressions.happy;
+  return (
+    <div style={{
+      width:size, height:size, position:"relative", flexShrink:0,
+      animation: animate ? "mascotBounce 0.6s cubic-bezier(.34,1.56,.64,1)" : "mascotFloat 3s ease-in-out infinite",
+    }}>
+      {/* Knight helmet body */}
+      <svg viewBox="0 0 80 80" width={size} height={size}>
+        <defs>
+          <radialGradient id="helmetG" cx="40%" cy="30%">
+            <stop offset="0%" stopColor="#74b9ff"/>
+            <stop offset="100%" stopColor="#2980b9"/>
+          </radialGradient>
+          <radialGradient id="faceG" cx="40%" cy="35%">
+            <stop offset="0%" stopColor="#ffeaa7"/>
+            <stop offset="100%" stopColor="#fdcb6e"/>
+          </radialGradient>
+        </defs>
+        {/* Body/armour */}
+        <ellipse cx="40" cy="68" rx="22" ry="14" fill="#1a5276" opacity=".5"/>
+        <rect x="22" y="52" width="36" height="22" rx="8" fill="#2980b9"/>
+        <rect x="26" y="52" width="28" height="8" fill="#3498db"/>
+        {/* Armour details */}
+        <rect x="36" y="54" width="8" height="18" fill="#1a5276" opacity=".4" rx="2"/>
+        <rect x="22" y="58" width="36" height="2" fill="#1a5276" opacity=".3"/>
+        {/* Helmet */}
+        <ellipse cx="40" cy="36" rx="22" ry="24" fill="url(#helmetG)"/>
+        <rect x="18" y="28" width="44" height="20" rx="4" fill="url(#helmetG)"/>
+        {/* Visor opening - face */}
+        <rect x="24" y="30" width="32" height="22" rx="10" fill="url(#faceG)"/>
+        {/* Eyes */}
+        <circle cx="32" cy="38" r="5" fill="#fff"/>
+        <circle cx="48" cy="38" r="5" fill="#fff"/>
+        <circle cx="33" cy="39" r="3" fill="#2d3436"/>
+        <circle cx="49" cy="39" r="3" fill="#2d3436"/>
+        <circle cx="34" cy="38" r="1" fill="#fff"/>
+        <circle cx="50" cy="38" r="1" fill="#fff"/>
+        {/* Smile */}
+        <path d={mood==="sad"?"M32 46 Q40 42 48 46":"M32 44 Q40 50 48 44"} fill="none" stroke="#e17055" strokeWidth="2.5" strokeLinecap="round"/>
+        {/* Helmet plume */}
+        <ellipse cx="40" cy="14" rx="6" ry="14" fill="#e74c3c"/>
+        <ellipse cx="40" cy="14" rx="4" ry="12" fill="#ff6b6b"/>
+        {/* Helmet top ridge */}
+        <rect x="34" y="12" width="12" height="8" rx="3" fill="#1a5276"/>
+        {/* Stars for excited */}
+        {mood==="celebrating"&&<>
+          <text x="8" y="20" fontSize="12" style={{animation:"spin 1s linear infinite"}}>⭐</text>
+          <text x="56" y="18" fontSize="10" style={{animation:"spin 1.5s linear infinite reverse"}}>✨</text>
+        </>}
+      </svg>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// SPEECH BUBBLE
+// ═══════════════════════════════════════════════════════════
+function speak(text){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.85;   // slightly slower for kids
+  u.pitch = 1.1;   // slightly higher, friendlier
+  u.volume = 1;
+  // Prefer a friendly voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v=>v.name.includes("Samantha")||v.name.includes("Karen")||v.name.includes("Daniel")||v.lang==="en-GB"||v.lang==="en-US");
+  if(preferred) u.voice = preferred;
+  window.speechSynthesis.speak(u);
+}
+
 function MiniBoard({board,onTap,selected,targets,lastMove,highlightSq}){
   const cells=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)cells.push({r,c});
   const files=["a","b","c","d","e","f","g","h"];
