@@ -1741,7 +1741,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
           </div>
           {/* Progress summary */}
           <div style={{marginTop:12,textAlign:"center",fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:700}}>
-            {completedPuzzles}/63 puzzles complete 🏆
+            {completedPuzzles}/65 puzzles complete 🏆
           </div>
         </div>
       </div>
@@ -2507,15 +2507,15 @@ function AwardsScreen({xp, completedPuzzles, completedIds, streak}){
     // pieces=8, pawns=7, openings=7, tactics=7, checkmate=7, strategy=8, endgame=7, master=7, rush=7
     // Cumulative: 8, 15, 22, 29, 36, 44, 51, 58, 65
     {title:"First Move!",     desc:"Complete your first puzzle",     icon:"🎯", earned:completedPuzzles>=1,  color:"#e74c3c", shadow:"#c0392b"},
-    {title:"Piece Master",    desc:"Complete Piece Power zone",      icon:"♞", earned:completedPuzzles>=8,  color:"#e67e22", shadow:"#ba6b09"},
-    {title:"Pawn Power",      desc:"Complete Pawn Kingdom zone",     icon:"♟️", earned:completedPuzzles>=15, color:"#f39c12", shadow:"#d4890a"},
-    {title:"Opening Expert",  desc:"Complete Open Strong zone",      icon:"🏰", earned:completedPuzzles>=22, color:"#27ae60", shadow:"#1e8449"},
-    {title:"Tactics Ace",     desc:"Complete Tactics zone",          icon:"⚔️", earned:completedPuzzles>=29, color:"#00b894", shadow:"#00896e"},
-    {title:"Checkmate Hunter",desc:"Complete Checkmate Hunt zone",   icon:"🎯", earned:completedPuzzles>=36, color:"#8e44ad", shadow:"#6c3483"},
-    {title:"Strategist",      desc:"Complete Strategy zone",         icon:"🧠", earned:completedPuzzles>=44, color:"#2980b9", shadow:"#1a5276"},
-    {title:"Endgame Pro",     desc:"Complete Endgame zone",          icon:"👑", earned:completedPuzzles>=51, color:"#16a085", shadow:"#0e6655"},
-    {title:"Master Class",    desc:"Complete Master Moves zone",     icon:"🌟", earned:completedPuzzles>=58, color:"#2c3e50", shadow:"#1a252f"},
-    {title:"Grand Master!",   desc:"Complete ALL 65 puzzles!",       icon:"🏆", earned:completedPuzzles>=65, color:"#f1c40f", shadow:"#d4ac0d"},
+    {title:"Piece Master",    desc:"Complete Piece Power zone",      icon:"♞", earned:PUZZLES.filter(p=>p.zone==="pieces").every(p=>(completedIds||[]).includes(p.id)),  color:"#e67e22", shadow:"#ba6b09"},
+    {title:"Pawn Power",      desc:"Complete Pawn Kingdom zone",     icon:"♟️", earned:PUZZLES.filter(p=>p.zone==="pawns").every(p=>(completedIds||[]).includes(p.id)), color:"#f39c12", shadow:"#d4890a"},
+    {title:"Opening Expert",  desc:"Complete Open Strong zone",      icon:"🏰", earned:PUZZLES.filter(p=>p.zone==="openings").every(p=>(completedIds||[]).includes(p.id)), color:"#27ae60", shadow:"#1e8449"},
+    {title:"Tactics Ace",     desc:"Complete Tactics zone",          icon:"⚔️", earned:PUZZLES.filter(p=>p.zone==="tactics").every(p=>(completedIds||[]).includes(p.id)), color:"#00b894", shadow:"#00896e"},
+    {title:"Checkmate Hunter",desc:"Complete Checkmate Hunt zone",   icon:"🎯", earned:PUZZLES.filter(p=>p.zone==="checkmate").every(p=>(completedIds||[]).includes(p.id)), color:"#8e44ad", shadow:"#6c3483"},
+    {title:"Strategist",      desc:"Complete Strategy zone",         icon:"🧠", earned:PUZZLES.filter(p=>p.zone==="strategy").every(p=>(completedIds||[]).includes(p.id)), color:"#2980b9", shadow:"#1a5276"},
+    {title:"Endgame Pro",     desc:"Complete Endgame zone",          icon:"👑", earned:PUZZLES.filter(p=>p.zone==="endgame").every(p=>(completedIds||[]).includes(p.id)), color:"#16a085", shadow:"#0e6655"},
+    {title:"Master Class",    desc:"Complete Master Moves zone",     icon:"🌟", earned:PUZZLES.filter(p=>p.zone==="master").every(p=>(completedIds||[]).includes(p.id)), color:"#2c3e50", shadow:"#1a252f"},
+    {title:"Grand Master!",   desc:"Complete ALL 65 puzzles!",       icon:"🏆", earned:PUZZLES.every(p=>(completedIds||[]).includes(p.id)), color:"#f1c40f", shadow:"#d4ac0d"},
     // XP milestones
     {title:"Star Collector",  desc:"Earn 300 XP",                   icon:"⭐", earned:xp>=300,             color:"#f39c12", shadow:"#d4890a"},
     {title:"Champion!",       desc:"Earn 1000 XP",                  icon:"♕", earned:xp>=1000,            color:"#8e44ad", shadow:"#6c3483"},
