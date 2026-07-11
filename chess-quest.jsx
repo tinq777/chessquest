@@ -237,7 +237,7 @@ const PUZZLES=[
   // Puzzle 1: Qg8# — queen slides up h-file, king cornered at h8, no escape
   // wq=g1(7,6), wk=a1(7,0), bk=h8(0,7)
   // Qg8: queen goes to (0,6). Attacks (0,7)=bk. King can't go to g7(1,6) or h7(1,7) — both covered by queen. CHECKMATE.
-  {id:1,zone:"pieces",title:"Checkmate in 1!",desc:"Slide your Queen to g8 to checkmate the King in the corner!",emoji:"⚔️",
+  {id:1,zone:"checkmate",title:"Checkmate in 1!",desc:"Slide your Queen to g8 to checkmate the King in the corner!",emoji:"⚔️",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,null],
@@ -249,7 +249,7 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,"wq",null]
     ],
     solution:{from:{r:7,c:6},to:{r:0,c:6}},
-    hint:"The Queen slides in straight lines — send her all the way to the top!",xp:30},
+    hint:"The Queen slides in straight lines — send her all the way to the top!",xp:40},
 
   // Puzzle 2: Knight Fork — CORRECTED
   // wn=a4(4,0), bk=c8(0,2), br=d5(3,3), wk=h1(7,7)
@@ -320,7 +320,7 @@ const PUZZLES=[
   // bk=e8(0,4), br=e5(3,4), wq=e3(5,4), wk=e1(7,4) — all on e-file
   // br is pinned (can't move or wq takes bk... wait wq already attacks bk through br)
   // wq captures br at (3,4). bk at (0,4) is 3 rows from (3,4) — cannot recapture. VALID.
-  {id:6,zone:"tactics",title:"Pin & Win!",desc:"The Rook can't move — it's pinned to the King! Capture it with your Queen!",emoji:"📌",
+  {id:6,zone:"strategy",title:"Pin & Win!",desc:"The Rook can't move — it's pinned to the King! Capture it with your Queen!",emoji:"📌",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -600,7 +600,7 @@ const PUZZLES=[
     solution:{from:{r:4,c:2},to:{r:1,c:5}},
     hint:"Count the diagonal squares — your Bishop on c4 can reach f7!",xp:25},
 
-  {id:22,zone:"pieces",title:"Discovered Check!",desc:"Move your Knight and reveal a hidden Rook attack on the King!",emoji:"♞",
+  {id:22,zone:"tactics",title:"Discovered Check!",desc:"Move your Knight and reveal a hidden Rook attack on the King!",emoji:"♞",
     board:[
       [null,null,null,"bk",null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -612,7 +612,7 @@ const PUZZLES=[
       [null,null,null,"wr",null,null,"wk",null]
     ],
     solution:{from:{r:3,c:3},to:{r:4,c:5}},
-    hint:"Move the Knight away from d5 — it reveals the Rook's attack on the King!",xp:25},
+    hint:"Move the Knight away from d5 — it reveals the Rook's attack on the King!",xp:30},
 {id:23,zone:"pawns",title:"d4 Opening!",desc:"Control the centre with your d-pawn — push it two squares forward!",emoji:"🏰",
     board:[
       ["br","bn","bb","bq","bk","bb","bn","br"],
@@ -709,7 +709,7 @@ const PUZZLES=[
       ["wr",null,"wb","wq","wk","wb","wn","wr"]
     ],
     solution:{from:{r:7,c:3},to:{r:5,c:5}},
-    hint:"The Queen on f3 eyes the weak f7 pawn near the enemy King!",xp:30},
+    hint:"The Queen on f3 eyes the weak f7 pawn near the enemy King!",xp:25},
 
   // ── TACTICS (additional) ──
   {id:30,zone:"tactics",title:"Queen Swipe!",desc:"Your Queen can slide up the e-file and capture the enemy Queen!",emoji:"⚡",
@@ -810,7 +810,7 @@ const PUZZLES=[
     ],
     solution:{from:{r:1,c:0},to:{r:0,c:0}},
     hint:"Push the pawn from a7 to a8 — it becomes a Queen and wins the game!",xp:25},
-{id:37,zone:"checkmate",title:"Queen Swap!",desc:"Win the enemy Queen by capturing it on d5!",emoji:"🎯",
+{id:37,zone:"strategy",title:"Queen Swap!",desc:"Win the enemy Queen by capturing it on d5!",emoji:"🎯",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -822,7 +822,7 @@ const PUZZLES=[
       [null,null,null,null,"wk",null,null,null]
     ],
     solution:{from:{r:6,c:0},to:{r:3,c:3}},
-    hint:"Your Queen swoops diagonally from a2 to capture the enemy Queen on d5!",xp:30},
+    hint:"Your Queen swoops diagonally from a2 to capture the enemy Queen on d5!",xp:35},
 {id:38,zone:"endgame",title:"King Marches!",desc:"In endgames the King is a fighter — march it toward the centre!",emoji:"♔",
     board:[
       [null,null,null,null,null,null,null,null],
@@ -835,7 +835,7 @@ const PUZZLES=[
       [null,null,null,null,null,null,null,null]
     ],
     solution:{from:{r:3,c:2},to:{r:4,c:3}},
-    hint:"Activate your King in the endgame — it belongs in the centre!",xp:25},
+    hint:"Activate your King in the endgame — it belongs in the centre!",xp:35},
 
   {id:39,zone:"pawns",title:"C-File Promotion!",desc:"Your c-pawn is one step from glory — advance it to become a Queen!",emoji:"♟️",
     board:[
@@ -876,7 +876,7 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,null,null]
     ],
     solution:{from:{r:0,c:3},to:{r:6,c:3}},
-    hint:"The Queen slides down the d-file and grabs the pawn before it promotes!",xp:30},
+    hint:"The Queen slides down the d-file and grabs the pawn before it promotes!",xp:35},
 
   {id:42,zone:"endgame",title:"Cut Off the King!",desc:"Move your Rook to d1 — it checks the King and drives it back!",emoji:"✂️",
     board:[
@@ -890,7 +890,7 @@ const PUZZLES=[
       ["wr",null,null,null,null,null,null,null]
     ],
     solution:{from:{r:7,c:0},to:{r:7,c:3}},
-    hint:"The Rook slides along rank 1 to d1 — the King on d5 is in check!",xp:30},
+    hint:"The Rook slides along rank 1 to d1 — the King on d5 is in check!",xp:35},
 
   {id:43,zone:"pawns",title:"Pawn to the 7th!",desc:"Advance your pawn to e7 — one step from queening!",emoji:"♟️",
     board:[
@@ -906,7 +906,7 @@ const PUZZLES=[
     solution:{from:{r:2,c:4},to:{r:1,c:4}},
     hint:"Push the pawn to e7 — the King is right behind it for support!",xp:25},
 
-  {id:44,zone:"endgame",title:"King Takes!",desc:"Your King can capture the last pawn to win the endgame!",emoji:"♔",
+  {id:44,zone:"pieces",title:"King Takes!",desc:"Your King can capture the last pawn to win the endgame!",emoji:"♔",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -918,7 +918,7 @@ const PUZZLES=[
       [null,null,null,null,null,null,null,"bk"]
     ],
     solution:{from:{r:4,c:3},to:{r:4,c:4}},
-    hint:"The King captures the pawn — removing it clears the path to victory!",xp:25},
+    hint:"The King captures the pawn — removing it clears the path to victory!",xp:20},
 
   // ── STRATEGY ──
   {id:45,zone:"strategy",title:"Knight Outpost!",desc:"Place your Knight on the powerful e5 square — it controls the whole board!",emoji:"♞",
@@ -934,7 +934,7 @@ const PUZZLES=[
     ],
     solution:{from:{r:5,c:5},to:{r:3,c:4}},
     targetSq:{r:3,c:4},
-    hint:"Knights love central squares — e5 is the best outpost on the board!",xp:30},
+    hint:"Knights love central squares — e5 is the best outpost on the board!",xp:35},
 
   {id:46,zone:"strategy",title:"Rook on Open File!",desc:"Place your Rook on the open e-file where it has maximum power!",emoji:"♖",
     board:[
@@ -949,9 +949,9 @@ const PUZZLES=[
     ],
     solution:{from:{r:7,c:0},to:{r:7,c:4}},
     targetSq:{r:7,c:4},
-    hint:"Rooks are strongest on open files with no pawns blocking them!",xp:25},
+    hint:"Rooks are strongest on open files with no pawns blocking them!",xp:35},
 
-  {id:47,zone:"strategy",title:"Rook Grabs Material!",desc:"Your Rook can capture the undefended enemy Rook — take it!",emoji:"🧠",
+  {id:47,zone:"endgame",title:"Rook Grabs Material!",desc:"Your Rook can capture the undefended enemy Rook — take it!",emoji:"🧠",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -963,7 +963,7 @@ const PUZZLES=[
       [null,null,null,"wr",null,null,null,"wk"]
     ],
     solution:{from:{r:7,c:3},to:{r:4,c:3}},
-    hint:"Slide your Rook from d1 to d4 — it captures the enemy Rook for free!",xp:30},
+    hint:"Slide your Rook from d1 to d4 — it captures the enemy Rook for free!",xp:35},
 {id:48,zone:"strategy",title:"Long Diagonal Strike!",desc:"Your Bishop controls the long diagonal — move it to g7 to pressure the King!",emoji:"🧠",
     board:[
       [null,null,null,null,"bk",null,null,null],
@@ -976,7 +976,7 @@ const PUZZLES=[
       [null,null,null,null,"wk",null,null,null]
     ],
     solution:{from:{r:5,c:2},to:{r:1,c:6}},
-    hint:"The Bishop slides from c3 all the way to g7 — it attacks the King's position!",xp:30},
+    hint:"The Bishop slides from c3 all the way to g7 — it attacks the King's position!",xp:35},
 {id:49,zone:"strategy",title:"Bishop Forks!",desc:"Your Bishop can attack two pieces at once — find the fork square!",emoji:"🧠",
     board:[
       [null,null,null,null,"bk",null,null,null],
@@ -989,7 +989,7 @@ const PUZZLES=[
       [null,null,null,null,"wk",null,null,null]
     ],
     solution:{from:{r:5,c:3},to:{r:3,c:5}},
-    hint:"The Bishop jumps to f5 — it attacks both Rooks on h7 and h1 at the same time!",xp:30},
+    hint:"The Bishop jumps to f5 — it attacks both Rooks on h7 and h1 at the same time!",xp:35},
 {id:50,zone:"strategy",title:"King Safety First!",desc:"Move your King to f1 — away from the centre and the danger!",emoji:"🛡️",
     board:[
       [null,null,null,null,null,null,null,"bk"],
@@ -1002,7 +1002,7 @@ const PUZZLES=[
       [null,null,null,null,"wk",null,null,null]
     ],
     solution:{from:{r:7,c:4},to:{r:7,c:5}},
-    hint:"When your King is in danger, move it to safety — f1 is much safer than e1!",xp:25},
+    hint:"When your King is in danger, move it to safety — f1 is much safer than e1!",xp:35},
 
   {id:51,zone:"strategy",title:"Minority Attack!",desc:"Advance your b-pawn to create weaknesses in Black's queenside!",emoji:"♟️",
     board:[
@@ -1016,7 +1016,7 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,null,null]
     ],
     solution:{from:{r:3,c:1},to:{r:2,c:2}},
-    hint:"Capture on c6 to create an isolated or backward pawn in Black's camp!",xp:30},
+    hint:"Capture on c6 to create an isolated or backward pawn in Black's camp!",xp:35},
 
   {id:52,zone:"endgame",title:"Rook Behind Passer!",desc:"Place your Rook behind the passed pawn — it supports and pushes it!",emoji:"♖",
     board:[
@@ -1031,7 +1031,7 @@ const PUZZLES=[
     ],
     solution:{from:{r:7,c:3},to:{r:5,c:3}},
     targetSq:{r:5,c:3},
-    hint:"Rooks belong BEHIND passed pawns — they push them from behind!",xp:30},
+    hint:"Rooks belong BEHIND passed pawns — they push them from behind!",xp:35},
 
   {id:53,zone:"master",title:"Bishop Wins the Queen!",desc:"Your Bishop can capture the enemy Queen — spot the winning move!",emoji:"🌟",
     board:[
@@ -1058,7 +1058,7 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,null,"bk"]
     ],
     solution:{from:{r:7,c:0},to:{r:6,c:1}},
-    hint:"Move the King toward the centre — it will be much more active on b2!",xp:25},
+    hint:"Move the King toward the centre — it will be much more active on b2!",xp:35},
 
   // ── PUZZLE RUSH (additional) ──
   {id:55,zone:"rush",title:"Arabian Mate!",desc:"Jump your Rook to h7 — the Knight covers all the escape squares!",emoji:"⚡",
@@ -1101,7 +1101,7 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,null,"wq"]
     ],
     solution:{from:{r:7,c:7},to:{r:0,c:7}},
-    hint:"The Rook on h5 is undefended — slide your Queen straight up and grab it!",xp:40},
+    hint:"The Rook on h5 is undefended — slide your Queen straight up and grab it!",xp:50},
 
   {id:58,zone:"master",title:"Rook and Knight Mate!",desc:"Slide your Rook to h7 — the Knight and Rook deliver checkmate!",emoji:"⚡",
     board:[
@@ -1186,6 +1186,33 @@ const PUZZLES=[
     ],
     solution:{from:{r:3,c:5},to:{r:1,c:4}},
     hint:"Jump your Knight to e7 — it forks the King on e8 AND the Queen on d6!",xp:50},
+  {id:64,zone:"pieces",title:"Queen Slide!",desc:"Queens can move in ANY direction! Slide your Queen all the way to h8.",emoji:"♞",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["wk",null,null,null,null,null,null,"wq"]
+    ],
+    solution:{from:{r:7,c:7},to:{r:0,c:7}},
+    hint:"The Queen slides straight up the h-file all the way to h8!",xp:15},
+
+  {id:65,zone:"pieces",title:"Knight Hops!",desc:"Knights jump in an L-shape and can hop over other pieces! Jump to e5.",emoji:"♞",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["wk",null,null,"wn",null,null,null,null]
+    ],
+    solution:{from:{r:7,c:3},to:{r:5,c:4}},
+    hint:"The Knight at d1 jumps in an L — 2 squares up and 1 across to reach e3!",xp:15},
 ];
 
 
@@ -2476,17 +2503,19 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
 function AwardsScreen({xp, completedPuzzles, completedIds, streak}){
   const rank=getRank(xp);
   const awards=[
-    // Zone completion achievements (1 per zone = 9 total)
+    // Zone completion achievements — thresholds match actual cumulative puzzle counts
+    // pieces=8, pawns=7, openings=7, tactics=7, checkmate=7, strategy=8, endgame=7, master=7, rush=7
+    // Cumulative: 8, 15, 22, 29, 36, 44, 51, 58, 65
     {title:"First Move!",     desc:"Complete your first puzzle",     icon:"🎯", earned:completedPuzzles>=1,  color:"#e74c3c", shadow:"#c0392b"},
-    {title:"Piece Master",    desc:"Complete Piece Power zone",      icon:"♞", earned:completedPuzzles>=7,  color:"#e67e22", shadow:"#ba6b09"},
-    {title:"Pawn Power",      desc:"Complete Pawn Kingdom zone",     icon:"♟️", earned:completedPuzzles>=14, color:"#f39c12", shadow:"#d4890a"},
-    {title:"Opening Expert",  desc:"Complete Open Strong zone",      icon:"🏰", earned:completedPuzzles>=21, color:"#27ae60", shadow:"#1e8449"},
-    {title:"Tactics Ace",     desc:"Complete Tactics zone",          icon:"⚔️", earned:completedPuzzles>=28, color:"#00b894", shadow:"#00896e"},
-    {title:"Checkmate Hunter",desc:"Complete Checkmate Hunt zone",   icon:"🎯", earned:completedPuzzles>=35, color:"#8e44ad", shadow:"#6c3483"},
-    {title:"Strategist",      desc:"Complete Strategy zone",         icon:"🧠", earned:completedPuzzles>=42, color:"#2980b9", shadow:"#1a5276"},
-    {title:"Endgame Pro",     desc:"Complete Endgame zone",          icon:"👑", earned:completedPuzzles>=49, color:"#16a085", shadow:"#0e6655"},
-    {title:"Master Class",    desc:"Complete Master Moves zone",     icon:"🌟", earned:completedPuzzles>=56, color:"#2c3e50", shadow:"#1a252f"},
-    {title:"Grand Master!",   desc:"Complete ALL 63 puzzles!",       icon:"🏆", earned:completedPuzzles>=63, color:"#f1c40f", shadow:"#d4ac0d"},
+    {title:"Piece Master",    desc:"Complete Piece Power zone",      icon:"♞", earned:completedPuzzles>=8,  color:"#e67e22", shadow:"#ba6b09"},
+    {title:"Pawn Power",      desc:"Complete Pawn Kingdom zone",     icon:"♟️", earned:completedPuzzles>=15, color:"#f39c12", shadow:"#d4890a"},
+    {title:"Opening Expert",  desc:"Complete Open Strong zone",      icon:"🏰", earned:completedPuzzles>=22, color:"#27ae60", shadow:"#1e8449"},
+    {title:"Tactics Ace",     desc:"Complete Tactics zone",          icon:"⚔️", earned:completedPuzzles>=29, color:"#00b894", shadow:"#00896e"},
+    {title:"Checkmate Hunter",desc:"Complete Checkmate Hunt zone",   icon:"🎯", earned:completedPuzzles>=36, color:"#8e44ad", shadow:"#6c3483"},
+    {title:"Strategist",      desc:"Complete Strategy zone",         icon:"🧠", earned:completedPuzzles>=44, color:"#2980b9", shadow:"#1a5276"},
+    {title:"Endgame Pro",     desc:"Complete Endgame zone",          icon:"👑", earned:completedPuzzles>=51, color:"#16a085", shadow:"#0e6655"},
+    {title:"Master Class",    desc:"Complete Master Moves zone",     icon:"🌟", earned:completedPuzzles>=58, color:"#2c3e50", shadow:"#1a252f"},
+    {title:"Grand Master!",   desc:"Complete ALL 65 puzzles!",       icon:"🏆", earned:completedPuzzles>=65, color:"#f1c40f", shadow:"#d4ac0d"},
     // XP milestones
     {title:"Star Collector",  desc:"Earn 300 XP",                   icon:"⭐", earned:xp>=300,             color:"#f39c12", shadow:"#d4890a"},
     {title:"Champion!",       desc:"Earn 1000 XP",                  icon:"♕", earned:xp>=1000,            color:"#8e44ad", shadow:"#6c3483"},
@@ -3286,7 +3315,7 @@ function ChessWorld(){
             }}>GRAND MASTER!</div>
 
             <div style={{fontSize:16,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:16,lineHeight:1.5}}>
-              You completed ALL 60 puzzles!<br/>You're a true Chess Quest champion! ⚔️
+              You completed ALL 65 puzzles!<br/>You're a true Chess Quest champion! ⚔️
             </div>
 
             {/* Stats */}
@@ -3296,7 +3325,7 @@ function ChessWorld(){
                 <div style={{fontSize:10,color:"rgba(255,255,255,.6)",fontWeight:700}}>TOTAL XP</div>
               </div>
               <div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"10px 16px",textAlign:"center"}}>
-                <div style={{fontSize:22,fontWeight:900,color:"#74b9ff"}}>60</div>
+                <div style={{fontSize:22,fontWeight:900,color:"#74b9ff"}}>65</div>
                 <div style={{fontSize:10,color:"rgba(255,255,255,.6)",fontWeight:700}}>PUZZLES</div>
               </div>
               <div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"10px 16px",textAlign:"center"}}>
