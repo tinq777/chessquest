@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#0d1b4b"/>
+  <!-- Gold gradient background circle -->
+  <circle cx="256" cy="256" r="200" fill="#1a2a6a"/>
+  <!-- Chess piece (queen) -->
+  <text x="256" y="330" text-anchor="middle" font-size="220" fill="url(#gold)">♟</text>
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="40%" stop-color="#ffe566"/>
+      <stop offset="100%" stop-color="#ffaa22"/>
+    </linearGradient>
+  </defs>
+</svg>
