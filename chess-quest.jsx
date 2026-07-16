@@ -1,39 +1,20 @@
-// Chess Quest v2.1
-// Chess Quest — Firebase Edition
+// Chess Quest v3.0 — Local storage edition
+// All data saved to device localStorage. No login, no Firebase, no network needed.
 const { useState, useCallback, useRef, useEffect } = React;
 
-// ═══════════════════════════════════════════════════════════
-// FIREBASE CONFIG
-// ═══════════════════════════════════════════════════════════
-// Firebase is loaded via a real <script type="module"> in index.html
-// (Babel-standalone can't do dynamic import() outside module scope),
-// which exposes everything we need on window.__firebase
-let fbAuth = null, fbDb = null, googleProvider = null;
-let _signInWithPopup, _signInWithEmailAndPassword, _createUserWithEmailAndPassword, _signOut, _onAuthStateChanged;
-let _doc, _getDoc, _setDoc;
+const STORAGE_KEY = "chess_quest_data";
 
-async function initFirebase(){
-  if(fbAuth) return true;
-  // Wait for the module script in index.html to finish loading Firebase
-  let tries = 0;
-  while(!window.__firebase && tries < 100){
-    await new Promise(r=>setTimeout(r,50));
-    tries++;
-  }
-  if(!window.__firebase){ console.error("Firebase failed to load"); return false; }
-  const fb = window.__firebase;
-  fbAuth = fb.auth;
-  fbDb   = fb.db;
-  googleProvider = fb.googleProvider;
-  _signInWithPopup                 = fb.signInWithPopup;
-  _signInWithEmailAndPassword      = fb.signInWithEmailAndPassword;
-  _createUserWithEmailAndPassword  = fb.createUserWithEmailAndPassword;
-  _signOut                         = fb.signOut;
-  _onAuthStateChanged              = fb.onAuthStateChanged;
-  _doc    = fb.doc;
-  _getDoc = fb.getDoc;
-  _setDoc = fb.setDoc;
-  return true;
+function loadLocal(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e){ return null; }
+}
+
+function saveLocal(data){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e){ /* storage full or unavailable */ }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -166,7 +147,72 @@ function hangingFor(board,side){const ot=opp(side),res=[];for(let r=0;r<8;r++)fo
 function threatsFor(board,side){const ot=opp(side),res=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=board[r][c];if(!mine(p,side))continue;const atts=[];for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++)if(mine(board[rr][cc],ot)&&pMoves(board,rr,cc,ot).some(m=>m.to.r===r&&m.to.c===c))atts.push(board[rr][cc]);if(!atts.length)continue;if(!isAttBy(board,r,c,side)||Math.min(...atts.map(a=>VALS[typ(a)]))<VALS[typ(p)])res.push({r,c,piece:p});}return res;}
 function findForks(board,side){const ot=opp(side),forks=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++){if(!mine(board[r][c],side))continue;for(const m of legalFor(board,r,c,side)){const nb=applyM(board,m);const att=[];for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++){if(!mine(nb[rr][cc],ot)||VALS[typ(nb[rr][cc])]<3)continue;if(pMoves(nb,m.to.r,m.to.c,side).some(mv=>mv.to.r===rr&&mv.to.c===cc))att.push(nb[rr][cc]);}if(att.length>=2)forks.push({move:m,targets:att});}}return forks;}
 function scoreBlack(board,m){let s=0;if(m.captured)s+=VALS[typ(m.captured)]*10;if(["bn","bb"].includes(m.piece)&&m.from.r===0)s+=7;if(m.piece==="bp"&&(m.to.c===3||m.to.c===4))s+=4;if(inCheck(applyM(board,m),"w"))s+=8;return s+Math.random()*3;}
-function pickBlack(board){const moves=allLegal(board,"b");if(!moves.length)return null;moves.sort((a,b)=>scoreBlack(board,b)-scoreBlack(board,a));return moves.slice(0,Math.min(6,moves.length))[Math.floor(Math.random()*Math.min(6,moves.length))];}
+
+// Static board evaluation for minimax (positive = good for black)
+function evalBoard(board){
+  let score=0;
+  const centerBonus=[[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,1,1,1,1,0,0],[0,0,1,2,2,1,0,0],[0,0,1,2,2,1,0,0],[0,0,1,1,1,1,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=board[r][c]; if(!p) continue;
+    const val=VALS[typ(p)]*10;
+    const cb=centerBonus[r][c];
+    if(p[0]==="b") score+=val+cb;
+    else score-=val+cb;
+  }
+  return score;
+}
+
+// Minimax with alpha-beta pruning (depth 2 = looks 2 moves ahead)
+function minimax(board,depth,alpha,beta,isBlack){
+  if(depth===0) return evalBoard(board);
+  const side=isBlack?"b":"w";
+  const moves=allLegal(board,side);
+  if(!moves.length) return isBlack?-9999:9999; // checkmate/stalemate
+  if(isBlack){
+    let best=-Infinity;
+    for(const m of moves){
+      const nb=applyM(board,m);
+      best=Math.max(best,minimax(nb,depth-1,alpha,beta,false));
+      alpha=Math.max(alpha,best);
+      if(beta<=alpha) break;
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(const m of moves){
+      const nb=applyM(board,m);
+      best=Math.min(best,minimax(nb,depth-1,alpha,beta,true));
+      beta=Math.min(beta,best);
+      if(beta<=alpha) break;
+    }
+    return best;
+  }
+}
+
+function pickBlack(board, difficulty="medium"){
+  const moves=allLegal(board,"b");
+  if(!moves.length) return null;
+
+  if(difficulty==="easy"){
+    // Easy: picks randomly, sometimes blunders on purpose
+    return moves[Math.floor(Math.random()*moves.length)];
+  }
+
+  if(difficulty==="hard"){
+    // Hard: minimax depth 3 — looks 3 moves ahead, plays near-perfectly
+    let best=-Infinity, bestMove=moves[0];
+    for(const m of moves){
+      const nb=applyM(board,m);
+      const score=minimax(nb,2,-Infinity,Infinity,false);
+      if(score>best){best=score;bestMove=m;}
+    }
+    return bestMove;
+  }
+
+  // Medium: top-6 with some randomness (original)
+  moves.sort((a,b)=>scoreBlack(board,b)-scoreBlack(board,a));
+  return moves.slice(0,Math.min(6,moves.length))[Math.floor(Math.random()*Math.min(6,moves.length))];
+}
 
 // ═══════════════════════════════════════════════════════════
 // DATA
@@ -176,224 +222,22 @@ const getRank=xp=>[...RANKS].reverse().find(r=>xp>=r.min)||RANKS[0];
 const getNextRank=xp=>{const i=RANKS.findIndex(r=>r.min>xp);return i>=0?RANKS[i]:null;};
 
 const ZONES=[
-  {id:"pieces",  label:"Piece Power",  emoji:"♞",  color:"#e74c3c", light:"#ff6b6b", bg:"#c0392b", desc:"Learn how pieces move!",        stars:6},
-  {id:"openings",label:"Openings",     emoji:"🏰", color:"#27ae60", light:"#55efc4", bg:"#1e8449", desc:"Start the game like a champion!", stars:6},
-  {id:"tactics", label:"Tactics",      emoji:"⚔️",  color:"#f39c12", light:"#ffd93d", bg:"#e67e22", desc:"Win pieces for free!",           stars:8, locked:true},
-  {id:"strategy",label:"Strategy",     emoji:"🧠", color:"#2980b9", light:"#74b9ff", bg:"#1a5276", desc:"Think like a pro!",              stars:8, locked:true},
-  {id:"endgame", label:"Endgame",      emoji:"👑", color:"#8e44ad", light:"#a29bfe", bg:"#6c3483", desc:"How to finish and win!",         stars:6, locked:true},
-  {id:"rush",    label:"Puzzle Rush",  emoji:"⚡", color:"#e84393", light:"#fd79a8", bg:"#c0136e", desc:"Speed challenges — think fast!",  stars:6, locked:true},
-];
-
-
-const ZONES2=[
-  {id:"gate",    label:"Dragon's Gate",  emoji:"🐉", color:"#c0392b", light:"#ff6b6b", bg:"#922b21", desc:"Enter the Dragon's realm!"},
-  {id:"armory",  label:"Dark Armory",    emoji:"⚔️",  color:"#7d3c98", light:"#a569bd", bg:"#6c3483", desc:"Master pins and skewers!"},
-  {id:"tower",   label:"Dark Tower",     emoji:"🗼", color:"#1a5276", light:"#5dade2", bg:"#154360", desc:"Knight combinations!"},
-  {id:"crypt",   label:"Shadow Crypt",   emoji:"💀", color:"#117a65", light:"#48c9b0", bg:"#0e6655", desc:"Back rank attacks!"},
-  {id:"lava",    label:"Lava Forge",     emoji:"🌋", color:"#d35400", light:"#f0b27a", bg:"#b7440a", desc:"Queen combinations!"},
-  {id:"spider",  label:"Spider Web",     emoji:"🕷️", color:"#212f3c", light:"#717d7e", bg:"#1a252f", desc:"Rook and bishop endgames!"},
-  {id:"eye",     label:"Dragon's Eye",   emoji:"👁️", color:"#7b241c", light:"#ec7063", bg:"#641e16", desc:"Advanced tactics!"},
-  {id:"lair",    label:"Dragon's Lair",  emoji:"🐲", color:"#784212", light:"#ca8a04", bg:"#6e2c00", desc:"Complex checkmates!"},
-  {id:"castle2", label:"Dark Castle",    emoji:"🏰", color:"#1b2631", light:"#566573", bg:"#17202a", desc:"Master finishing moves!"},
-];
-
-const PUZZLES2=[
-  {id:101,zone:"gate",title:"Pin and Take!",desc:"The enemy Knight is pinned to its King — capture it for free!",emoji:"🐉",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"bn",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wq",null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:4,toRow:3,toCol:4,hint:"Your Queen on e3 steps forward to e5 — the pinned Knight can't run!",xp:30},
-  {id:102,zone:"gate",title:"Royal Skewer!",desc:"Attack the King — when it flees you win the Rook hiding behind!",emoji:"🐉",
-    board:[["bk",null,null,null,null,null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wq"]],
-    fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Queen h1 rockets to h8 — skewer! King must move, Rook is yours!",xp:35},
-  {id:103,zone:"gate",title:"Rook Raid!",desc:"Slam your Rook to the 8th rank — check the King AND attack the Rook!",emoji:"🐉",
-    board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:7,fromCol:4,toRow:0,toCol:4,hint:"Rook e1 to e8 — double attack on King and Rook at the same time!",xp:30},
-  {id:104,zone:"gate",title:"Bishop Strikes!",desc:"Your Bishop can capture the enemy Queen — spot the winning move!",emoji:"🐉",
-    board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wb",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:4,fromCol:5,toRow:2,toCol:3,hint:"Bishop f4 slashes diagonally to d6 — captures the Queen!",xp:35},
-  {id:105,zone:"gate",title:"Back Rank Blast!",desc:"The enemy King is trapped on its back rank — fire your Rook!",emoji:"🐉",
-    board:[["bk",null,null,null,null,null,null,null],["bp","bp",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wr",null]],
-    fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 flies to g8 — the King is trapped with nowhere to go!",xp:30},
-  {id:106,zone:"gate",title:"Knight Fork!",desc:"Your Knight jumps to fork the King AND threatens the Rook!",emoji:"🐉",
-    board:[[null,null,"bk",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wn",null,null,null,null,null,null],[null,null,null,null,"br",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:3,fromCol:1,toRow:2,toCol:3,hint:"Knight b5 leaps to d6 — checks the King on c8 and threatens the Rook!",xp:30},
-  {id:107,zone:"gate",title:"Diagonal Check!",desc:"Your Queen swoops in with a deadly diagonal check — find it!",emoji:"🐉",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bp","bp",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wq"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:3,fromCol:7,toRow:1,toCol:5,hint:"Queen h5 cuts diagonally to f7 — a powerful check against the King!",xp:35},
-  {id:108,zone:"armory",title:"Bishop Wins Material!",desc:"Your Bishop captures the undefended enemy Bishop!",emoji:"⚔️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bb",null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wb",null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:6,fromCol:1,toRow:4,toCol:3,hint:"Bishop b2 glides to d4 — captures the enemy Bishop for free!",xp:35},
-  {id:109,zone:"armory",title:"Diagonal Skewer!",desc:"Hit the King diagonally — when it moves, the Rook behind it falls!",emoji:"⚔️",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk","wq",null,null,null,null,null,null]],
-    fromRow:7,fromCol:1,toRow:1,toCol:7,hint:"Queen b1 streaks diagonally to h7 — skewers the King! Rook on h4 falls next!",xp:40},
-  {id:110,zone:"armory",title:"Rook Captures Pinned Queen!",desc:"The enemy Queen is pinned and can't escape — take it!",emoji:"⚔️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:7,fromCol:4,toRow:1,toCol:4,hint:"Rook e1 charges to e7 — the pinned Queen has nowhere to run!",xp:40},
-  {id:111,zone:"armory",title:"Pin and Win!",desc:"The enemy Knight is pinned to its King — capture it!",emoji:"⚔️",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,"bn",null,null,null,null,null],[null,null,null,null,null,null,null,null],["wb",null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:6,fromCol:0,toRow:4,toCol:2,hint:"Bishop a2 steps to c4 — the Knight can't escape the pin to its King!",xp:35},
-  {id:112,zone:"armory",title:"Queen Fork Check!",desc:"Your Queen gives check AND attacks the Rook — two for one!",emoji:"⚔️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"br",null,null],[null,null,null,null,null,null,null,null],[null,"wq",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:1,toRow:1,toCol:5,hint:"Queen b3 swoops to f7 — checks the King AND attacks the Rook on f5!",xp:40},
-  {id:113,zone:"armory",title:"Rook Wins Pawn and Checks!",desc:"Win the pawn AND give check in one Rook move!",emoji:"⚔️",
-    board:[[null,null,null,null,null,null,null,"bk"],["bp","bp",null,null,null,null,null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],
-    fromRow:7,fromCol:7,toRow:1,toCol:7,hint:"Rook h1 takes the h7 pawn — and it's also check!",xp:35},
-  {id:114,zone:"armory",title:"Discovered Attack!",desc:"Move your Bishop to reveal a hidden Rook attack on the Queen!",emoji:"⚔️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wb",null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:6,fromCol:4,toRow:4,toCol:6,hint:"Bishop e2 steps to g4 — it reveals the Rook's attack on the pinned Queen!",xp:40},
-  {id:115,zone:"tower",title:"Knight Outpost!",desc:"Jump your Knight to the powerful d5 square — it attacks everywhere!",emoji:"🗼",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"wn",null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:2,toRow:3,toCol:3,hint:"Knight c3 leaps to d5 — it threatens the Queen AND controls the centre!",xp:35},
-  {id:116,zone:"tower",title:"Knight Double Fork!",desc:"One Knight move attacks both the King AND the Rook!",emoji:"🗼",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"br"],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:4,toRow:3,toCol:5,hint:"Knight e3 hops to f5 — forks the King on g7 AND the Rook on h4!",xp:40},
-  {id:117,zone:"tower",title:"Knight Captures!",desc:"Your Knight can take the undefended enemy Knight!",emoji:"🗼",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bn",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:4,toRow:3,toCol:3,hint:"Knight e3 jumps to d5 — captures the enemy Knight for free!",xp:35},
-  {id:118,zone:"tower",title:"Royal Check!",desc:"Jump your Knight to give check and seize a powerful square!",emoji:"🗼",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,"bk",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:5,toRow:3,toCol:4,hint:"Knight f3 springs to e5 — checks the King on d7 and controls the centre!",xp:35},
-  {id:119,zone:"tower",title:"Family Fork!",desc:"Your Knight can attack the King AND the Queen at once!",emoji:"🗼",
-    board:[[null,null,null,null,null,null,null,null],[null,null,"bk",null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:4,fromCol:5,toRow:3,toCol:3,hint:"Knight f4 leaps to d5 — forks King on c7 AND the Queen on e7!",xp:45},
-  {id:120,zone:"tower",title:"Fork King and Rook!",desc:"Find the square where your Knight attacks King AND Rook!",emoji:"🗼",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,"bk",null,"br",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"wn",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:4,fromCol:2,toRow:3,toCol:4,hint:"Knight c4 hops to e5 — forks King on d7 AND Rook on f7!",xp:45},
-  {id:121,zone:"tower",title:"Win the Rook!",desc:"Your Knight can capture the hanging enemy Rook — take it!",emoji:"🗼",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"br",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wn",null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:6,toRow:3,toCol:5,hint:"Knight g3 jumps to f5 — captures the Rook that has nowhere to escape!",xp:40},
-  {id:122,zone:"crypt",title:"Rook Invades!",desc:"Drive your Rook deep into enemy territory and win material!",emoji:"💀",
-    board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,"bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:7,fromCol:4,toRow:1,toCol:4,hint:"Rook e1 storms to e7 — wins the pawn and threatens everything!",xp:40},
-  {id:123,zone:"crypt",title:"Rook to the 8th!",desc:"Drive your Rook to the back rank — the King is trapped!",emoji:"💀",
-    board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,"wr",null,null]],
-    fromRow:7,fromCol:5,toRow:0,toCol:5,hint:"Rook f1 slams to f8 — giving check along the 8th rank!",xp:40},
-  {id:124,zone:"crypt",title:"Queen Invades!",desc:"Your Queen storms the 7th rank for a crushing invasion!",emoji:"💀",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wq",null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:3,toRow:1,toCol:3,hint:"Queen d3 advances to d7 — invading with a deadly threat!",xp:40},
-  {id:125,zone:"crypt",title:"Mating Net!",desc:"Bring your Rook to the 8th — the King is caught in a net!",emoji:"💀",
-    board:[["bk",null,null,null,null,null,null,null],["bp",null,null,null,null,null,null,null],[null,"wk",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wr"]],
-    fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 charges to h8 — checkmate! King trapped by its own pawns!",xp:45},
-  {id:126,zone:"crypt",title:"Diagonal Smothered Mate!",desc:"Your Queen delivers checkmate along the diagonal!",emoji:"💀",
-    board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],
-    fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 sweeps to g7 — checkmate! King is smothered by its own pawns!",xp:45},
-  {id:127,zone:"crypt",title:"Rook Check Wins Rook!",desc:"Give check AND capture the enemy Rook in one move!",emoji:"💀",
-    board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],
-    fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 flies to h8 — gives check AND wins the enemy Rook!",xp:40},
-  {id:128,zone:"crypt",title:"Back Rank Invasion!",desc:"Your Queen storms the back rank to deliver a decisive check!",emoji:"💀",
-    board:[[null,null,null,"bk",null,null,null,null],[null,null,null,"bp",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wq",null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:3,toRow:1,toCol:3,hint:"Queen d3 rockets to d7 — wins the pawn and gives a powerful check!",xp:45},
-  {id:129,zone:"lava",title:"Queen Checks King!",desc:"Drive your Queen forward to give a powerful check!",emoji:"🌋",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wq",null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:4,toRow:1,toCol:4,hint:"Queen e3 charges to e7 — check! The King must flee!",xp:35},
-  {id:130,zone:"lava",title:"Queen Fork!",desc:"One Queen move checks the King AND attacks the Rook!",emoji:"🌋",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"br",null,null],[null,null,null,null,null,null,null,null],[null,"wq",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:1,toRow:1,toCol:5,hint:"Queen b3 swoops to f7 — checks King AND attacks the Rook on f5!",xp:45},
-  {id:131,zone:"lava",title:"Queen Diagonal Smash!",desc:"Your Queen can slice diagonally to win a free Rook!",emoji:"🌋",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"br",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wq",null],[null,null,null,null,null,null,null,"wk"]],
-    fromRow:6,fromCol:6,toRow:3,toCol:3,hint:"Queen g2 slashes diagonally to d5 — captures the undefended Rook!",xp:40},
-  {id:132,zone:"lava",title:"Queen Wins the Bishop!",desc:"Your Queen can capture the undefended enemy Bishop!",emoji:"🌋",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bb",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wq",null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:6,fromCol:0,toRow:3,toCol:3,hint:"Queen a2 slices diagonally to d5 — captures the hanging Bishop!",xp:40},
-  {id:133,zone:"lava",title:"Queen Gives Check!",desc:"Push your Queen in to give a powerful check!",emoji:"🌋",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"bk",null,null,null,null,null],[null,"bp",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wq",null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:5,toRow:3,toCol:3,hint:"Queen f3 sweeps diagonally to d5 — a powerful check against the King!",xp:40},
-  {id:134,zone:"lava",title:"Queen Captures Queen!",desc:"Spot the enemy Queen and take it for a huge material gain!",emoji:"🌋",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wq",null],["wk",null,null,null,null,null,null,null]],
-    fromRow:6,fromCol:6,toRow:3,toCol:3,hint:"Queen g2 slices diagonally to d5 — captures the enemy Queen!",xp:45},
-  {id:135,zone:"lava",title:"Queen to the 8th!",desc:"Invade with your Queen to the back rank!",emoji:"🌋",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],
-    fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Queen g1 rockets to g8 — a crushing back-rank invasion!",xp:45},
-  {id:136,zone:"spider",title:"Rook Wins Pawn!",desc:"Activate your Rook and gobble up the enemy pawn!",emoji:"🕷️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:7,fromCol:4,toRow:1,toCol:4,hint:"Rook e1 charges to e7 — wins the pawn and dominates the file!",xp:40},
-  {id:137,zone:"spider",title:"Bishop Fires Down the Diagonal!",desc:"Your Bishop controls the longest diagonal — attack with it!",emoji:"🕷️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wb",null,null,null,null,null,null,"wk"]],
-    fromRow:7,fromCol:0,toRow:1,toCol:6,hint:"Bishop a1 fires all the way to g7 — attacking the King!",xp:40},
-  {id:138,zone:"spider",title:"Rook to the 7th!",desc:"Invade the 7th rank with your Rook — the most powerful position!",emoji:"🕷️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,"bp",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk","wr",null,null,null,null,null,null]],
-    fromRow:7,fromCol:1,toRow:1,toCol:1,hint:"Rook b1 invades to b7 — wins the pawn and rules the 7th rank!",xp:40},
-  {id:139,zone:"spider",title:"Bishop Takes Rook!",desc:"Your Bishop can capture the unguarded Rook — take it!",emoji:"🕷️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wb",null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:6,fromCol:4,toRow:3,toCol:7,hint:"Bishop e2 slices diagonally to h5 — captures the Rook!",xp:40},
-  {id:140,zone:"spider",title:"Rook Cuts the King Off!",desc:"Activate your Rook to cut off the enemy King!",emoji:"🕷️",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],
-    fromRow:7,fromCol:7,toRow:1,toCol:7,hint:"Rook h1 to h7 — cuts the King off from the rest of the board!",xp:40},
-  {id:141,zone:"spider",title:"Bishop Outpost!",desc:"Plant your Bishop in the centre — it dominates from there!",emoji:"🕷️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wb",null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:6,fromCol:1,toRow:4,toCol:3,hint:"Bishop b2 glides to d4 — a powerful central outpost!",xp:35},
-  {id:142,zone:"spider",title:"Rook Wins the Rook!",desc:"Your Rook can capture the unprotected enemy Rook!",emoji:"🕷️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"br",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:7,fromCol:4,toRow:3,toCol:4,hint:"Rook e1 slides up to e5 — captures the undefended enemy Rook!",xp:40},
-  {id:143,zone:"eye",title:"Queen Wins the Queen!",desc:"Spot the hanging enemy Queen and capture it with yours!",emoji:"👁️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"bq",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wq",null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:5,fromCol:3,toRow:3,toCol:1,hint:"Queen d3 swoops diagonally to b5 — captures the enemy Queen and gives check!",xp:45},
-  {id:144,zone:"eye",title:"Discovered Attack!",desc:"Move your Bishop to reveal a hidden Rook attack on the Queen!",emoji:"👁️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wb",null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:6,fromCol:4,toRow:4,toCol:6,hint:"Bishop e2 steps to g4 — reveals the Rook's deadly attack on the Queen!",xp:45},
-  {id:145,zone:"eye",title:"Smothered Queen Mate!",desc:"Deliver checkmate with your Queen — King smothered by its own pawns!",emoji:"👁️",
-    board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],
-    fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 sweeps to g7 — checkmate! King has nowhere to run!",xp:50},
-  {id:146,zone:"eye",title:"Rook Dominates!",desc:"Use your Rook to cut off the King and control key squares!",emoji:"👁️",
-    board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],
-    fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 cuts to h8 — the King is trapped on the back rank!",xp:45},
-  {id:147,zone:"eye",title:"Queen Invasion!",desc:"Drive your Queen deep into enemy territory!",emoji:"👁️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],
-    fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Queen g1 blasts to g8 — a crushing back-rank invasion!",xp:45},
-  {id:148,zone:"eye",title:"Bishop Captures the Queen!",desc:"Your Bishop can take the enemy Queen — spot it!",emoji:"👁️",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wb",null],["wk",null,null,null,null,null,null,null]],
-    fromRow:6,fromCol:6,toRow:3,toCol:3,hint:"Bishop g2 slashes diagonally to d5 — captures the Queen!",xp:50},
-  {id:149,zone:"eye",title:"Knight Springs into Action!",desc:"Find the square where your Knight gives a powerful check!",emoji:"👁️",
-    board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,"bk",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wn",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],
-    fromRow:4,fromCol:3,toRow:2,toCol:4,hint:"Knight d4 springs to e6 — a forking check against the King!",xp:45},
-  {id:150,zone:"lair",title:"Anastasia's Mate!",desc:"Knight and Rook combine for a classic mating pattern!",emoji:"🐲",
-    board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],
-    fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 to h8 — Anastasia's Mate! The Knight covers escape squares!",xp:50},
-  {id:151,zone:"lair",title:"Arabian Mate!",desc:"Knight and Rook deliver the classic Arabian Mate!",emoji:"🐲",
-    board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wn"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wr",null]],
-    fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Rook g1 to g7 — Arabian Mate! Knight on h6 seals all escape!",xp:50},
-  {id:152,zone:"lair",title:"Corridor Checkmate!",desc:"Drive your Rook to the back rank for a corridor mate!",emoji:"🐲",
-    board:[["bk",null,null,null,null,null,null,null],["bp",null,null,null,null,null,null,null],[null,"wk",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wr",null]],
-    fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 delivers to g8 — checkmate! King has no escape!",xp:50},
-  {id:153,zone:"lair",title:"Smothered Mate!",desc:"The King is trapped — your Knight delivers the final blow!",emoji:"🐲",
-    board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,"wr",null,null]],
-    fromRow:3,fromCol:4,toRow:1,toCol:5,hint:"Knight e5 leaps to f7 — smothered checkmate! King is trapped by its own pawns!",xp:55},
-  {id:154,zone:"lair",title:"Queen Diagonal Check!",desc:"Use your Queen to give a deadly diagonal check!",emoji:"🐲",
-    board:[["bk",null,null,null,null,null,null,null],[null,"bp",null,null,null,null,null,null],[null,null,null,"wk",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wq"]],
-    fromRow:7,fromCol:7,toRow:1,toCol:1,hint:"Queen h1 slices diagonally to b7 — check! King is in danger!",xp:50},
-  {id:155,zone:"lair",title:"Back Rank Smash!",desc:"Your Rook invades the back rank for a devastating finish!",emoji:"🐲",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,"bp","bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wr",null]],
-    fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 crashes to g8 — the King is caught on the back rank!",xp:50},
-  {id:156,zone:"lair",title:"Queen Smothers the Dragon!",desc:"Deliver checkmate with your Queen — the Dragon is vanquished!",emoji:"🐲",
-    board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],
-    fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 blazes to g7 — checkmate! The Dragon King falls!",xp:55},
-  {id:157,zone:"castle2",title:"Clearance Strike!",desc:"Your Bishop reveals a hidden Rook attack on the Queen!",emoji:"🏰",
-    board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wb",null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:6,fromCol:4,toRow:4,toCol:6,hint:"Bishop e2 steps to g4 — clears the file and reveals a crushing Rook attack!",xp:55},
-  {id:158,zone:"castle2",title:"Double Rook Power!",desc:"Use your Rook to win material AND give check!",emoji:"🏰",
-    board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],
-    fromRow:7,fromCol:4,toRow:0,toCol:4,hint:"Rook e1 to e8 — captures the Rook AND gives check in one!",xp:55},
-  {id:159,zone:"castle2",title:"Rook Windmill Setup!",desc:"Launch your Rook to the back rank and start the windmill!",emoji:"🏰",
-    board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],
-    fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 to h8 — check! The windmill pattern begins!",xp:55},
-  {id:160,zone:"castle2",title:"Final Smothered Mate!",desc:"Deliver the checkmate that vanquishes the Dungeon Boss!",emoji:"🏰",
-    board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],
-    fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 sweeps to g7 — smothered checkmate! The Dungeon falls!",xp:60},
-  {id:161,zone:"castle2",title:"Rook Delivers!",desc:"Bring your Rook to the 8th rank for the decisive blow!",emoji:"🏰",
-    board:[["bk",null,null,null,null,null,null,null],["bp",null,null,null,null,null,null,null],[null,"wk",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wr",null]],
-    fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 drives to g8 — the King is checkmated on the back rank!",xp:55},
-  {id:162,zone:"castle2",title:"Bishop Long Diagonal Mate!",desc:"Fire your Bishop down the longest diagonal for checkmate!",emoji:"🏰",
-    board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,"bp","bp",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wb",null,null,null,null,null,null,"wk"]],
-    fromRow:7,fromCol:0,toRow:1,toCol:6,hint:"Bishop a1 fires down the great diagonal to g7 — checkmate!",xp:60},
-  {id:163,zone:"castle2",title:"The Dragon Slayer!",desc:"Deliver the final checkmate to complete the Chess Dungeon!",emoji:"🏰",
-    board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],
-    fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 blazes to g7 — CHECKMATE! You have conquered the Dragon's Dungeon!",xp:60},
+  {id:"pieces",  label:"Piece Power",  emoji:"♞", color:"#e74c3c", light:"#ff7675", bg:"#c0392b", desc:"Learn how each piece moves!",    locked:false},
+  {id:"pawns",   label:"Pawn Kingdom", emoji:"♟️", color:"#e67e22", light:"#ffd93d", bg:"#d35400", desc:"Pawns are mighty — use them!",    locked:true},
+  {id:"openings",label:"Open Strong",  emoji:"🏰", color:"#27ae60", light:"#55efc4", bg:"#1e8449", desc:"Start your game like a champ!",   locked:true},
+  {id:"tactics", label:"Tactics",      emoji:"⚔️",  color:"#f39c12", light:"#ffd93d", bg:"#e67e22", desc:"Win pieces for free!",           locked:true},
+  {id:"checkmate",label:"Checkmate Hunt",emoji:"🎯",color:"#8e44ad", light:"#a29bfe", bg:"#6c3483", desc:"Hunt down the King!",            locked:true},
+  {id:"strategy",label:"Strategy",     emoji:"🧠", color:"#2980b9", light:"#74b9ff", bg:"#1a5276", desc:"Think like a pro!",               locked:true},
+  {id:"endgame", label:"Endgame",      emoji:"👑", color:"#16a085", light:"#81ecec", bg:"#0e6655", desc:"Finish the game and win!",        locked:true},
+  {id:"master",  label:"Master Moves", emoji:"🌟", color:"#2c3e50", light:"#b2bec3", bg:"#1a252f", desc:"Elite chess challenges!",         locked:true},
+  {id:"rush",    label:"Puzzle Rush",  emoji:"⚡", color:"#e84393", light:"#fd79a8", bg:"#c0136e", desc:"Speed challenges — think fast!",  locked:true},
 ];
 
 const PUZZLES=[
   // Puzzle 1: Qg8# — queen slides up h-file, king cornered at h8, no escape
   // wq=g1(7,6), wk=a1(7,0), bk=h8(0,7)
   // Qg8: queen goes to (0,6). Attacks (0,7)=bk. King can't go to g7(1,6) or h7(1,7) — both covered by queen. CHECKMATE.
-  {id:1,zone:"pieces",title:"Checkmate in 1!",desc:"Slide your Queen to g8 to checkmate the King in the corner!",emoji:"⚔️",
+  {id:1,zone:"checkmate",title:"Checkmate in 1!",desc:"Slide your Queen to g8 to checkmate the King in the corner!",emoji:"⚔️",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,null],
@@ -405,7 +249,7 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,"wq",null]
     ],
     solution:{from:{r:7,c:6},to:{r:0,c:6}},
-    hint:"The Queen slides in straight lines — send her all the way to the top!",xp:30},
+    hint:"The Queen slides in straight lines — send her all the way to the top!",xp:40},
 
   // Puzzle 2: Knight Fork — CORRECTED
   // wn=a4(4,0), bk=c8(0,2), br=d5(3,3), wk=h1(7,7)
@@ -467,7 +311,7 @@ const PUZZLES=[
     hint:"Knights move in an L: 2 squares one way, 1 square the other!",xp:20},
 
   // Puzzle 5: Centre control — move e2-e4
-  {id:5,zone:"openings",title:"Control the Centre!",desc:"Move your pawn two squares forward to take control of the centre!",emoji:"🏰",
+  {id:5,zone:"pawns",title:"Control the Centre!",desc:"Move your pawn two squares forward to take control of the centre!",emoji:"🏰",
     board:INIT(),
     solution:{from:{r:6,c:4},to:{r:4,c:4}},
     hint:"The best first moves go to the middle — e4 or d4!",xp:20},
@@ -476,7 +320,7 @@ const PUZZLES=[
   // bk=e8(0,4), br=e5(3,4), wq=e3(5,4), wk=e1(7,4) — all on e-file
   // br is pinned (can't move or wq takes bk... wait wq already attacks bk through br)
   // wq captures br at (3,4). bk at (0,4) is 3 rows from (3,4) — cannot recapture. VALID.
-  {id:6,zone:"tactics",title:"Pin & Win!",desc:"The Rook can't move — it's pinned to the King! Capture it with your Queen!",emoji:"📌",
+  {id:6,zone:"strategy",title:"Pin & Win!",desc:"The Rook can't move — it's pinned to the King! Capture it with your Queen!",emoji:"📌",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -503,7 +347,7 @@ const PUZZLES=[
   // wk=e1(7,4), wr=h1(7,7), clear squares f1,g1
   // Solution: king moves to g1 (castling — but we simplify as king side-step to safety)
   // Simpler: move king from e1 to f1 away from centre to demonstrate king safety
-  {id:8,zone:"openings",title:"King Safety!",desc:"Your King is safer away from the centre. Move it to safety!",emoji:"🏰",
+  {id:8,zone:"openings",title:"King Safety!",desc:"Tuck your King to f1 for safety — away from the centre!",emoji:"🏰",
     board:[
       ["br",null,"bb","bq","bk","bb",null,"br"],
       ["bp","bp","bp","bp",null,"bp","bp","bp"],
@@ -514,8 +358,8 @@ const PUZZLES=[
       ["wp","wp","wp","wp",null,"wp","wp","wp"],
       ["wr",null,"wb","wq","wk",null,null,"wr"]
     ],
-    solution:{from:{r:7,c:4},to:{r:7,c:6}},
-    hint:"Move your King to g1 — it hides in the corner away from danger!",xp:25},
+    solution:{from:{r:7,c:4},to:{r:7,c:5}},
+    hint:"Step your King to f1 — away from the centre and on the way to safety!",xp:25},
 
   // Puzzle 9: Pieces — bishop diagonal move
   // wb on c1(7,2), clear diagonal to h6(2,7), no pieces blocking
@@ -544,7 +388,7 @@ const PUZZLES=[
   // Clean setup: bk=h8(0,7), black pawns on g7(1,6) and f7(1,5) blocking escape
   // wq=a8(0,0) moves to h8(0,7) — checkmate along rank!
   // wk=a1(7,0) to avoid stalemate. bk trapped by own pawns.
-  {id:10,zone:"tactics",title:"Back Rank Mate!",desc:"Slide your Queen along the back rank to checkmate the King!",emoji:"💥",
+  {id:10,zone:"checkmate",title:"Back Rank Mate!",desc:"Slide your Queen along the back rank to checkmate the King!",emoji:"💥",
     board:[
       ["wq",null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,"bp","bp","bp"],
@@ -600,19 +444,19 @@ const PUZZLES=[
   // wn needs to jump to f7(1,5) — delivers check AND covers g8 and h8
   // From f7, knight attacks: d6,d8,e5,g5,h6,h8 — covers h8=king, so check
   // wk=a1(7,0) for legality
-  {id:13,zone:"rush",title:"Smothered Mate!",desc:"The King is trapped by his own pieces! Jump your Knight in for checkmate!",emoji:"⚡",
+  {id:13,zone:"master",title:"Smothered Mate!",desc:"The King is trapped by its own pawns! Jump your Knight to f7 for checkmate!",emoji:"⚡",
     board:[
-      [null,null,null,null,null,null,null,"bk"],
+      [null,null,null,null,null,null,"bp","bk"],
       [null,null,null,null,null,null,"bp","bp"],
       [null,null,null,null,null,null,null,null],
+      [null,null,null,null,"wn",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wk",null,null,null,null,"wn",null,null]
+      ["wk",null,null,null,null,"wr",null,null]
     ],
-    solution:{from:{r:7,c:5},to:{r:1,c:6}},
-    hint:"Knights jump in an L — find the square where your knight attacks the trapped King!",xp:50},
+    solution:{from:{r:3,c:4},to:{r:1,c:5}},
+    hint:"Jump your Knight from e5 to f7 — the King is boxed in by its own pawns!",xp:50},
 
   // PR2: Double attack — queen fork hitting rook and knight simultaneously
   // wq=a1(7,0), br=d4(4,3), bn=g4(4,6), bk=e8(0,4), wk=h1(7,7)
@@ -625,7 +469,7 @@ const PUZZLES=[
   // Can br take wq? br at d8 is 4 squares away, and the queen IS on d4 which is on d-file — yes br could take if unprotected
   // Protect wq: put wp at c3(5,2) — wait, we just need the queen to fork 2 pieces
   // The POINT is it's a fork regardless — black can only save one piece
-  {id:14,zone:"rush",title:"Queen Fork!",desc:"Move your Queen to attack TWO pieces at once — a fork!",emoji:"⚡",
+  {id:14,zone:"master",title:"Queen Fork!",desc:"Move your Queen to attack TWO pieces at once — a fork!",emoji:"⚡",
     board:[
       [null,null,null,"br",null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -655,7 +499,7 @@ const PUZZLES=[
   // e8(0,4): attacked by wq on f7? Diagonally yes. g8(0,6): attacked by wq on f7 diag yes
   // e7(1,4): attacked by wq on f7 along rank. g7(1,6): attacked by wq on f7 along rank
   // So ALL escape squares covered — CHECKMATE! Just need wk not in stalemate position
-  {id:15,zone:"rush",title:"File Mate!",desc:"Slide your Queen straight up the f-file for checkmate!",emoji:"⚡",
+  {id:15,zone:"master",title:"File Mate!",desc:"Slide your Queen straight up the f-file for checkmate!",emoji:"⚡",
     board:[
       [null,null,null,null,null,"bk",null,null],
       [null,null,null,null,null,null,null,null],
@@ -672,37 +516,35 @@ const PUZZLES=[
   // PR4: Knight outpost — move knight to dominant central square
   // wn=g1(7,6) moves to e5(3,4) — powerful central square
   // Show it attacks many squares from there
-  {id:16,zone:"rush",title:"Knight Outpost!",desc:"Plant your Knight in the centre — it controls the whole board from e5!",emoji:"⚡",
+  {id:16,zone:"master",title:"Diagonal Domination!",desc:"Your Bishop can slice across to g7 and deliver a powerful check!",emoji:"🌟",
     board:[
       [null,null,null,null,"bk",null,null,null],
-      ["bp","bp","bp",null,"bp","bp","bp","bp"],
+      [null,null,null,null,null,null,"bp","bp"],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
+      [null,"wb",null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,"wk",null,null,null,null,"wn",null]
+      [null,null,null,null,"wk",null,null,null]
     ],
-    solution:{from:{r:7,c:6},to:{r:5,c:5}},
-    targetSq:{r:5,c:5},
-    hint:"Move the Knight toward the centre — it controls far more squares there!",xp:35},
+    solution:{from:{r:4,c:1},to:{r:1,c:4}},
+    hint:"The Bishop sweeps from b4 to e7 — blocking any escape and threatening checkmate!",xp:35},
 
-  // ── PIECE POWER (additional) ──
-  {id:17,zone:"pieces",title:"Queen Captures!",desc:"Slide your Queen up the d-file to capture the enemy Queen!",emoji:"♛",
+  {id:17,zone:"checkmate",title:"Queen Smothers the King!",desc:"The King is trapped by its own pawns — move your Queen to g7 for checkmate!",emoji:"🎯",
     board:[
-      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,"bp","bk"],
+      [null,null,null,null,null,null,null,"bp"],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,"bq",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,"wq",null,null,null,"wk"]
+      ["wk",null,null,null,null,null,"wq",null]
     ],
-    solution:{from:{r:7,c:3},to:{r:3,c:3}},
-    hint:"Queens move along files — slide straight up to d5!",xp:25},
+    solution:{from:{r:7,c:6},to:{r:1,c:6}},
+    hint:"Slide your Queen from g1 straight up to g7 — the King is cornered!",xp:30},
 
-  {id:18,zone:"pieces",title:"Pawn Promotion!",desc:"Push your pawn all the way to the end to become a Queen!",emoji:"👑",
+  {id:18,zone:"pawns",title:"Pawn Promotion!",desc:"Push your pawn all the way to the end to become a Queen!",emoji:"👑",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,"wp",null,null,null],
@@ -716,7 +558,7 @@ const PUZZLES=[
     solution:{from:{r:1,c:4},to:{r:0,c:4}},
     hint:"Pawns that reach the other end become Queens — push to e8!",xp:25},
 
-  {id:19,zone:"pieces",title:"Rook Checkmate!",desc:"Slide your Rook along the back rank to checkmate the King!",emoji:"♖",
+  {id:19,zone:"checkmate",title:"Rook Checkmate!",desc:"Slide your Rook along the back rank to checkmate the King!",emoji:"♖",
     board:[
       ["bk",null,null,null,null,null,null,"wr"],
       ["bp","bn","wk",null,null,null,null,null],
@@ -758,22 +600,20 @@ const PUZZLES=[
     solution:{from:{r:4,c:2},to:{r:1,c:5}},
     hint:"Count the diagonal squares — your Bishop on c4 can reach f7!",xp:25},
 
-  {id:22,zone:"pieces",title:"Back Rank Crush!",desc:"Slide your Rook along the back rank — the King is trapped!",emoji:"♜",
+  {id:22,zone:"tactics",title:"Discovered Check!",desc:"Move your Knight and reveal a hidden Rook attack on the King!",emoji:"♞",
     board:[
-      ["bk",null,null,null,null,null,null,"wr"],
-      ["bp","bn","wk",null,null,null,null,null],
+      [null,null,null,"bk",null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,"wn",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
+      [null,null,null,"wr",null,null,"wk",null]
     ],
-    solution:{from:{r:0,c:7},to:{r:0,c:1}},
-    hint:"The Rook sweeps the whole rank — the King has nowhere to go!",xp:35},
-
-  // ── OPENINGS (additional) ──
-  {id:23,zone:"openings",title:"d4 Opening!",desc:"Control the centre with your d-pawn — push it two squares forward!",emoji:"🏰",
+    solution:{from:{r:3,c:3},to:{r:4,c:5}},
+    hint:"Move the Knight away from d5 — it reveals the Rook's attack on the King!",xp:30},
+{id:23,zone:"pawns",title:"d4 Opening!",desc:"Control the centre with your d-pawn — push it two squares forward!",emoji:"🏰",
     board:[
       ["br","bn","bb","bq","bk","bb","bn","br"],
       ["bp","bp","bp","bp","bp","bp","bp","bp"],
@@ -829,7 +669,7 @@ const PUZZLES=[
     solution:{from:{r:5,c:2},to:{r:3,c:3}},
     hint:"Knights are strongest in the centre — d5 is a great outpost!",xp:25},
 
-  {id:27,zone:"openings",title:"Central Capture!",desc:"Capture the pawn on d5 to control the centre!",emoji:"⚔️",
+  {id:27,zone:"pawns",title:"Central Capture!",desc:"Capture the pawn on d5 to control the centre!",emoji:"⚔️",
     board:[
       ["br","bn","bb","bq","bk","bb","bn","br"],
       ["bp","bp","bp",null,"bp","bp","bp","bp"],
@@ -869,7 +709,7 @@ const PUZZLES=[
       ["wr",null,"wb","wq","wk","wb","wn","wr"]
     ],
     solution:{from:{r:7,c:3},to:{r:5,c:5}},
-    hint:"The Queen on f3 eyes the weak f7 pawn near the enemy King!",xp:30},
+    hint:"The Queen on f3 eyes the weak f7 pawn near the enemy King!",xp:25},
 
   // ── TACTICS (additional) ──
   {id:30,zone:"tactics",title:"Queen Swipe!",desc:"Your Queen can slide up the e-file and capture the enemy Queen!",emoji:"⚡",
@@ -914,7 +754,7 @@ const PUZZLES=[
     solution:{from:{r:4,c:3},to:{r:2,c:4}},
     hint:"Move the Knight out of the way — it uncovers your Bishop's attack on the King!",xp:40},
 
-  {id:33,zone:"tactics",title:"Capture with Check!",desc:"Take the Bishop AND give check at the same time!",emoji:"💥",
+  {id:33,zone:"checkmate",title:"Capture with Check!",desc:"Take the Bishop AND give check at the same time!",emoji:"💥",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,"bk",null],
@@ -928,7 +768,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:0},to:{r:3,c:4}},
     hint:"Your Queen can capture on e5 and attack the King in the same move!",xp:35},
 
-  {id:34,zone:"tactics",title:"Pin and Win!",desc:"The Rook is pinned to the King — capture it for free!",emoji:"📌",
+  {id:34,zone:"checkmate",title:"Pin and Win!",desc:"The Rook is pinned to the King — capture it for free!",emoji:"📌",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -943,7 +783,7 @@ const PUZZLES=[
     hint:"A pinned piece can't move — the Rook on e5 is stuck, take it!",xp:35},
 
   // ── ENDGAME ──
-  {id:35,zone:"endgame",title:"Queen and King Mate!",desc:"Slide your Queen to b7 — the King is trapped in the corner!",emoji:"👑",
+  {id:35,zone:"checkmate",title:"Queen and King Mate!",desc:"Slide your Queen to b7 — the King is trapped in the corner!",emoji:"👑",
     board:[
       ["bk",null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -957,35 +797,33 @@ const PUZZLES=[
     solution:{from:{r:7,c:1},to:{r:1,c:1}},
     hint:"The Queen on b7 gives check — the King at a8 has nowhere to go!",xp:40},
 
-  {id:36,zone:"endgame",title:"Promote to Win!",desc:"Push the pawn to e8 and promote it to a Queen!",emoji:"♛",
+  {id:36,zone:"pawns",title:"A-File Promotion!",desc:"Your a-pawn is one step from becoming a Queen — push it!",emoji:"♟️",
     board:[
-      [null,null,null,null,null,null,null,"bk"],
-      [null,null,null,null,"wp",null,null,null],
-      [null,null,null,null,"wk",null,null,null],
+      [null,null,null,null,"bk",null,null,null],
+      ["wp",null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,"wk"]
     ],
-    solution:{from:{r:1,c:4},to:{r:0,c:4}},
-    hint:"The pawn is one step from queening — push it!",xp:35},
-
-  {id:37,zone:"endgame",title:"Rook to b8!",desc:"Slide your Rook along the back rank — the King is cornered!",emoji:"♖",
+    solution:{from:{r:1,c:0},to:{r:0,c:0}},
+    hint:"Push the pawn from a7 to a8 — it becomes a Queen and wins the game!",xp:25},
+{id:37,zone:"strategy",title:"Queen Swap!",desc:"Win the enemy Queen by capturing it on d5!",emoji:"🎯",
     board:[
-      ["bk",null,null,null,null,null,null,"wr"],
-      ["bp","bn","wk",null,null,null,null,null],
+      [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
+      [null,null,null,"bq",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
+      ["wq",null,null,null,null,null,null,null],
+      [null,null,null,null,"wk",null,null,null]
     ],
-    solution:{from:{r:0,c:7},to:{r:0,c:1}},
-    hint:"The Rook slides to b8 giving check — the King can't escape!",xp:40},
-
-  {id:38,zone:"endgame",title:"King Marches!",desc:"In endgames the King is a fighter — march it toward the centre!",emoji:"♔",
+    solution:{from:{r:6,c:0},to:{r:3,c:3}},
+    hint:"Your Queen swoops diagonally from a2 to capture the enemy Queen on d5!",xp:35},
+{id:38,zone:"endgame",title:"King Marches!",desc:"In endgames the King is a fighter — march it toward the centre!",emoji:"♔",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,"bk",null,null,null],
@@ -997,23 +835,22 @@ const PUZZLES=[
       [null,null,null,null,null,null,null,null]
     ],
     solution:{from:{r:3,c:2},to:{r:4,c:3}},
-    hint:"Activate your King in the endgame — it belongs in the centre!",xp:25},
+    hint:"Activate your King in the endgame — it belongs in the centre!",xp:35},
 
-  {id:39,zone:"endgame",title:"Unstoppable Pawn!",desc:"Push the pawn to e8 — nothing can stop it becoming a Queen!",emoji:"♟️",
+  {id:39,zone:"pawns",title:"C-File Promotion!",desc:"Your c-pawn is one step from glory — advance it to become a Queen!",emoji:"♟️",
     board:[
-      [null,null,null,"wk",null,null,null,"bk"],
-      [null,null,null,null,"wp",null,null,null],
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,"wp",null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null]
+      ["wk",null,null,null,null,null,null,null]
     ],
-    solution:{from:{r:1,c:4},to:{r:0,c:4}},
-    hint:"The pawn is safe and the King is close — promote!",xp:35},
-
-  {id:40,zone:"endgame",title:"Stop the Passer!",desc:"Slide your Rook to a7 to block the dangerous passed pawn!",emoji:"🛡️",
+    solution:{from:{r:1,c:2},to:{r:0,c:2}},
+    hint:"Push the c-pawn from c7 to c8 — it becomes a brand new Queen!",xp:25},
+{id:40,zone:"endgame",title:"Stop the Passer!",desc:"Slide your Rook to a7 to block the dangerous passed pawn!",emoji:"🛡️",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,"wr"],
@@ -1039,7 +876,7 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,null,null]
     ],
     solution:{from:{r:0,c:3},to:{r:6,c:3}},
-    hint:"The Queen slides down the d-file and grabs the pawn before it promotes!",xp:30},
+    hint:"The Queen slides down the d-file and grabs the pawn before it promotes!",xp:35},
 
   {id:42,zone:"endgame",title:"Cut Off the King!",desc:"Move your Rook to d1 — it checks the King and drives it back!",emoji:"✂️",
     board:[
@@ -1053,9 +890,9 @@ const PUZZLES=[
       ["wr",null,null,null,null,null,null,null]
     ],
     solution:{from:{r:7,c:0},to:{r:7,c:3}},
-    hint:"The Rook slides along rank 1 to d1 — the King on d5 is in check!",xp:30},
+    hint:"The Rook slides along rank 1 to d1 — the King on d5 is in check!",xp:35},
 
-  {id:43,zone:"endgame",title:"Pawn to the 7th!",desc:"Advance your pawn to e7 — one step from queening!",emoji:"♟️",
+  {id:43,zone:"pawns",title:"Pawn to the 7th!",desc:"Advance your pawn to e7 — one step from queening!",emoji:"♟️",
     board:[
       [null,null,null,null,null,null,"bk",null],
       [null,null,null,null,null,null,null,null],
@@ -1069,7 +906,7 @@ const PUZZLES=[
     solution:{from:{r:2,c:4},to:{r:1,c:4}},
     hint:"Push the pawn to e7 — the King is right behind it for support!",xp:25},
 
-  {id:44,zone:"endgame",title:"King Takes!",desc:"Your King can capture the last pawn to win the endgame!",emoji:"♔",
+  {id:44,zone:"pieces",title:"King Takes!",desc:"Your King can capture the last pawn to win the endgame!",emoji:"♔",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -1081,7 +918,7 @@ const PUZZLES=[
       [null,null,null,null,null,null,null,"bk"]
     ],
     solution:{from:{r:4,c:3},to:{r:4,c:4}},
-    hint:"The King captures the pawn — removing it clears the path to victory!",xp:25},
+    hint:"The King captures the pawn — removing it clears the path to victory!",xp:20},
 
   // ── STRATEGY ──
   {id:45,zone:"strategy",title:"Knight Outpost!",desc:"Place your Knight on the powerful e5 square — it controls the whole board!",emoji:"♞",
@@ -1097,7 +934,7 @@ const PUZZLES=[
     ],
     solution:{from:{r:5,c:5},to:{r:3,c:4}},
     targetSq:{r:3,c:4},
-    hint:"Knights love central squares — e5 is the best outpost on the board!",xp:30},
+    hint:"Knights love central squares — e5 is the best outpost on the board!",xp:35},
 
   {id:46,zone:"strategy",title:"Rook on Open File!",desc:"Place your Rook on the open e-file where it has maximum power!",emoji:"♖",
     board:[
@@ -1112,51 +949,48 @@ const PUZZLES=[
     ],
     solution:{from:{r:7,c:0},to:{r:7,c:4}},
     targetSq:{r:7,c:4},
-    hint:"Rooks are strongest on open files with no pawns blocking them!",xp:25},
+    hint:"Rooks are strongest on open files with no pawns blocking them!",xp:35},
 
-  {id:47,zone:"strategy",title:"Rook Invasion!",desc:"Send your Rook to the 8th rank — it invades the enemy position!",emoji:"⚔️",
+  {id:47,zone:"endgame",title:"Rook Grabs Material!",desc:"Your Rook can capture the undefended enemy Rook — take it!",emoji:"🧠",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
+      [null,null,null,"br",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,"wr",null,null,null],
-      ["wr",null,null,null,null,null,null,"wk"]
+      [null,null,null,"wr",null,null,null,"wk"]
     ],
-    solution:{from:{r:7,c:0},to:{r:0,c:0}},
-    hint:"Two Rooks on the 7th and 8th ranks are devastating — invade!",xp:35},
-
-  {id:48,zone:"strategy",title:"Target Weakness!",desc:"The isolated pawn on d5 is weak — capture it with your Queen!",emoji:"🎯",
+    solution:{from:{r:7,c:3},to:{r:4,c:3}},
+    hint:"Slide your Rook from d1 to d4 — it captures the enemy Rook for free!",xp:35},
+{id:48,zone:"strategy",title:"Long Diagonal Strike!",desc:"Your Bishop controls the long diagonal — move it to g7 to pressure the King!",emoji:"🧠",
     board:[
       [null,null,null,null,"bk",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,"bp",null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wk",null,null,"wq",null,null,null,null]
-    ],
-    solution:{from:{r:7,c:3},to:{r:3,c:3}},
-    hint:"Isolated pawns can't be defended by other pawns — attack them!",xp:30},
-
-  {id:49,zone:"strategy",title:"Eliminate the Defender!",desc:"Take the Knight that defends your opponent's position!",emoji:"♗",
-    board:[
-      [null,null,null,null,null,null,null,"bk"],
-      [null,null,null,null,null,"bn",null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,"wb",null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,"wk"]
+      [null,null,null,null,"wk",null,null,null]
     ],
-    solution:{from:{r:4,c:2},to:{r:1,c:5}},
-    hint:"The Knight on f6 defends important squares — capture it with your Bishop!",xp:30},
-
-  {id:50,zone:"strategy",title:"King Safety First!",desc:"Move your King to f1 — away from the centre and the danger!",emoji:"🛡️",
+    solution:{from:{r:5,c:2},to:{r:1,c:6}},
+    hint:"The Bishop slides from c3 all the way to g7 — it attacks the King's position!",xp:35},
+{id:49,zone:"strategy",title:"Bishop Forks!",desc:"Your Bishop can attack two pieces at once — find the fork square!",emoji:"🧠",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,"br"],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,"wb",null,null,null,null],
+      [null,null,null,null,null,null,null,"br"],
+      [null,null,null,null,"wk",null,null,null]
+    ],
+    solution:{from:{r:5,c:3},to:{r:3,c:5}},
+    hint:"The Bishop jumps to f5 — it attacks both Rooks on h7 and h1 at the same time!",xp:35},
+{id:50,zone:"strategy",title:"King Safety First!",desc:"Move your King to f1 — away from the centre and the danger!",emoji:"🛡️",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,null],
@@ -1168,7 +1002,7 @@ const PUZZLES=[
       [null,null,null,null,"wk",null,null,null]
     ],
     solution:{from:{r:7,c:4},to:{r:7,c:5}},
-    hint:"When your King is in danger, move it to safety — f1 is much safer than e1!",xp:25},
+    hint:"When your King is in danger, move it to safety — f1 is much safer than e1!",xp:35},
 
   {id:51,zone:"strategy",title:"Minority Attack!",desc:"Advance your b-pawn to create weaknesses in Black's queenside!",emoji:"♟️",
     board:[
@@ -1182,9 +1016,9 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,null,null]
     ],
     solution:{from:{r:3,c:1},to:{r:2,c:2}},
-    hint:"Capture on c6 to create an isolated or backward pawn in Black's camp!",xp:30},
+    hint:"Capture on c6 to create an isolated or backward pawn in Black's camp!",xp:35},
 
-  {id:52,zone:"strategy",title:"Rook Behind Passer!",desc:"Place your Rook behind the passed pawn — it supports and pushes it!",emoji:"♖",
+  {id:52,zone:"endgame",title:"Rook Behind Passer!",desc:"Place your Rook behind the passed pawn — it supports and pushes it!",emoji:"♖",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,null],
@@ -1197,23 +1031,22 @@ const PUZZLES=[
     ],
     solution:{from:{r:7,c:3},to:{r:5,c:3}},
     targetSq:{r:5,c:3},
-    hint:"Rooks belong BEHIND passed pawns — they push them from behind!",xp:30},
+    hint:"Rooks belong BEHIND passed pawns — they push them from behind!",xp:35},
 
-  {id:53,zone:"strategy",title:"Win Material!",desc:"Your Queen can capture the undefended Rook — take it!",emoji:"💎",
+  {id:53,zone:"master",title:"Bishop Wins the Queen!",desc:"Your Bishop can capture the enemy Queen — spot the winning move!",emoji:"🌟",
     board:[
-      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,"bk"],
+      [null,null,null,null,null,null,"bq",null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,"br",null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
-      ["wk",null,null,null,"wq",null,null,null]
+      ["wb",null,null,null,null,null,null,"wk"]
     ],
-    solution:{from:{r:7,c:4},to:{r:3,c:4}},
-    hint:"The Rook on e5 is hanging — grab it with your Queen!",xp:30},
-
-  {id:54,zone:"strategy",title:"Centralise the King!",desc:"In the endgame the King is powerful — march it toward the centre!",emoji:"♔",
+    solution:{from:{r:7,c:0},to:{r:1,c:6}},
+    hint:"The Bishop slices from a1 all the way to g7 — capturing the Queen in one move!",xp:40},
+{id:54,zone:"endgame",title:"Centralise the King!",desc:"In the endgame the King is powerful — march it toward the centre!",emoji:"♔",
     board:[
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -1225,7 +1058,7 @@ const PUZZLES=[
       ["wk",null,null,null,null,null,null,"bk"]
     ],
     solution:{from:{r:7,c:0},to:{r:6,c:1}},
-    hint:"Move the King toward the centre — it will be much more active on b2!",xp:25},
+    hint:"Move the King toward the centre — it will be much more active on b2!",xp:35},
 
   // ── PUZZLE RUSH (additional) ──
   {id:55,zone:"rush",title:"Arabian Mate!",desc:"Jump your Rook to h7 — the Knight covers all the escape squares!",emoji:"⚡",
@@ -1256,9 +1089,9 @@ const PUZZLES=[
     solution:{from:{r:7,c:1},to:{r:1,c:7}},
     hint:"The Queen on h7 is check and the Rook on h1 protects it — checkmate!",xp:50},
 
-  {id:57,zone:"rush",title:"Speed Grab!",desc:"Spot the hanging piece and capture it instantly!",emoji:"⚡",
+  {id:57,zone:"rush",title:"Speed Grab!",desc:"The Rook is sitting on h8 undefended — slide your Queen up and take it!",emoji:"⚡",
     board:[
-      [null,null,null,null,"bk",null,"br",null],
+      [null,null,null,null,"bk",null,null,"br"],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -1267,10 +1100,10 @@ const PUZZLES=[
       [null,null,null,null,null,null,null,null],
       ["wk",null,null,null,null,null,null,"wq"]
     ],
-    solution:{from:{r:7,c:7},to:{r:3,c:7}},
-    hint:"The Rook on h5 is undefended — slide your Queen straight up and grab it!",xp:40},
+    solution:{from:{r:7,c:7},to:{r:0,c:7}},
+    hint:"The Rook on h5 is undefended — slide your Queen straight up and grab it!",xp:50},
 
-  {id:58,zone:"rush",title:"Rook and Knight Mate!",desc:"Slide your Rook to h7 — the Knight and Rook deliver checkmate!",emoji:"⚡",
+  {id:58,zone:"master",title:"Rook and Knight Mate!",desc:"Slide your Rook to h7 — the Knight and Rook deliver checkmate!",emoji:"⚡",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,"bp","bp"],
@@ -1284,7 +1117,7 @@ const PUZZLES=[
     solution:{from:{r:7,c:7},to:{r:1,c:7}},
     hint:"The Rook to h7 captures the pawn and gives checkmate — the Knight covers g8!",xp:50},
 
-  {id:59,zone:"rush",title:"Queen with Check!",desc:"Capture the Bishop AND give check in the same move!",emoji:"⚡",
+  {id:59,zone:"master",title:"Queen with Check!",desc:"Capture the Bishop AND give check in the same move!",emoji:"⚡",
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,"bb"],
@@ -1311,11 +1144,150 @@ const PUZZLES=[
     ],
     solution:{from:{r:0,c:7},to:{r:0,c:1}},
     hint:"The Queen sweeps the back rank to b8 — the King is trapped in the corner!",xp:50},
+
+  // ── RUSH ZONE additional puzzles (completing 9 zones × 7 = 63 total) ──
+  {id:61,zone:"rush",title:"Queen Strikes!",desc:"Slide your Queen to b2 — the King is trapped in the corner!",emoji:"⚡",
+    board:[
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,"wq",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["wk",null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["bk",null,null,null,null,null,null,null]
+    ],
+    solution:{from:{r:3,c:4},to:{r:6,c:1}},
+    hint:"The Queen swoops to b2 — the King has nowhere to run!",xp:50},
+
+  {id:62,zone:"rush",title:"Queen Diagonal Snipe!",desc:"Spot the undefended Rook and capture it with your Queen in one move!",emoji:"⚡",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,"br",null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,"wq",null],
+      [null,null,null,null,"wk",null,null,null]
+    ],
+    solution:{from:{r:6,c:6},to:{r:3,c:3}},
+    hint:"Your Queen sweeps diagonally from g2 to d5 — snapping up the free Rook!",xp:50},
+{id:63,zone:"rush",title:"Royal Fork!",desc:"Your Knight can attack the King AND Queen at the same time — find the square!",emoji:"⚡",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,"bq",null,null,null,null],
+      [null,null,null,null,null,"wn",null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,"wk",null,null,null,null,null]
+    ],
+    solution:{from:{r:3,c:5},to:{r:1,c:4}},
+    hint:"Jump your Knight to e7 — it forks the King on e8 AND the Queen on d6!",xp:50},
+  {id:64,zone:"pieces",title:"Queen Slide!",desc:"Queens can move in ANY direction! Slide your Queen all the way to h8.",emoji:"♞",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["wk",null,null,null,null,null,null,"wq"]
+    ],
+    solution:{from:{r:7,c:7},to:{r:0,c:7}},
+    hint:"The Queen slides straight up the h-file all the way to h8!",xp:15},
+
+  {id:65,zone:"pieces",title:"Knight Hops!",desc:"Knights jump in an L-shape and can hop over other pieces! Jump to e5.",emoji:"♞",
+    board:[
+      [null,null,null,null,"bk",null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ["wk",null,null,"wn",null,null,null,null]
+    ],
+    solution:{from:{r:7,c:3},to:{r:5,c:4}},
+    hint:"The Knight at d1 jumps in an L — 2 squares up and 1 across to reach e3!",xp:15},
 ];
 
 
+
+function SpeechBubble({msg, mood="happy", showSpeaker=false}){
+  const [speaking, setSpeaking] = useState(false);
+  const bubbleColors = {
+    happy:"#fff", excited:"#fff9e6", thinking:"#f0f0ff",
+    celebrating:"#fff9e6", sad:"#fff0f0", encouraging:"#f0fff4"
+  };
+  const borderColors = {
+    happy:"#74b9ff", excited:"#f1c40f", thinking:"#a29bfe",
+    celebrating:"#f1c40f", sad:"#ff7675", encouraging:"#00b894"
+  };
+
+  const handleSpeak = () => {
+    SFX.tap();
+    setSpeaking(true);
+    speak(msg);
+    // Reset icon after estimated speech duration
+    const ms = Math.max(1500, msg.length * 60);
+    setTimeout(() => setSpeaking(false), ms);
+  };
+
+  return (
+    <div style={{display:"flex", alignItems:"flex-start", gap:10}}>
+      <KnightMascot mood={mood} size={64}/>
+      <div style={{flex:1, position:"relative"}}>
+        {/* Tail of bubble */}
+        <div style={{
+          position:"absolute", left:-10, top:16,
+          width:0, height:0,
+          borderTop:"8px solid transparent",
+          borderBottom:"8px solid transparent",
+          borderRight:`10px solid ${borderColors[mood]||"#74b9ff"}`,
+        }}/>
+        <div style={{
+          background: bubbleColors[mood]||"#fff",
+          border:`3px solid ${borderColors[mood]||"#74b9ff"}`,
+          borderRadius:"18px 18px 18px 4px",
+          padding:"10px 14px 10px 12px",
+          boxShadow:"0 4px 0 rgba(0,0,0,.08)",
+          fontSize:14, lineHeight:1.5, color:"#2d3436", fontWeight:600,
+          display:"flex", alignItems:"flex-start", gap:8,
+        }}>
+          <span style={{flex:1}}>{msg}</span>
+          {/* Speaker button */}
+          <button
+            onClick={handleSpeak}
+            title="Tap to hear instructions"
+            style={{
+              flexShrink:0,
+              width:34, height:34, borderRadius:"50%",
+              background: speaking
+                ? "linear-gradient(145deg,#6c5ce7,#a29bfe)"
+                : "linear-gradient(145deg,#74b9ff,#0984e3)",
+              border:"2px solid rgba(255,255,255,.6)",
+              boxShadow: speaking ? "0 0 0 3px rgba(108,92,231,.35)" : "0 3px 0 rgba(0,0,0,.15)",
+              cursor:"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:16,
+              animation: speaking ? "pulse .6s ease-in-out infinite" : "none",
+              transition:"all .2s ease",
+              marginTop:2,
+            }}>
+            {speaking ? "🔊" : "🔈"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════
-// MASCOT — Knight character SVG, reacts to game state
+// MINI BOARD
 // ═══════════════════════════════════════════════════════════
 function KnightMascot({mood="happy", size=80, animate=false}){
   const expressions = {
@@ -1397,78 +1369,6 @@ function speak(text){
   window.speechSynthesis.speak(u);
 }
 
-function SpeechBubble({msg, mood="happy", showSpeaker=false}){
-  const [speaking, setSpeaking] = useState(false);
-  const bubbleColors = {
-    happy:"#fff", excited:"#fff9e6", thinking:"#f0f0ff",
-    celebrating:"#fff9e6", sad:"#fff0f0", encouraging:"#f0fff4"
-  };
-  const borderColors = {
-    happy:"#74b9ff", excited:"#f1c40f", thinking:"#a29bfe",
-    celebrating:"#f1c40f", sad:"#ff7675", encouraging:"#00b894"
-  };
-
-  const handleSpeak = () => {
-    SFX.tap();
-    setSpeaking(true);
-    speak(msg);
-    // Reset icon after estimated speech duration
-    const ms = Math.max(1500, msg.length * 60);
-    setTimeout(() => setSpeaking(false), ms);
-  };
-
-  return (
-    <div style={{display:"flex", alignItems:"flex-start", gap:10}}>
-      <KnightMascot mood={mood} size={64}/>
-      <div style={{flex:1, position:"relative"}}>
-        {/* Tail of bubble */}
-        <div style={{
-          position:"absolute", left:-10, top:16,
-          width:0, height:0,
-          borderTop:"8px solid transparent",
-          borderBottom:"8px solid transparent",
-          borderRight:`10px solid ${borderColors[mood]||"#74b9ff"}`,
-        }}/>
-        <div style={{
-          background: bubbleColors[mood]||"#fff",
-          border:`3px solid ${borderColors[mood]||"#74b9ff"}`,
-          borderRadius:"18px 18px 18px 4px",
-          padding:"10px 14px 10px 12px",
-          boxShadow:"0 4px 0 rgba(0,0,0,.08)",
-          fontSize:14, lineHeight:1.5, color:"#2d3436", fontWeight:600,
-          display:"flex", alignItems:"flex-start", gap:8,
-        }}>
-          <span style={{flex:1}}>{msg}</span>
-          {/* Speaker button */}
-          <button
-            onClick={handleSpeak}
-            title="Tap to hear instructions"
-            style={{
-              flexShrink:0,
-              width:34, height:34, borderRadius:"50%",
-              background: speaking
-                ? "linear-gradient(145deg,#6c5ce7,#a29bfe)"
-                : "linear-gradient(145deg,#74b9ff,#0984e3)",
-              border:"2px solid rgba(255,255,255,.6)",
-              boxShadow: speaking ? "0 0 0 3px rgba(108,92,231,.35)" : "0 3px 0 rgba(0,0,0,.15)",
-              cursor:"pointer",
-              display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:16,
-              animation: speaking ? "pulse .6s ease-in-out infinite" : "none",
-              transition:"all .2s ease",
-              marginTop:2,
-            }}>
-            {speaking ? "🔊" : "🔈"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
-// MINI BOARD
-// ═══════════════════════════════════════════════════════════
 function MiniBoard({board,onTap,selected,targets,lastMove,highlightSq}){
   const cells=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)cells.push({r,c});
   const files=["a","b","c","d","e","f","g","h"];
@@ -1626,6 +1526,10 @@ function MiniBoard({board,onTap,selected,targets,lastMove,highlightSq}){
 // ═══════════════════════════════════════════════════════════
 // ZONE ILLUSTRATED ICON
 // ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+// ZONE ILLUSTRATED ICON
+// ═══════════════════════════════════════════════════════════
 function ZoneIcon({zone, size=70}){
   const icons = {
     pieces:   {bg:"#e74c3c", light:"#ff6b6b", symbol:"♞", label:"⚔"},
@@ -1667,7 +1571,7 @@ function ZoneIcon({zone, size=70}){
 // ═══════════════════════════════════════════════════════════
 // HOME SCREEN — Reading Eggs style
 // ═══════════════════════════════════════════════════════════
-function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems, playerName, playerAvatar, playerColor, world=1, world1Done=false}){
+function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, playerName, playerAvatar, playerColor}){
   const rank = getRank(xp);
   const next = getNextRank(xp);
   const xpPct = next ? ((xp-rank.min)/(next.min-rank.min))*100 : 100;
@@ -1697,33 +1601,6 @@ function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems,
       </div>
 
       <div style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"12px 16px 20px",WebkitOverflowScrolling:"touch"}}>
-
-        {/* DEBUG — remove after testing */}
-        <div style={{background:"#000",color:"#0f0",padding:"6px 10px",borderRadius:8,marginBottom:8,fontSize:11,fontFamily:"monospace"}}>
-          world={world} | world1Done={String(world1Done)} | completed={completedPuzzles}
-        </div>
-
-        {/* Continue Adventure banner — top of page, always visible */}
-        {world===1&&world1Done&&(
-          <button onClick={()=>onNav("world2")} style={{width:"100%",background:"linear-gradient(135deg,#922b21,#c0392b)",border:"3px solid rgba(255,120,120,.4)",borderRadius:18,padding:"12px 16px",cursor:"pointer",boxShadow:"0 6px 0 #7b241c",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:14}}>
-            <span style={{fontSize:26}}>🐉</span>
-            <div style={{textAlign:"left"}}>
-              <div style={{fontSize:14,fontWeight:900,color:"#fff"}}>Continue Adventure!</div>
-              <div style={{fontSize:11,color:"rgba(255,200,200,.9)",fontWeight:700}}>Enter Chess Dungeon — World 2 🏰</div>
-            </div>
-            <span style={{fontSize:18,color:"rgba(255,200,200,.8)",marginLeft:"auto"}}>→</span>
-          </button>
-        )}
-        {world===2&&(
-          <div style={{display:"flex",gap:8,marginBottom:14}}>
-            <button onClick={()=>onNav("world1")} style={{flex:1,background:"linear-gradient(135deg,#1a3a6a,#0d2040)",border:"2px solid rgba(100,150,255,.3)",borderRadius:14,padding:"10px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:16}}>🏰</span><div style={{fontSize:12,fontWeight:900,color:"#fff"}}>World 1</div>
-            </button>
-            <div style={{flex:2,background:"linear-gradient(135deg,#7b241c,#c0392b)",border:"2px solid rgba(255,100,100,.3)",borderRadius:14,padding:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:16}}>🐉</span><div style={{fontSize:12,fontWeight:900,color:"#fff"}}>Chess Dungeon — Active</div>
-            </div>
-          </div>
-        )}
 
         {/* Header row */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
@@ -1758,19 +1635,41 @@ function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems,
           </div>
         </div>
 
-        {/* Daily Challenge */}
-        <div onClick={()=>onNav("zones")} className="tap-target" style={{background:"linear-gradient(135deg,#e74c3c,#c0392b)",borderRadius:20,padding:"14px",marginBottom:14,border:"3px solid rgba(255,255,255,.3)",boxShadow:"0 6px 0 #922b21",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{fontSize:40,filter:"drop-shadow(0 3px 6px rgba(0,0,0,.3))",display:"inline-block",animation:"dailyPulse 1.5s ease-in-out infinite"}}>🎯</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,.8)",fontWeight:800,letterSpacing:1}}>⚡ DAILY CHALLENGE</div>
-            <div style={{fontSize:15,fontWeight:900,color:"#fff",marginBottom:6}}>Complete 3 puzzles! +50 💎</div>
-            <div style={{height:10,background:"rgba(0,0,0,.25)",borderRadius:999,overflow:"hidden",border:"2px solid rgba(255,255,255,.2)"}}>
-              <div style={{height:"100%",width:`${(Math.min(completedPuzzles,3)/3)*100}%`,background:"linear-gradient(90deg,#f1c40f,#f39c12)",borderRadius:999}}/>
+        {/* Next Zone Challenge */}
+        {(()=>{
+          const nextZoneIdx = ZONES.findIndex((z,i)=>{
+            const prevZ = i>0 ? ZONES[i-1] : null;
+            const prevPs = prevZ ? PUZZLES.filter(p=>p.zone===prevZ.id) : [];
+            const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
+            return i>0 && prevD<prevPs.length ? false : PUZZLES.filter(p=>p.zone===z.id).some(p=>!(completedIds||[]).includes(p.id));
+          });
+          const currentZone = nextZoneIdx>=0 ? ZONES[nextZoneIdx] : null;
+          if(!currentZone) return(
+            <div style={{background:"linear-gradient(135deg,#f1c40f,#e67e22)",borderRadius:20,padding:"14px",marginBottom:14,border:"3px solid rgba(255,255,255,.3)",boxShadow:"0 6px 0 #d4ac0d",textAlign:"center"}}>
+              <div style={{fontSize:28,marginBottom:4}}>🏆</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#1a1a2e"}}>All 63 puzzles complete!</div>
+              <div style={{fontSize:12,color:"rgba(0,0,0,.6)",fontWeight:700}}>You are a Chess Grand Master!</div>
             </div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,.8)",marginTop:3,fontWeight:700}}>{Math.min(completedPuzzles,3)}/3 done</div>
-          </div>
-          <div style={{fontSize:28,animation:"dailyPulse 0.8s ease-in-out infinite",fontWeight:900}}>→</div>
-        </div>
+          );
+          const zonePuzzles = PUZZLES.filter(p=>p.zone===currentZone.id);
+          const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+          const pct = (done/zonePuzzles.length)*100;
+          return(
+            <div onClick={()=>onNav("zone:"+currentZone.id)} className="tap-target"
+              style={{background:`linear-gradient(135deg,${currentZone.color},${currentZone.bg})`,borderRadius:20,padding:"14px",marginBottom:14,border:"3px solid rgba(255,255,255,.3)",boxShadow:`0 6px 0 ${currentZone.bg}`,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+              <div style={{fontSize:36,animation:"dailyPulse 1.5s ease-in-out infinite"}}>{currentZone.emoji}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.8)",fontWeight:800,letterSpacing:1}}>🏰 CURRENT ZONE</div>
+                <div style={{fontSize:14,fontWeight:900,color:"#fff",marginBottom:6}}>{currentZone.label}</div>
+                <div style={{height:10,background:"rgba(0,0,0,.25)",borderRadius:999,overflow:"hidden",border:"2px solid rgba(255,255,255,.2)"}}>
+                  <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#f1c40f,#fff)",borderRadius:999,transition:"width .8s ease"}}/>
+                </div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.8)",marginTop:3,fontWeight:700}}>{done}/{zonePuzzles.length} puzzles done</div>
+              </div>
+              <div style={{fontSize:24,animation:"dailyPulse 0.8s ease-in-out infinite",fontWeight:900}}>→</div>
+            </div>
+          );
+        })()}
 
         {/* Stats bubbles */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
@@ -1787,31 +1686,64 @@ function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems,
           ))}
         </div>
 
-
-        {/* Zone icons */}
-        <div style={{background:"rgba(255,255,255,.15)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:"2px solid rgba(255,255,255,.3)",marginBottom:8}}>
-          <div style={{fontSize:12,fontWeight:900,color:"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center",textShadow:"0 1px 3px rgba(0,0,0,.3)"}}>
-            <span style={{display:"inline-block",animation:"swordSlash 1.5s ease-in-out infinite"}}>⚔️</span>
-            {" CHESS REALMS "}
-            <span style={{display:"inline-block",animation:"swordSlash 1.5s ease-in-out infinite reverse"}}>⚔️</span>
+        {/* Chess Village zone grid */}
+        <div style={{background:"rgba(255,255,255,.12)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:"2px solid rgba(255,255,255,.2)",marginBottom:8}}>
+          {/* Title */}
+          <div style={{fontSize:12,fontWeight:900,color:"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center"}}>
+            <span style={{display:"inline-block",animation:"mascotFloat 2s ease-in-out infinite"}}>🏰</span>
+            {" CHESS VILLAGE "}
+            <span style={{display:"inline-block",animation:"mascotFloat 2.5s ease-in-out infinite reverse"}}>🏠</span>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,justifyItems:"center"}}>
-            {(world===1?ZONES:ZONES2).map(z=>(
-              <button key={z.id}
-                onClick={()=>!z.locked&&onNav("zone:"+z.id)}
-                style={{background:"none",border:"none",cursor:z.locked?"default":"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:0,opacity:z.locked?.4:1,width:"100%"}}>
-                <div style={{position:"relative",width:56,height:56}}>
-                  <ZoneIcon zone={z} size={56}/>
-                  {z.locked&&(
-                    <div style={{position:"absolute",inset:0,borderRadius:56*.28,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🔒</div>
+          {/* 3-column grid of zones */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+            {ZONES.map((z,i)=>{
+              const prevZ = i>0 ? ZONES[i-1] : null;
+              const prevPs = prevZ ? PUZZLES.filter(p=>p.zone===prevZ.id) : [];
+              const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
+              const isLocked = i>0 && prevD<prevPs.length;
+              const zonePuzzles = PUZZLES.filter(p=>p.zone===z.id);
+              const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+              const isComplete = done===zonePuzzles.length;
+              return(
+                <button key={z.id}
+                  onClick={()=>{ if(!isLocked) onNav("zone:"+z.id); }}
+                  style={{
+                    background:isLocked?"rgba(0,0,0,.25)":`linear-gradient(145deg,${z.color},${z.bg})`,
+                    border:`2px solid ${isLocked?"rgba(255,255,255,.1)":"rgba(255,255,255,.3)"}`,
+                    borderRadius:16,padding:"10px 6px 8px",
+                    cursor:isLocked?"default":"pointer",
+                    display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+                    opacity:isLocked?.5:1,
+                    boxShadow:isLocked?"none":`0 4px 0 ${z.bg}`,
+                    position:"relative",
+                  }}>
+                  {/* Emoji icon */}
+                  <div style={{fontSize:22,filter:isLocked?"grayscale(1)":"none",animation:isLocked?"none":`iconBob ${2+i*.2}s ease-in-out infinite`}}>
+                    {isLocked?"🔒":z.emoji}
+                  </div>
+                  {/* Zone name */}
+                  <div style={{fontSize:8,fontWeight:900,color:isLocked?"rgba(255,255,255,.4)":"#fff",textAlign:"center",lineHeight:1.3,letterSpacing:.3}}>
+                    {z.label.toUpperCase()}
+                  </div>
+                  {/* Progress pills */}
+                  {!isLocked&&(
+                    <div style={{fontSize:8,color:"rgba(255,255,255,.8)",fontWeight:700}}>
+                      {isComplete?"✓ Done":`${done}/${zonePuzzles.length}`}
+                    </div>
                   )}
-                </div>
-                <div style={{fontSize:10,fontWeight:900,color:z.locked?"rgba(255,255,255,.45)":"#fff",textAlign:"center",textShadow:"0 1px 3px rgba(0,0,0,.4)",lineHeight:1.2,maxWidth:70}}>{z.label}</div>
-              </button>
-            ))}
+                  {/* Complete badge */}
+                  {isComplete&&(
+                    <div style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#27ae60",border:"2px solid #fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:900}}>✓</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {/* Progress summary */}
+          <div style={{marginTop:12,textAlign:"center",fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:700}}>
+            {completedPuzzles}/65 puzzles complete 🏆
           </div>
         </div>
-
       </div>
     </div>
   );
@@ -1820,277 +1752,522 @@ function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems,
 // ═══════════════════════════════════════════════════════════
 // MAP SCREEN — Reading Eggs adventure map style
 // ═══════════════════════════════════════════════════════════
-function MapScreen({xp, completedPuzzles, onStartPuzzle, playerAvatar, playerColor, world=1, zones=ZONES, puzzles=PUZZLES}){
+function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAvatar, playerColor}){
 
   const youAreHere = (() => {
-    for(let i=0; i<zones.length; i++){
-      if(zones[i].locked) return Math.max(0,i-1);
-      const zonePuzzles = puzzles.filter(p=>p.zone===zones[i].id);
-      const startId = puzzles[0]?.id || 1;
-      const done = zonePuzzles.filter(p=>(p.id-startId)<completedPuzzles).length;
-      if(done < zonePuzzles.length) return i;
+    for(let i=0; i<ZONES.length; i++){
+      const prevZ2 = i>0 ? ZONES[i-1] : null;
+      const prevPs2 = prevZ2 ? PUZZLES.filter(p=>p.zone===prevZ2.id) : [];
+      const prevD2 = prevPs2.filter(p=>(completedIds||[]).includes(p.id)).length;
+      if(i>0 && prevD2 < prevPs2.length) return Math.max(0,i-1);
+      const zonePuzzles = PUZZLES.filter(p=>p.zone===ZONES[i].id);
+      const zoneDone = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+      if(zoneDone < zonePuzzles.length) return i;
     }
-    return zones.filter(z=>!z.locked).length-1;
+    return ZONES.length-1;
   })();
 
-  // 6 zone positions in a winding S-curve within 320x520 canvas
-  const baseNodes=[
-    {x:220,y:530},  // 1
-    {x: 90,y:450},  // 2
-    {x:220,y:365},  // 3
-    {x: 90,y:278},  // 4
-    {x:220,y:192},  // 5
-    {x: 90,y:115},  // 6
-    {x:220,y: 60},  // 7
-    {x:150,y:420},  // 8
-    {x:155,y:290},  // 9
+  // Building positions — spread across the village along the river
+  const buildings = [
+    {x:240, y:530, zone:"pieces",    label:"Piece Power",    emoji:"♞"},
+    {x:70,  y:470, zone:"pawns",     label:"Pawn Kingdom",   emoji:"♟️"},
+    {x:242, y:442, zone:"openings",  label:"Open Strong",    emoji:"🏰"},
+    {x:68,  y:348, zone:"tactics",   label:"Tactics",        emoji:"⚔️"},
+    {x:232, y:285, zone:"checkmate", label:"Checkmate Hunt", emoji:"🎯"},
+    {x:72,  y:228, zone:"strategy",  label:"Strategy",       emoji:"🧠"},
+    {x:228, y:172, zone:"endgame",   label:"Endgame",        emoji:"👑"},
+    {x:75,  y:152, zone:"master",    label:"Master Moves",   emoji:"🌟"},
+    {x:160, y:58,  zone:"rush",      label:"Puzzle Rush",    emoji:"⚡"},
   ];
-  const nodes=zones.map((_,i)=>baseNodes[i]||{x:155,y:200});
 
-  // Smooth bezier S-curve through all 6 nodes
-  const pathD = `M220,530 C165,505 130,475 90,450 C55,425 155,390 220,365 C275,340 110,305 90,278 C65,252 160,218 220,192 C275,168 130,138 90,115`;
+  // Stone road winding through the village
+  // Road split into two segments — bottom village + short approach to castle gate
+  // The gap in the middle is hidden behind the castle hill
+  const roadBottom = "M240,545 C200,525 140,510 70,490 C30,475 50,445 90,428 C150,408 240,400 240,400 C270,385 255,360 210,348 C160,335 60,340 65,340 C30,328 42,300 80,288 C130,272 235,278 235,278 C268,265 252,238 210,228 C165,218 60,222 70,222 C35,210 48,190 85,178";
+  const roadTop    = "M228,170 C258,158 245,140 200,130";
 
-  return (
+  return(
     <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 0 #4a3ab5",flexShrink:0}}>
-        <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>🗺️ CHESS REALMS</div>
+
+      {/* Header */}
+      <div style={{background:"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px",flexShrink:0,boxShadow:"0 4px 0 #1b5e20",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        <span style={{fontSize:16}}>🏰</span>
+        <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>CHESS VILLAGE</span>
+        <span style={{fontSize:16}}>🗺️</span>
       </div>
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
 
-        {/* Coach bubble */}
-        <div style={{padding:"10px 14px 8px"}}>
-          <SpeechBubble msg={world===2?"⚔️ Chess Dungeon! Harder puzzles await — slay the Dragon!":"Tap a zone to train! Complete all puzzles to unlock the next world! 🏆"} mood="excited"/>
-        </div>
+      {/* Scrollable map */}
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
+        <svg viewBox="0 0 320 590" width="100%" style={{display:"block",minHeight:"100%"}}>
+          <defs>
+            {/* Sky gradient — golden hour light */}
+            <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#87ceeb"/>
+              <stop offset="55%"  stopColor="#b0dff5"/>
+              <stop offset="100%" stopColor="#ddeeff"/>
+            </linearGradient>
+            {/* Ground/grass */}
+            <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#4caf50"/>
+              <stop offset="100%" stopColor="#2e7d32"/>
+            </linearGradient>
+            {/* River */}
+            <linearGradient id="riverG" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"   stopColor="#1565c0"/>
+              <stop offset="100%" stopColor="#42a5f5"/>
+            </linearGradient>
+            {/* Mountain */}
+            <linearGradient id="mtnG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#78909c"/>
+              <stop offset="100%" stopColor="#4a5568"/>
+            </linearGradient>
+            {/* Castle hill */}
+            <linearGradient id="hillG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#388e3c"/>
+              <stop offset="100%" stopColor="#1b5e20"/>
+            </linearGradient>
+            <filter id="shadow">
+              <feDropShadow dx="1" dy="3" stdDeviation="3" floodOpacity="0.3"/>
+            </filter>
+            <filter id="softglow">
+              <feGaussianBlur stdDeviation="4" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
 
-        {/* The Map */}
-        <div style={{margin:"0 12px 12px",borderRadius:24,overflow:"hidden",border:"4px solid #1a6b32",boxShadow:"0 8px 0 #0f4020, 0 12px 32px rgba(0,0,0,.4)"}}>
-          <svg viewBox="0 0 320 600" width="100%" style={{display:"block"}}>
-            <defs>
-              <linearGradient id="bgTop" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"   stopColor="#1a1a3e"/>
-                <stop offset="45%"  stopColor="#2d1b69"/>
-                <stop offset="100%" stopColor="#1a6b32"/>
-              </linearGradient>
-              <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#27ae60"/>
-                <stop offset="100%" stopColor="#1a6b32"/>
-              </linearGradient>
-              <linearGradient id="goldPath" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ffe566"/>
-                <stop offset="100%" stopColor="#f39c12"/>
-              </linearGradient>
-              <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#fffde7" stopOpacity=".9"/>
-                <stop offset="100%" stopColor="#fffde7" stopOpacity="0"/>
-              </radialGradient>
-              <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#f1c40f" stopOpacity=".6"/>
-                <stop offset="100%" stopColor="#f1c40f" stopOpacity="0"/>
-              </radialGradient>
-              <filter id="softGlow">
-                <feGaussianBlur stdDeviation="3" result="blur"/>
-                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-              </filter>
-              <filter id="shadow">
-                <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#000" floodOpacity=".4"/>
-              </filter>
-            </defs>
+          </defs>
 
-            {/* ── BACKGROUND ── */}
-            <rect width="320" height="500" fill="url(#bgTop)"/>
+          {/* ── SKY ── */}
+          <rect width="320" height="590" fill="url(#skyG)"/>
 
-            {/* Stars in night sky */}
-            {[[20,20],[60,12],[110,8],[160,18],[220,6],[270,15],[300,25],[40,45],[140,35],[240,40],[295,50],[80,55]].map(([x,y],i)=>(
-              <circle key={i} cx={x} cy={y} r={i%3===0?1.5:1} fill="#fff" opacity={0.5+Math.sin(i)*0.4}/>
-            ))}
-
-            {/* Moon */}
-            <circle cx="268" cy="38" r="28" fill="url(#moonGlow)"/>
-            <circle cx="268" cy="38" r="22" fill="#fffde7" opacity=".95"/>
-            <circle cx="278" cy="30" r="16" fill="#2d1b69"/>
-
-            {/* Purple/blue hills in background */}
-            <ellipse cx="60"  cy="200" rx="110" ry="70" fill="#1e1060" opacity=".7"/>
-            <ellipse cx="270" cy="220" rx="100" ry="65" fill="#1e1060" opacity=".6"/>
-            <ellipse cx="160" cy="190" rx="80"  ry="55" fill="#2a1575" opacity=".5"/>
-
-            {/* Distant castle silhouette */}
-            <g opacity=".35" transform="translate(110,55)">
-              <rect x="0"  y="30" width="80" height="55" fill="#0d0930"/>
-              <rect x="-8" y="18" width="20" height="42" fill="#0d0930"/>
-              <rect x="68" y="18" width="20" height="42" fill="#0d0930"/>
-              <rect x="20" y="8"  width="40" height="50" fill="#120c3a"/>
-              {[0,6,12].map(x=><rect key={x} x={x-8}  y={13} width="5" height="8" fill="#0d0930"/>)}
-              {[20,27,34,41].map(x=><rect key={x} x={x} y={3}  width="5" height="8" fill="#120c3a"/>)}
-              {[68,74,80].map(x=><rect key={x} x={x}   y={13} width="5" height="8" fill="#0d0930"/>)}
+          {/* Clouds */}
+          {[[55,30,1],[160,18,.85],[250,42,.75],[110,65,.7],[285,25,.8]].map(([cx,cy,op],i)=>(
+            <g key={i} opacity={op}>
+              <ellipse cx={cx}    cy={cy}    rx={28+i*4} ry={10+i*2} fill="#fff"/>
+              <ellipse cx={cx-10} cy={cy-5}  rx={15+i*2} ry={12+i*2} fill="#fff"/>
+              <ellipse cx={cx+12} cy={cy-4}  rx={16+i*2} ry={10+i*1} fill="#fff"/>
             </g>
+          ))}
 
-            {/* Rolling green ground */}
-            <ellipse cx="160" cy="600" rx="240" ry="90" fill="url(#groundGrad)"/>
-            <rect y="560" width="320" height="40" fill="#1a6b32"/>
+          {/* Sun with warm glow */}
+          <circle cx="40" cy="45" r="28" fill="#fff9c4" opacity=".6" filter="url(#softglow)"/>
+          <circle cx="40" cy="45" r="20" fill="#ffee58" opacity=".9"/>
+          <circle cx="40" cy="45" r="14" fill="#fdd835"/>
 
-            {/* Ground hills */}
-            <ellipse cx="40"  cy="575" rx="120" ry="50" fill="#27ae60" opacity=".8"/>
-            <ellipse cx="280" cy="570" rx="110" ry="45" fill="#27ae60" opacity=".7"/>
+          {/* ── FAR BACKGROUND MOUNTAINS ── */}
+          <polygon points="0,200 60,90 120,200"   fill="#90a4ae" opacity=".45"/>
+          <polygon points="50,200 140,75 230,200"  fill="#78909c" opacity=".4"/>
+          <polygon points="180,200 270,88 320,200" fill="#90a4ae" opacity=".38"/>
+          {/* Snow caps */}
+          <polygon points="60,90 50,125 70,125"   fill="#eceff1" opacity=".8"/>
+          <polygon points="140,75 128,114 152,114" fill="#eceff1" opacity=".85"/>
+          <polygon points="270,88 260,120 280,120" fill="#eceff1" opacity=".75"/>
 
-            {/* Trees - left side */}
-            {[[18,480],[22,400],[15,325],[20,245],[18,165],[15,90]].map(([x,y],i)=>(
-              <g key={`tl${i}`}>
-                <rect x={x-3} y={y+18} width="6" height="18" fill="#5d4037" rx="1"/>
-                <polygon points={`${x},${y-5} ${x-16},${y+24} ${x+16},${y+24}`} fill={["#1e8449","#27ae60","#145a32","#1a7a40"][i]}/>
-                <polygon points={`${x},${y-18} ${x-11},${y+5} ${x+11},${y+5}`}  fill={["#27ae60","#2ecc71","#1e8449","#27ae60"][i]}/>
-              </g>
+          {/* Mist at mountain base */}
+          <ellipse cx="160" cy="200" rx="200" ry="25" fill="#fff" opacity=".18"/>
+
+          {/* ── GRASSY TERRAIN ── */}
+          {/* Main ground layer */}
+          <rect x="0" y="190" width="320" height="400" fill="url(#grassG)" opacity=".7"/>
+          {/* Rolling hills */}
+          <ellipse cx="60"  cy="210" rx="100" ry="35" fill="#4caf50" opacity=".6"/>
+          <ellipse cx="260" cy="205" rx="100" ry="32" fill="#4caf50" opacity=".55"/>
+          <ellipse cx="160" cy="220" rx="140" ry="28" fill="#43a047" opacity=".5"/>
+
+          {/* ── CASTLE HILL ── */}
+          <ellipse cx="160" cy="110" rx="105" ry="60" fill="url(#hillG)"/>
+          <ellipse cx="160" cy="95"  rx="80"  ry="45" fill="#2e7d32"/>
+          {/* Rocky cliff face */}
+          <polygon points="80,115 100,75 125,110"  fill="#5d6e7a" opacity=".6"/>
+          <polygon points="200,115 220,70 240,110" fill="#546e7a" opacity=".55"/>
+
+          {/* ── CASTLE (on the hill) ── */}
+          <g transform="translate(95,18)" filter="url(#shadow)">
+            {/* Castle base wall */}
+            <rect x="5"  y="60" width="120" height="55" rx="2" fill="#b0bec5"/>
+            <rect x="5"  y="60" width="120" height="55" rx="2" fill="#cfd8dc" opacity=".4"/>
+            {/* Stone texture lines */}
+            {[0,1,2,3,4].map(row=>(
+              <rect key={row} x="5" y={60+row*11} width="120" height="1" fill="#90a4ae" opacity=".4"/>
             ))}
-
-            {/* Trees - right side */}
-            {[[300,470],[295,390],[302,310],[298,230],[300,155],[296,85]].map(([x,y],i)=>(
-              <g key={`tr${i}`}>
-                <rect x={x-3} y={y+18} width="6" height="18" fill="#5d4037" rx="1"/>
-                <polygon points={`${x},${y-5} ${x-15},${y+22} ${x+15},${y+22}`} fill={["#145a32","#1e8449","#27ae60","#145a32"][i]}/>
-                <polygon points={`${x},${y-17} ${x-10},${y+4} ${x+10},${y+4}`}  fill={["#1e8449","#27ae60","#2ecc71","#1e8449"][i]}/>
-              </g>
+            {/* Left tower */}
+            <rect x="0"  y="35" width="30" height="82" rx="3" fill="#b0bec5"/>
+            <rect x="0"  y="35" width="30" height="82" rx="3" fill="#cfd8dc" opacity=".3"/>
+            {/* Right tower */}
+            <rect x="100" y="35" width="30" height="82" rx="3" fill="#b0bec5"/>
+            {/* Centre tower (tallest) */}
+            <rect x="45" y="15" width="40" height="102" rx="3" fill="#bdbdbd"/>
+            <rect x="45" y="15" width="40" height="102" rx="3" fill="#fff" opacity=".15"/>
+            {/* Battlements — left tower */}
+            {[1,7,13,21].map(bx=>(
+              <rect key={bx} x={bx} y="28" width="5" height="9" rx="1" fill="#90a4ae"/>
             ))}
+            {/* Battlements — right tower */}
+            {[101,107,113,121].map(bx=>(
+              <rect key={bx} x={bx} y="28" width="5" height="9" rx="1" fill="#90a4ae"/>
+            ))}
+            {/* Battlements — centre */}
+            {[46,54,62,70,78].map(bx=>(
+              <rect key={bx} x={bx} y="8" width="5" height="9" rx="1" fill="#9e9e9e"/>
+            ))}
+            {/* Conical roofs */}
+            <polygon points="15,35 0,35 30,35 15,5"   fill="#546e7a"/>
+            <polygon points="115,35 100,35 130,35 115,5" fill="#546e7a"/>
+            <polygon points="65,15 45,15 85,15 65,-18"  fill="#455a64"/>
+            {/* Flags */}
+            <rect x="14" y="4"  width="2" height="12" fill="#fdd835"/>
+            <polygon points="16,4 26,7 16,10" fill="#e53935"/>
+            <rect x="64" y="-20" width="2" height="14" fill="#fdd835"/>
+            <polygon points="66,-20 78,-17 66,-14" fill="#e53935"/>
+            {/* Gate arch */}
+            <path d="M55,117 L55,95 Q65,84 75,95 L75,117" fill="#37474f"/>
+            {/* Gate portcullis */}
+            {[57,61,65,69,73].map(gx=>(
+              <rect key={gx} x={gx} y="90" width="1.5" height="26" fill="#78909c" opacity=".7"/>
+            ))}
+            {/* Windows */}
+            <rect x="8"  y="50" width="12" height="16" rx="6" fill="#ffd54f" opacity=".8"/>
+            <rect x="110" y="50" width="12" height="16" rx="6" fill="#ffd54f" opacity=".8"/>
+            <rect x="54" y="28" width="22" height="18" rx="4" fill="#ffd54f" opacity=".9"/>
+            {/* Wall connecting towers */}
+            <rect x="30" y="55" width="16" height="60" rx="1" fill="#b0bec5"/>
+            <rect x="84" y="55" width="16" height="60" rx="1" fill="#b0bec5"/>
+          </g>
 
-            {/* Glowing winding path - shadow */}
-            <path d={pathD} fill="none" stroke="rgba(0,0,0,.5)" strokeWidth="22" strokeLinecap="round"/>
-            {/* Path base */}
-            <path d={pathD} fill="none" stroke="#b8860b" strokeWidth="20" strokeLinecap="round"/>
-            {/* Gold fill */}
-            <path d={pathD} fill="none" stroke="url(#goldPath)" strokeWidth="16" strokeLinecap="round" filter="url(#softGlow)"/>
-            {/* Centre highlight */}
-            <path d={pathD} fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeDasharray="8,14" opacity=".5"/>
+          {/* ── RIVER winding through village ── */}
+          {/* River bank / shadow */}
+          <path d="M290,360 C260,345 210,370 185,385 C160,400 170,415 145,420 C120,425 80,405 55,395 C30,385 10,370 0,360 L0,400 C15,415 45,435 75,445 C105,455 140,465 165,460 C190,455 205,445 230,440 C260,434 290,420 310,410 Z"
+            fill="#1565c0" opacity=".55"/>
+          {/* River main */}
+          <path d="M300,355 C270,340 215,365 188,382 C162,398 172,413 147,418 C122,423 82,402 57,392 C32,382 8,365 -5,355 L-5,390 C10,405 42,428 72,438 C102,448 138,458 163,453 C188,448 203,438 228,433 C258,427 285,412 300,400 Z"
+            fill="url(#riverG)" opacity=".8"/>
+          {/* River shimmer */}
+          {[[80,382],[130,395],[180,405],[220,390]].map(([rx,ry],i)=>(
+            <ellipse key={i} cx={rx} cy={ry} rx={12+i*3} ry={3} fill="#fff" opacity=".25"/>
+          ))}
 
-            {/* ── CASTLE (destination) at top ── */}
-            <g transform="translate(120,4)" filter="url(#shadow)">
-              {/* Base */}
-              <rect x="14" y="38" width="56" height="48" fill="#4a4a8a" rx="2"/>
-              {/* Side towers */}
-              <rect x="4"  y="24" width="16" height="44" fill="#3a3a7a" rx="2"/>
-              <rect x="64" y="24" width="16" height="44" fill="#3a3a7a" rx="2"/>
-              {/* Centre tower */}
-              <rect x="26" y="12" width="32" height="54" fill="#5a5aaa" rx="2"/>
-              {/* Battlements - side left */}
-              {[4,10,16].map(x=><rect key={x} x={x}  y={18} width="5" height="8" fill="#3a3a7a" rx="1"/>)}
-              {/* Battlements - centre */}
-              {[26,32,38,44,50].map(x=><rect key={x} x={x} y={6}  width="5" height="8" fill="#5a5aaa" rx="1"/>)}
-              {/* Battlements - side right */}
-              {[64,70,75].map(x=><rect key={x} x={x} y={18} width="5" height="8" fill="#3a3a7a" rx="1"/>)}
-              {/* Glowing windows */}
-              <rect x="30" y="22" width="24" height="16" rx="8" fill="#f1c40f" opacity=".9"/>
-              <rect x="6"  y="32" width="12" height="10" rx="3" fill="#ffd700" opacity=".7"/>
-              <rect x="66" y="32" width="12" height="10" rx="3" fill="#ffd700" opacity=".7"/>
-              {/* Door */}
-              <ellipse cx="42" cy="86" rx="10" ry="13" fill="#1a0a2e"/>
-              {/* Flag */}
-              <line x1="42" y1="6" x2="42" y2="-6" stroke="#e0e0e0" strokeWidth="2"/>
-              <polygon points="42,-6 58,0 42,6" fill="#e74c3c"/>
-              {/* Castle glow */}
-              <rect x="4" y="6" width="76" height="76" fill="none" stroke="#f1c40f" strokeWidth="1" opacity=".3" rx="4"/>
+          {/* ── STONE BRIDGE ── */}
+          <g transform="translate(135,378)">
+            {/* Bridge arch */}
+            <path d="M0,30 L0,15 Q25,-5 50,15 L50,30" fill="#8d6e63"/>
+            {/* Bridge deck */}
+            <rect x="-5" y="26" width="60" height="10" rx="2" fill="#a1887f"/>
+            {/* Parapet */}
+            <rect x="-5" y="20" width="60" height="6" rx="1" fill="#8d6e63"/>
+            {/* Bridge pillars */}
+            {[0,12,24,36,48].map(px=>(
+              <rect key={px} x={px} y="20" width="3" height="8" rx="1" fill="#6d4c41"/>
+            ))}
+          </g>
+
+          {/* Small boats on river */}
+          <g transform="translate(90,395)">
+            <path d="M0,8 Q10,-2 20,8" fill="#8d6e63" stroke="#6d4c41" strokeWidth="1"/>
+            <rect x="8" y="0" width="2" height="10" fill="#a1887f"/>
+            <polygon points="10,1 18,5 10,9" fill="#ef9a9a" opacity=".8"/>
+          </g>
+          <g transform="translate(200,408)">
+            <path d="M0,7 Q8,-1 16,7" fill="#8d6e63" stroke="#6d4c41" strokeWidth="1"/>
+            <rect x="6" y="0" width="2" height="8" fill="#a1887f"/>
+            <polygon points="8,1 15,4 8,7" fill="#81d4fa" opacity=".8"/>
+          </g>
+
+          {/* ── ROAD / PATH — two segments, hill area left blank ── */}
+          {[roadBottom, roadTop].map((seg,i)=>(
+            <g key={i}>
+              <path d={seg} fill="none" stroke="#5d4037" strokeWidth="13" strokeLinecap="round" opacity=".4"/>
+              <path d={seg} fill="none" stroke="#bcaaa4" strokeWidth="10" strokeLinecap="round" opacity=".9"/>
+              <path d={seg} fill="none" stroke="#d7ccc8" strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
             </g>
+          ))}
 
-            {/* Castle label banner */}
-            <rect x="68" y="8" width="184" height="22" rx="11" fill="#2980b9"/>
-            <rect x="68" y="8" width="184" height="22" rx="11" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth="1.5"/>
-            <polygon points="68,8 60,19 68,30"  fill="#1a5276"/>
-            <polygon points="252,8 260,19 252,30" fill="#1a5276"/>
-            <text x="160" y="23" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="900" fontFamily="sans-serif" letterSpacing="1">{world===2?"🐉 DARK CASTLE":"👑 GRAND MASTER CASTLE"}</text>
+          {/* ── TREES ── */}
+          {[[15,300],[295,290],[22,420],[302,400],[18,480],[300,460],[14,540],[298,525]].map(([tx,ty],i)=>(
+            <g key={i} transform={`translate(${tx},${ty})`} opacity=".9">
+              <rect x="-3" y="14" width="6" height="12" rx="1" fill="#5d4037"/>
+              <circle cx="0" cy="8"  r="11" fill={i%3===0?"#2e7d32":i%3===1?"#388e3c":"#43a047"}/>
+              <circle cx="0" cy="2"  r="8"  fill={i%3===0?"#388e3c":i%3===1?"#43a047":"#4caf50"}/>
+              <circle cx="0" cy="-3" r="5"  fill="#66bb6a"/>
+            </g>
+          ))}
 
-            {/* ── ZONE NODES ── */}
-            {zones.map((z,i)=>{
-              const n=nodes[i];
-              if(!n) return null;
-              const locked=z.locked;
-              const isHere=i===youAreHere;
-              const zonePuzzles=puzzles.filter(p=>p.zone===z.id);
-              const startId2=puzzles[0]?.id||1;
-              const done=zonePuzzles.filter(p=>(p.id-startId2)<completedPuzzles).length;
-              const pct=zonePuzzles.length?(done/zonePuzzles.length)*100:0;
+          {/* Flower patches */}
+          {[[40,320],[280,330],[60,450],[260,460]].map(([fx,fy],i)=>(
+            <g key={i}>
+              {[0,5,10].map(d=>(
+                <circle key={d} cx={fx+d} cy={fy} r="2.5" fill={["#ef9a9a","#fff59d","#f48fb1","#80cbc4"][i]} opacity=".8"/>
+              ))}
+            </g>
+          ))}
 
-              return(
-                <g key={z.id} onClick={()=>!locked&&onStartPuzzle(z.id)} style={{cursor:locked?"default":"pointer"}}>
+          {/* ── ZONE BUILDINGS ── */}
+          {buildings.map((b,i)=>{
+            const prevZone = i>0 ? ZONES[i-1] : null;
+            const prevPuzzles = prevZone ? PUZZLES.filter(p=>p.zone===prevZone.id) : [];
+            const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+            const locked = i===0 ? false : prevDone < prevPuzzles.length;
+            const zonePuzzles = PUZZLES.filter(p=>p.zone===b.zone);
+            const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+            const isHere = i===youAreHere;
+            const pct = zonePuzzles.length ? (done/zonePuzzles.length)*100 : 0;
+            const isComplete = done===zonePuzzles.length;
+            const zoneColor = ZONES[i]?.color || "#888";
 
-                  {/* Pulse glow for current zone */}
-                  {isHere&&<>
-                    <circle cx={n.x} cy={n.y} r="52" fill="url(#nodeGlow)" opacity=".8" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>
-                    <circle cx={n.x} cy={n.y} r="42" fill="none" stroke="#f1c40f" strokeWidth="2.5" opacity=".5" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>
-                  </>}
+            // Skip zone 9 (rush/castle) — drawn separately above
+            if(b.zone==="rush") return null;
 
-                  {/* Shadow */}
-                  <ellipse cx={n.x+2} cy={n.y+9} rx="33" ry="10" fill="rgba(0,0,0,.3)"/>
+            return(
+              <g key={b.zone} onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
 
-                  {/* Outer ring */}
-                  <circle cx={n.x} cy={n.y} r="33" fill={locked?"#2a2a4a":z.color} filter="url(#shadow)"/>
-                  {/* Inner circle */}
-                  <circle cx={n.x} cy={n.y} r="26" fill={locked?"#1a1a3a":`${z.color}cc`}/>
-                  {/* Shine */}
-                  <ellipse cx={n.x-8} cy={n.y-10} rx="10" ry="7" fill="rgba(255,255,255,.2)" transform={`rotate(-30,${n.x-8},${n.y-10})`}/>
+                {/* Glow ring for current zone */}
+                {isHere&&<circle cx={b.x} cy={b.y} r="38" fill={`${zoneColor}33`} stroke={zoneColor} strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
 
-                  {/* Progress arc */}
-                  {!locked&&pct>0&&(
-                    <circle cx={n.x} cy={n.y} r="30"
-                      fill="none" stroke="#f1c40f" strokeWidth="4"
-                      strokeDasharray={`${pct*1.885} 188.5`}
-                      strokeDashoffset="47.1"
-                      strokeLinecap="round" opacity=".9"
-                      transform={`rotate(-90 ${n.x} ${n.y})`}
-                      filter="url(#softGlow)"
-                    />
-                  )}
+                {/* Unique building per zone */}
+                {(()=>{
+                  const bw=52, bh=58; // building canvas size
+                  const bx_=b.x-bw/2, by_=b.y-bh+8;
+                  const col=zoneColor;
+                  const lo=locked;
 
-                  {/* Icon or lock */}
-                  {locked
-                    ? <text x={n.x} y={n.y+9} textAnchor="middle" fontSize="22" style={{userSelect:"none"}}>🔒</text>
-                    : <text x={n.x} y={n.y+10} textAnchor="middle" dominantBaseline="middle" fontSize="26" style={{userSelect:"none"}}>{z.emoji}</text>
-                  }
+                  const drawBuilding=()=>{
+                    if(b.zone==="pieces") return( // Cozy thatched cottage
+                      <g>
+                        <rect x="8" y="28" width="38" height="26" rx="3" fill={lo?"#78909c":"#d4a96a"}/>
+                        <polygon points="4,30 27,8 50,30" fill={lo?"#546e7a":"#e74c3c"}/>
+                        <polygon points="8,30 27,11 46,30" fill={lo?"#607d8b":"#ff6b6b"} opacity=".7"/>
+                        <rect x="10" y="32" width="10" height="10" rx="2" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.4:.9}/>
+                        <rect x="34" y="32" width="10" height="10" rx="2" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.4:.9}/>
+                        <rect x="20" y="38" width="14" height="16" rx="4" fill={lo?"#37474f":"#8B4513"}/>
+                        <rect x="38" y="14" width="6" height="14" rx="2" fill={lo?"#455a64":"#8B4513"}/>
+                        {!lo&&<><ellipse cx="41" cy="12" rx="5" ry="3" fill="#90a4ae" opacity=".7"/>
+                        <ellipse cx="43" cy="9" rx="3" ry="2" fill="#b0bec5" opacity=".5"/></>}
+                        <text x="27" y="26" textAnchor="middle" fontSize="10">{lo?"🔒":"🏠"}</text>
+                      </g>
+                    );
+                    if(b.zone==="pawns") return( // Red barn
+                      <g>
+                        <rect x="6" y="26" width="42" height="28" rx="2" fill={lo?"#78909c":"#d4a96a"}/>
+                        <polygon points="2,28 27,4 52,28" fill={lo?"#546e7a":"#c0392b"}/>
+                        <rect x="22" y="12" width="10" height="18" rx="2" fill={lo?"#607d8b":"#c0392b"}/>
+                        <rect x="10" y="36" width="13" height="18" rx="2" fill={lo?"#37474f":"#8B4513"}/>
+                        <rect x="31" y="36" width="13" height="18" rx="2" fill={lo?"#37474f":"#7a3b10"}/>
+                        <line x1="27" y1="36" x2="27" y2="54" stroke={lo?"#546e7a":"#5d2906"} strokeWidth="1.5"/>
+                        <rect x="24" y="18" width="6" height="10" rx="1" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.3:.9}/>
+                        {!lo&&[0,8,16,24,32,40].map(fx=>(
+                          <g key={fx}><rect x={fx+3} y="50" width="3" height="8" rx="1" fill="#deb887"/>
+                          <rect x={fx+2} y="53" width="5" height="1.5" fill="#d2a679"/></g>
+                        ))}
+                        <text x="27" y="24" textAnchor="middle" fontSize="10">{lo?"🔒":"🌾"}</text>
+                      </g>
+                    );
+                    if(b.zone==="openings") return( // Tavern/Inn on river
+                      <g>
+                        <rect x="6" y="22" width="42" height="32" rx="3" fill={lo?"#78909c":"#d4a96a"}/>
+                        <rect x="6" y="22" width="42" height="16" rx="3" fill={lo?"#607d8b":"#c49152"}/>
+                        <polygon points="2,24 27,4 52,24" fill={lo?"#546e7a":"#8B4513"}/>
+                        <rect x="0" y="22" width="54" height="4" rx="1" fill={lo?"#455a64":"#7a3b10"}/>
+                        <rect x="10" y="26" width="10" height="10" rx="2" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.3:.9}/>
+                        <rect x="34" y="26" width="10" height="10" rx="2" fill={lo?"#455a64":"#ffd54f"} opacity={lo?.3:.9}/>
+                        {!lo&&<><rect x="17" y="36" width="20" height="9" rx="3" fill="#8B4513"/>
+                        <text x="27" y="43" textAnchor="middle" fill="#f1c40f" fontSize="6" fontWeight="900">INN</text></>}
+                        <rect x="20" y="44" width="14" height="12" rx="4" fill={lo?"#37474f":"#8B4513"}/>
+                        {/* Dock */}
+                        {[6,14,22,30,38,46].map(dx=>(
+                          <rect key={dx} x={dx} y="52" width="3" height="8" rx="1" fill="#5d4037" opacity=".7"/>
+                        ))}
+                        <rect x="4" y="57" width="48" height="2" rx="1" fill="#8d6e63" opacity=".6"/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🍺"}</text>
+                      </g>
+                    );
+                    if(b.zone==="tactics") return( // Blacksmith forge
+                      <g>
+                        <rect x="8" y="26" width="38" height="28" rx="3" fill={lo?"#546e7a":"#718096"}/>
+                        {!lo&&[0,1,2].map(row=>[0,1,2].map(c2=>(
+                          <rect key={`${row}${c2}`} x={10+c2*12} y={28+row*8} width="10" height="6" rx="1" fill="#636e72" opacity=".4"/>
+                        )))}
+                        <polygon points="4,28 27,6 50,28" fill={lo?"#455a64":"#2d3748"}/>
+                        <rect x="34" y="10" width="9" height="16" rx="2" fill={lo?"#37474f":"#4a5568"}/>
+                        {!lo&&<text x="38" y="12" textAnchor="middle" fontSize="10">🔥</text>}
+                        <rect x="19" y="38" width="16" height="16" rx="3" fill={lo?"#37474f":"#4a5568"}/>
+                        {!lo&&<ellipse cx="27" cy="52" rx="16" ry="3" fill="#e67e22" opacity=".3"/>}
+                        <text x="27" y="30" textAnchor="middle" fontSize="10">{lo?"🔒":"⚔️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="checkmate") return( // Wizard tower
+                      <g>
+                        <rect x="14" y="20" width="26" height="36" rx="4" fill={lo?"#546e7a":"#553c7b"}/>
+                        <polygon points="6,22 27,2 48,22" fill={lo?"#37474f":"#8e44ad"}/>
+                        <rect x="18" y="26" width="9" height="9" rx="4" fill={lo?"#37474f":"#ffeaa7"} opacity={lo?.3:.9}/>
+                        <rect x="31" y="26" width="9" height="9" rx="4" fill={lo?"#37474f":"#ffeaa7"} opacity={lo?.3:.9}/>
+                        {!lo&&<><text x="22" y="34" textAnchor="middle" fontSize="7">✨</text>
+                        <text x="35" y="34" textAnchor="middle" fontSize="7">⭐</text>
+                        <ellipse cx="27" cy="21" rx="12" ry="7" fill="#a29bfe" opacity=".3"/></>}
+                        <path d="M18,56 L18,44 Q27,36 36,44 L36,56" fill={lo?"#37474f":"#4a3060"}/>
+                        {[14,19,24,29,34,39].map(bx=>(
+                          <rect key={bx} x={bx} y="14" width="3" height="6" rx="1" fill={lo?"#455a64":"#6c5ce7"}/>
+                        ))}
+                        <text x="27" y="14" textAnchor="middle" fontSize="10">{lo?"🔒":"🔮"}</text>
+                      </g>
+                    );
+                    if(b.zone==="strategy") return( // Library
+                      <g>
+                        <rect x="6" y="22" width="42" height="32" rx="3" fill={lo?"#546e7a":"#2c5f8e"}/>
+                        {!lo&&[12,22,32,42].map(cx=>(
+                          <rect key={cx} x={cx} y="22" width="4" height="32" rx="1" fill="#1a4971" opacity=".7"/>
+                        ))}
+                        <polygon points="2,24 27,4 52,24" fill={lo?"#455a64":"#1a4971"}/>
+                        <rect x="16" y="26" width="22" height="14" rx="3" fill={lo?"#37474f":"#ffd54f"} opacity={lo?.3:.9}/>
+                        {!lo&&<text x="27" y="36" textAnchor="middle" fontSize="10">📚</text>}
+                        <rect x="20" y="40" width="14" height="14" rx="2" fill={lo?"#37474f":"#1a3a5c"}/>
+                        <rect x="14" y="52" width="26" height="2" rx="1" fill={lo?"#546e7a":"#2c5f8e"}/>
+                        <rect x="10" y="54" width="34" height="2" rx="1" fill={lo?"#455a64":"#1a4971"}/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"📚"}</text>
+                      </g>
+                    );
+                    if(b.zone==="endgame") return( // Cathedral
+                      <g>
+                        <rect x="10" y="28" width="34" height="26" rx="3" fill={lo?"#546e7a":"#5d4e6b"}/>
+                        <rect x="20" y="14" width="14" height="18" rx="2" fill={lo?"#455a64":"#4a3d58"}/>
+                        <polygon points="20,16 27,2 34,16" fill={lo?"#37474f":"#8e44ad"}/>
+                        {!lo&&<><rect x="25" y="3" width="4" height="11" rx="1" fill="#f1c40f"/>
+                        <rect x="22" y="7" width="10" height="3" rx="1" fill="#f1c40f"/></>}
+                        <rect x="14" y="32" width="9" height="13" rx="5" fill={lo?"#37474f":"#ffd54f"} opacity={lo?.3:.9}/>
+                        <rect x="31" y="32" width="9" height="13" rx="5" fill={lo?"#37474f":"#ffd54f"} opacity={lo?.3:.9}/>
+                        <rect x="21" y="42" width="12" height="12" rx="6" fill={lo?"#37474f":"#3d2d4a"}/>
+                        {!lo&&<text x="27" y="32" textAnchor="middle" fontSize="7">✨</text>}
+                        <text x="27" y="14" textAnchor="middle" fontSize="10">{lo?"🔒":"⛪"}</text>
+                      </g>
+                    );
+                    if(b.zone==="master") return( // Grand manor
+                      <g>
+                        <rect x="4"  y="24" width="46" height="28" rx="3" fill={lo?"#546e7a":"#8B4513"}/>
+                        <rect x="0"  y="30" width="12" height="22" rx="2" fill={lo?"#455a64":"#7a3b10"}/>
+                        <rect x="42" y="30" width="12" height="22" rx="2" fill={lo?"#455a64":"#7a3b10"}/>
+                        <polygon points="0,26 27,4 54,26" fill={lo?"#37474f":"#5d2906"}/>
+                        {!lo&&[8,18,28,38].map(wx=>(
+                          <rect key={wx} x={wx} y="28" width="7" height="9" rx="1" fill="#ffd54f" opacity=".9"/>
+                        ))}
+                        <rect x="20" y="40" width="14" height="12" rx="5" fill={lo?"#37474f":"#5d2906"}/>
+                        {!lo&&<><rect x="26" y="3" width="2" height="10" fill="#f1c40f"/>
+                        <polygon points="28,3 38,6 28,9" fill="#e53935"/></>}
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🌟"}</text>
+                      </g>
+                    );
+                    return null;
+                  };
 
-                  {/* Stars earned */}
-                  {!locked&&done>0&&(
-                    <text x={n.x} y={n.y+24} textAnchor="middle" fontSize="10" fill="#f1c40f" fontWeight="900" fontFamily="sans-serif">
-                      {"★".repeat(done)}{"☆".repeat(Math.max(0,zonePuzzles.length-done))}
-                    </text>
-                  )}
-
-                  {/* Number badge */}
-                  <circle cx={n.x+27} cy={n.y-27} r="13" fill={locked?"#3a3a6a":z.color} stroke="#fff" strokeWidth="2.5" filter="url(#shadow)"/>
-                  <text x={n.x+27} y={n.y-22} textAnchor="middle" fontSize="11" fill="#fff" fontWeight="900" fontFamily="sans-serif">{i+1}</text>
-
-                  {/* Label pill */}
-                  <rect x={n.x-36} y={n.y-56} width="72" height="20" rx="10" fill={locked?"#1a1a3a":z.color} opacity=".95"/>
-                  <rect x={n.x-36} y={n.y-56} width="72" height="20" rx="10" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth="1"/>
-                  <text x={n.x} y={n.y-42} textAnchor="middle" fontSize="9.5" fill="#fff" fontWeight="900" fontFamily="sans-serif" letterSpacing=".5">{z.label.toUpperCase()}</text>
-
-                  {/* YOU ARE HERE — player avatar */}
-                  {isHere&&(
-                    <g style={{animation:"mascotFloat 2s ease-in-out infinite"}}>
-                      {/* Pin stem */}
-                      <line x1={n.x} y1={n.y-36} x2={n.x} y2={n.y-52} stroke="#f1c40f" strokeWidth="2.5"/>
-                      {/* Avatar circle */}
-                      <circle cx={n.x} cy={n.y-62} r="16" fill={playerColor||"#e74c3c"} stroke="#fff" strokeWidth="3" filter="url(#shadow)"/>
-                      <text x={n.x} y={n.y-56} textAnchor="middle" dominantBaseline="middle" fontSize="18">{playerAvatar||"♟️"}</text>
-                      {/* YOU label */}
-                      <rect x={n.x-18} y={n.y-86} width="36" height="16" rx="8" fill="#f1c40f"/>
-                      <polygon points={`${n.x-4},${n.y-70} ${n.x+4},${n.y-70} ${n.x},${n.y-62}`} fill="#f1c40f"/>
-                      <text x={n.x} y={n.y-74} textAnchor="middle" fontSize="8.5" fill="#1a1a2e" fontWeight="900" fontFamily="sans-serif">YOU!</text>
+                  return(
+                    <g transform={`translate(${bx_},${by_})`}
+                       style={{filter:lo?"grayscale(0.8) brightness(0.6)":undefined}}
+                       opacity={lo?.8:1}
+                       filter="url(#shadow)">
+                      <svg viewBox="0 0 54 58" width={54} height={58} overflow="visible">
+                        {drawBuilding()}
+                      </svg>
                     </g>
-                  )}
-                </g>
-              );
-            })}
+                  );
+                })()}
 
-          </svg>
-        </div>
+                {/* Progress arc */}
+                {!locked&&pct>0&&(
+                  <circle cx={b.x} cy={b.y+14} r="12" fill="none"
+                    stroke="#fdd835" strokeWidth="3" strokeLinecap="round"
+                    strokeDasharray={`${pct} 100`}
+                    style={{transformOrigin:`${b.x}px ${b.y+14}px`,transform:"rotate(-90deg)"}}/>
+                )}
+
+                {/* Complete badge */}
+                {isComplete&&(
+                  <g>
+                    <circle cx={b.x+18} cy={b.y-36} r="9" fill="#43a047" stroke="#fff" strokeWidth="2"/>
+                    <text x={b.x+18} y={b.y-32} textAnchor="middle" fontSize="10" fill="#fff">✓</text>
+                  </g>
+                )}
+
+                {/* Label */}
+                <rect x={b.x-(b.label.length*3.6)} y={b.y+22} width={b.label.length*7.2+8} height="14" rx="7"
+                  fill={locked?"rgba(30,40,30,.7)":zoneColor} opacity=".92"/>
+                <text x={b.x} y={b.y+33} textAnchor="middle" fill="#fff" fontSize="8" fontWeight="900" fontFamily="sans-serif">
+                  {b.label.toUpperCase()}
+                </text>
+
+                {/* YOU ARE HERE pin */}
+                {isHere&&(
+                  <g style={{animation:"mascotFloat 2s ease-in-out infinite"}}>
+                    <ellipse cx={b.x} cy={b.y-50} rx="12" ry="12" fill={playerColor||"#e53935"} stroke="#fff" strokeWidth="2.5"/>
+                    <text x={b.x} y={b.y-46} textAnchor="middle" fontSize="12">{playerAvatar||"♟️"}</text>
+                    <polygon points={`${b.x-5},${b.y-40} ${b.x+5},${b.y-40} ${b.x},${b.y-34}`} fill={playerColor||"#e53935"}/>
+                    <text x={b.x} y={b.y-62} textAnchor="middle" fill="#fdd835" fontSize="7" fontWeight="900" fontFamily="sans-serif">YOU!</text>
+                  </g>
+                )}
+              </g>
+            );
+          })}
+
+          {/* ── CASTLE ZONE (rush) — clickable overlay ── */}
+          {(()=>{
+            const i = 8; // rush is index 8
+            const b = buildings[i];
+            const prevZone = ZONES[i-1];
+            const prevPuzzles = PUZZLES.filter(p=>p.zone===prevZone.id);
+            const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+            const locked = prevDone < prevPuzzles.length;
+            const zonePuzzles = PUZZLES.filter(p=>p.zone===b.zone);
+            const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+            const isHere = i===youAreHere;
+            const isComplete = done===zonePuzzles.length;
+            return(
+              <g onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
+                {/* Clickable area over castle */}
+                <rect x="95" y="0" width="130" height="145" fill="transparent"/>
+                {/* Glow if current */}
+                {isHere&&<ellipse cx="160" cy="90" rx="65" ry="50" fill="#fdd83533" stroke="#fdd835" strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
+                {/* Lock overlay if locked */}
+                {locked&&(
+                  <g>
+                    <rect x="135" y="55" width="50" height="50" rx="8" fill="rgba(0,0,0,.4)"/>
+                    <text x="160" y="88" textAnchor="middle" fontSize="24">🔒</text>
+                  </g>
+                )}
+                {/* Complete badge */}
+                {isComplete&&(
+                  <g>
+                    <circle cx="210" cy="22" r="12" fill="#43a047" stroke="#fff" strokeWidth="2.5"/>
+                    <text x="210" y="27" textAnchor="middle" fontSize="12" fill="#fff">✓</text>
+                  </g>
+                )}
+                {/* Label */}
+                <rect x="120" y="140" width="80" height="16" rx="8" fill={locked?"rgba(30,40,30,.8)":"#e53935"} opacity=".95"/>
+                <text x="160" y="152" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900" fontFamily="sans-serif">PUZZLE RUSH ⚡</text>
+                {/* YOU ARE HERE on castle */}
+                {isHere&&(
+                  <g style={{animation:"mascotFloat 2s ease-in-out infinite"}}>
+                    <ellipse cx="160" cy="-8" rx="12" ry="12" fill={playerColor||"#e53935"} stroke="#fff" strokeWidth="2.5"/>
+                    <text x="160" y="-4" textAnchor="middle" fontSize="12">{playerAvatar||"♟️"}</text>
+                    <polygon points="155,3 165,3 160,9" fill={playerColor||"#e53935"}/>
+                    <text x="160" y="-20" textAnchor="middle" fill="#fdd835" fontSize="7" fontWeight="900" fontFamily="sans-serif">YOU!</text>
+                  </g>
+                )}
+              </g>
+            );
+          })()}
+
+          {/* ── VILLAGE NAME SIGN ── */}
+          <g transform="translate(160,572)">
+            <rect x="-55" y="-12" width="110" height="22" rx="5" fill="#5d4037"/>
+            <rect x="-52" y="-9"  width="104" height="16" rx="3" fill="#8d6e63"/>
+            <text x="0" y="2" textAnchor="middle" fill="#fff8e1" fontSize="9" fontWeight="900" fontFamily="sans-serif">🏰 CHESS VILLAGE 🏰</text>
+          </g>
+        </svg>
       </div>
 
       <style>{`
-        @keyframes mapPulse{0%,100%{opacity:.25}50%{opacity:.8}}
-        @keyframes mascotFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+        @keyframes mapPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
       `}</style>
     </div>
   );
 }
 
 
-// Board sized to fit screen with all chrome accounted for
 function BoardContainer({children}){
   return(
     <div style={{flex:1,minHeight:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 10px",overflow:"hidden"}}>
@@ -2207,6 +2384,7 @@ function PuzzleScreen({puzzle, onComplete, onBack}){
 function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,hist,setHist,snaps,setSnaps,lastMove,setLastMove,over,setOver,thinking,setThinking,msg,setMsg,mood,setMood}){
   const PNAMES={p:"pawn",n:"knight",b:"bishop",r:"rook",q:"queen",k:"king"};
   const say=(m,mo="happy")=>{setMsg(m);setMood(mo);};
+  const [difficulty,setDifficulty]=useState("medium");
 
   const afterMove=(nb,move,isMine)=>{
     if(isMine){
@@ -2245,7 +2423,7 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
     if(!allLegal(nb,"b").length){setOver(true);if(inCheck(nb,"b"))say("CHECKMATE! YOU WIN! 🏆🎉","celebrating");else say("Stalemate — a draw! 🤝","happy");return;}
     setTurn("b");setThinking(true);
     setTimeout(()=>{
-      const bm=pickBlack(nb);if(!bm)return;
+      const bm=pickBlack(nb,difficulty);if(!bm)return;
       const nb2=applyM(nb,bm);
       setBoard(nb2);setLastMove({from:bm.from,to:bm.to});
       setHist(h=>[...h,notation(bm)]);setThinking(false);
@@ -2276,9 +2454,35 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
         <button onClick={newGame} style={{background:"linear-gradient(145deg,#e74c3c,#c0392b)",border:"none",borderRadius:14,padding:"8px 14px",color:"#fff",fontSize:16,fontWeight:900,boxShadow:"0 4px 0 #922b21"}}>{"✦"}</button>
       </div>
       {/* Speech bubble */}
-      <div style={{padding:"10px 14px 8px",flexShrink:0}}>
+      <div style={{padding:"10px 14px 4px",flexShrink:0}}>
         <SpeechBubble msg={msg} mood={mood} showSpeaker={true}/>
       </div>
+
+      {/* Difficulty selector */}
+      <div style={{padding:"0 14px 8px",flexShrink:0,display:"flex",alignItems:"center",gap:6}}>
+        <span style={{fontSize:11,fontWeight:800,color:"#636e72",letterSpacing:.5}}>LEVEL:</span>
+        {[
+          {key:"easy",  label:"😊 Easy",  color:"#27ae60", shadow:"#1e8449"},
+          {key:"medium",label:"🔥 Medium",color:"#e67e22", shadow:"#d35400"},
+          {key:"hard",  label:"💀 Hard",  color:"#e74c3c", shadow:"#c0392b"},
+        ].map(d=>(
+          <button key={d.key} onClick={()=>{setDifficulty(d.key);newGame();}}
+            style={{
+              flex:1,padding:"7px 4px",borderRadius:12,border:"none",
+              background:difficulty===d.key
+                ?`linear-gradient(145deg,${d.color},${d.shadow})`
+                :"rgba(0,0,0,.06)",
+              color:difficulty===d.key?"#fff":"#636e72",
+              fontSize:11,fontWeight:900,
+              boxShadow:difficulty===d.key?`0 3px 0 ${d.shadow}`:"none",
+              transform:difficulty===d.key?"translateY(-1px)":"none",
+              transition:"all .15s",
+            }}>
+            {d.label}
+          </button>
+        ))}
+      </div>
+
       {/* Board */}
       <BoardContainer>
         {()=><MiniBoard board={board} onTap={tap} selected={sel} targets={tgts} lastMove={lastMove}/>}
@@ -2296,27 +2500,25 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
 // ═══════════════════════════════════════════════════════════
 // AWARDS SCREEN
 // ═══════════════════════════════════════════════════════════
-function AwardsScreen({xp, completedPuzzles, completedPuzzles2=0, streak, world=1}){
+function AwardsScreen({xp, completedPuzzles, completedIds, streak}){
   const rank=getRank(xp);
   const awards=[
-    {title:"First Move!",   desc:"Complete your first puzzle", icon:"🎯", earned:completedPuzzles>=1, color:"#e74c3c", shadow:"#c0392b"},
-    {title:"Puzzle Solver", desc:"Complete 3 puzzles",         icon:"🧩", earned:completedPuzzles>=3, color:"#e67e22", shadow:"#ba6b09"},
-    {title:"On Fire!",      desc:"3 day streak",               icon:"🔥", earned:streak>=3,           color:"#f39c12", shadow:"#d4890a"},
-    {title:"Star Collector",desc:"Earn 100 XP",               icon:"⭐", earned:xp>=100,             color:"#f1c40f", shadow:"#d4ac0d"},
-    {title:"Knight Power",  desc:"Earn 250 XP",               icon:"♘", earned:xp>=250,             color:"#27ae60", shadow:"#1e8449"},
-    {title:"Tactics Ace",   desc:"Complete 4 puzzles",         icon:"⚔️", earned:completedPuzzles>=4, color:"#00b894", shadow:"#00896e"},
-    {title:"Champion!",     desc:"Earn 500 XP",               icon:"♖", earned:xp>=500,             color:"#8e44ad", shadow:"#6c3483"},
-    {title:"Grand Master",  desc:"Earn 1000 XP",              icon:"👑", earned:xp>=1000,            color:"#2980b9", shadow:"#1a5276"},
-    // World 2 Dungeon Awards
-    {title:"Dragon's Gate",  desc:"Enter the Chess Dungeon!",    icon:"🐉", earned:completedPuzzles2>=7,  color:"#c0392b", shadow:"#922b21"},
-    {title:"Dark Armory",    desc:"Master 14 Dungeon puzzles",   icon:"⚔️",  earned:completedPuzzles2>=14, color:"#7d3c98", shadow:"#6c3483"},
-    {title:"Dark Tower",     desc:"Master 21 Dungeon puzzles",   icon:"🗼", earned:completedPuzzles2>=21, color:"#1a5276", shadow:"#154360"},
-    {title:"Shadow Crypt",   desc:"Master 28 Dungeon puzzles",   icon:"💀", earned:completedPuzzles2>=28, color:"#117a65", shadow:"#0e6655"},
-    {title:"Lava Forge",     desc:"Master 35 Dungeon puzzles",   icon:"🌋", earned:completedPuzzles2>=35, color:"#d35400", shadow:"#b7440a"},
-    {title:"Spider Web",     desc:"Master 42 Dungeon puzzles",   icon:"🕷️", earned:completedPuzzles2>=42, color:"#212f3c", shadow:"#1a252f"},
-    {title:"Dragon's Eye",   desc:"Master 49 Dungeon puzzles",   icon:"👁️", earned:completedPuzzles2>=49, color:"#7b241c", shadow:"#641e16"},
-    {title:"Dragon's Lair",  desc:"Master 56 Dungeon puzzles",   icon:"🐲", earned:completedPuzzles2>=56, color:"#784212", shadow:"#6e2c00"},
-    {title:"Dragon Slayer!", desc:"Complete all 63 Dungeon puzzles!",icon:"🏆",earned:completedPuzzles2>=63,color:"#c0392b",shadow:"#7b241c"},
+    // Zone completion achievements — thresholds match actual cumulative puzzle counts
+    // pieces=8, pawns=7, openings=7, tactics=7, checkmate=7, strategy=8, endgame=7, master=7, rush=7
+    // Cumulative: 8, 15, 22, 29, 36, 44, 51, 58, 65
+    {title:"First Move!",     desc:"Complete your first puzzle",     icon:"🎯", earned:completedPuzzles>=1,  color:"#e74c3c", shadow:"#c0392b"},
+    {title:"Piece Master",    desc:"Complete Piece Power zone",      icon:"♞", earned:PUZZLES.filter(p=>p.zone==="pieces").every(p=>(completedIds||[]).includes(p.id)),  color:"#e67e22", shadow:"#ba6b09"},
+    {title:"Pawn Power",      desc:"Complete Pawn Kingdom zone",     icon:"♟️", earned:PUZZLES.filter(p=>p.zone==="pawns").every(p=>(completedIds||[]).includes(p.id)), color:"#f39c12", shadow:"#d4890a"},
+    {title:"Opening Expert",  desc:"Complete Open Strong zone",      icon:"🏰", earned:PUZZLES.filter(p=>p.zone==="openings").every(p=>(completedIds||[]).includes(p.id)), color:"#27ae60", shadow:"#1e8449"},
+    {title:"Tactics Ace",     desc:"Complete Tactics zone",          icon:"⚔️", earned:PUZZLES.filter(p=>p.zone==="tactics").every(p=>(completedIds||[]).includes(p.id)), color:"#00b894", shadow:"#00896e"},
+    {title:"Checkmate Hunter",desc:"Complete Checkmate Hunt zone",   icon:"🎯", earned:PUZZLES.filter(p=>p.zone==="checkmate").every(p=>(completedIds||[]).includes(p.id)), color:"#8e44ad", shadow:"#6c3483"},
+    {title:"Strategist",      desc:"Complete Strategy zone",         icon:"🧠", earned:PUZZLES.filter(p=>p.zone==="strategy").every(p=>(completedIds||[]).includes(p.id)), color:"#2980b9", shadow:"#1a5276"},
+    {title:"Endgame Pro",     desc:"Complete Endgame zone",          icon:"👑", earned:PUZZLES.filter(p=>p.zone==="endgame").every(p=>(completedIds||[]).includes(p.id)), color:"#16a085", shadow:"#0e6655"},
+    {title:"Master Class",    desc:"Complete Master Moves zone",     icon:"🌟", earned:PUZZLES.filter(p=>p.zone==="master").every(p=>(completedIds||[]).includes(p.id)), color:"#2c3e50", shadow:"#1a252f"},
+    {title:"Grand Master!",   desc:"Complete ALL 65 puzzles!",       icon:"🏆", earned:PUZZLES.every(p=>(completedIds||[]).includes(p.id)), color:"#f1c40f", shadow:"#d4ac0d"},
+    // XP milestones
+    {title:"Star Collector",  desc:"Earn 300 XP",                   icon:"⭐", earned:xp>=300,             color:"#f39c12", shadow:"#d4890a"},
+    {title:"Champion!",       desc:"Earn 1000 XP",                  icon:"♕", earned:xp>=1000,            color:"#8e44ad", shadow:"#6c3483"},
   ];
 
   const nextRank = getNextRank(xp);
@@ -2358,7 +2560,6 @@ function AwardsScreen({xp, completedPuzzles, completedPuzzles2=0, streak, world=
             {rank.name}
           </div>
           <div style={{fontSize:13,color:"rgba(255,255,255,.8)",marginBottom:12,fontWeight:700}}>{xp.toLocaleString()} XP earned</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,.6)",marginBottom:8,fontWeight:700}}>{completedPuzzles}/65 Village + {completedPuzzles2}/63 Dungeon puzzles</div>
 
           {/* XP Progress bar */}
           {nextRank&&(
@@ -2438,136 +2639,12 @@ function AwardsScreen({xp, completedPuzzles, completedPuzzles2=0, streak, world=
 
 
 // ═══════════════════════════════════════════════════════════
-// LOGIN SCREEN
-// ═══════════════════════════════════════════════════════════
-function LoginScreen({onLogin}){
-  const [mode, setMode]       = useState("choose"); // "choose" | "email"
-  const [isSignup, setIsSignup] = useState(false);
-  const [email, setEmail]     = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError]     = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleGoogle = async () => {
-    setLoading(true); setError("");
-    try {
-      await initFirebase();
-      const result = await _signInWithPopup(fbAuth, googleProvider);
-      onLogin(result.user);
-    } catch(e) {
-      console.error(e);
-      setError("Google sign-in failed. Try again.");
-    }
-    setLoading(false);
-  };
-
-  const handleEmail = async () => {
-    if(!email || !password){ setError("Please fill in all fields."); return; }
-    setLoading(true); setError("");
-    try {
-      const fn = isSignup ? _createUserWithEmailAndPassword : _signInWithEmailAndPassword;
-      const result = await fn(fbAuth, email, password);
-      onLogin(result.user);
-    } catch(e) {
-      if(e.code==="auth/email-already-in-use") setError("Email already registered. Try logging in.");
-      else if(e.code==="auth/wrong-password") setError("Wrong password. Try again.");
-      else if(e.code==="auth/user-not-found") setError("No account found. Sign up instead!");
-      else if(e.code==="auth/weak-password") setError("Password must be at least 6 characters.");
-      else setError("Something went wrong. Try again.");
-    }
-    setLoading(false);
-  };
-
-  return(
-    <div style={{height:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px",position:"relative",overflow:"hidden",fontFamily:'"Fredoka One","Nunito",-apple-system,sans-serif'}}>
-
-      {/* Background */}
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,#0d1b4b 0%,#1a2a6a 40%,#0f4c2a 100%)",zIndex:0}}/>
-
-      {/* Stars */}
-      {[...Array(18)].map((_,i)=>(
-        <div key={i} style={{position:"absolute",left:`${(i*53+7)%100}%`,top:`${(i*37+5)%60}%`,width:i%3===0?3:2,height:i%3===0?3:2,borderRadius:"50%",background:"#fff",opacity:.4+Math.sin(i)*.3,animation:`pulse ${1.5+i%3}s ease-in-out infinite`,animationDelay:`${i*.2}s`,zIndex:1}}/>
-      ))}
-
-      {/* Floating pieces */}
-      {["♟","♞","♝","♜","♛"].map((p,i)=>(
-        <div key={i} style={{position:"absolute",left:`${[8,80,15,68,88][i]}%`,top:`${[12,6,70,75,42][i]}%`,fontSize:30+i*3,opacity:.07,color:"#fff",animation:`mascotFloat ${3+i}s ease-in-out infinite`,animationDelay:`${i*.6}s`,zIndex:1,userSelect:"none"}}>{p}</div>
-      ))}
-
-      <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:340}}>
-
-        {/* Logo */}
-        <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{fontSize:72,display:"inline-block",filter:"drop-shadow(0 6px 24px rgba(241,196,15,.6))",animation:"logoBounce 2.5s ease-in-out infinite",lineHeight:1}}>♟️</div>
-          <div style={{fontFamily:'"Fredoka One",sans-serif',fontSize:46,fontWeight:900,fontStyle:"italic",background:"linear-gradient(180deg,#fff 0%,#ffe566 40%,#ffaa22 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1,lineHeight:1.1,filter:"drop-shadow(0 4px 0 rgba(0,0,0,.4))"}}>Chess Quest</div>
-          <div style={{fontSize:12,color:"rgba(255,255,255,.6)",fontWeight:700,letterSpacing:2,marginTop:4}}>LEARN · PLAY · MASTER</div>
-        </div>
-
-        {mode==="choose"&&(
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {/* Email — primary */}
-            <button onClick={()=>setMode("email")} style={{background:"linear-gradient(135deg,#f1c40f,#e67e22)",border:"none",borderRadius:18,padding:"18px",cursor:"pointer",boxShadow:"0 6px 0 #d4ac0d",fontSize:16,fontWeight:900,color:"#1a1a2e",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-              <span style={{fontSize:22}}>✉️</span> Sign In with Email
-            </button>
-
-            {/* Google — greyed out until enabled */}
-            <button disabled style={{background:"rgba(255,255,255,.07)",border:"2px solid rgba(255,255,255,.15)",borderRadius:18,padding:"16px",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"not-allowed",fontSize:14,fontWeight:800,color:"rgba(255,255,255,.35)"}}>
-              <svg width="18" height="18" viewBox="0 0 24 24" style={{opacity:.4}}><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-              Google Sign In (coming soon)
-            </button>
-
-            <div style={{textAlign:"center",fontSize:11,color:"rgba(255,255,255,.4)",fontWeight:700}}>
-              ☁️ Progress saves to the cloud automatically
-            </div>
-          </div>
-        )}
-
-        {mode==="email"&&(
-          <div style={{background:"rgba(255,255,255,.08)",borderRadius:24,padding:"20px",border:"2px solid rgba(255,255,255,.15)"}}>
-            <div style={{fontSize:17,fontWeight:900,color:"#fff",marginBottom:16,textAlign:"center"}}>{isSignup?"Create Account":"Welcome Back"}</div>
-
-            <input
-              value={email} onChange={e=>{setEmail(e.target.value);setError("");}}
-              placeholder="Email address"
-              type="email" autoComplete="email"
-              style={{width:"100%",padding:"13px 16px",borderRadius:14,border:"2px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.1)",color:"#fff",fontSize:15,fontWeight:700,marginBottom:10,outline:"none",fontFamily:"inherit",boxSizing:"border-box","::placeholder":{color:"rgba(255,255,255,.4)"}}}
-            />
-            <input
-              value={password} onChange={e=>{setPassword(e.target.value);setError("");}}
-              placeholder="Password"
-              type="password" autoComplete={isSignup?"new-password":"current-password"}
-              style={{width:"100%",padding:"13px 16px",borderRadius:14,border:"2px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.1)",color:"#fff",fontSize:15,fontWeight:700,marginBottom:12,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-            />
-
-            {error&&<div style={{background:"rgba(231,76,60,.2)",border:"2px solid #e74c3c",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#ff7675",fontWeight:700,marginBottom:12,textAlign:"center"}}>{error}</div>}
-
-            <button onClick={handleEmail} disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#f1c40f,#e67e22)",border:"none",borderRadius:14,padding:"14px",fontSize:15,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 0 #d4ac0d",color:"#1a1a2e",marginBottom:10}}>
-              {loading ? "Please wait…" : isSignup ? "Create Account 🎮" : "Log In ♟️"}
-            </button>
-
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>{setIsSignup(!isSignup);setError("");}} style={{flex:1,background:"rgba(255,255,255,.1)",border:"2px solid rgba(255,255,255,.2)",borderRadius:12,padding:"10px",fontSize:12,fontWeight:800,cursor:"pointer",color:"rgba(255,255,255,.8)"}}>
-                {isSignup?"Already have account?":"Create account"}
-              </button>
-              <button onClick={()=>{setMode("choose");setError("");}} style={{flex:1,background:"rgba(255,255,255,.1)",border:"2px solid rgba(255,255,255,.2)",borderRadius:12,padding:"10px",fontSize:12,fontWeight:800,cursor:"pointer",color:"rgba(255,255,255,.8)"}}>
-                ← Back
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-      <GlobalStyles/>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
 // PROFILE SYSTEM
 // ═══════════════════════════════════════════════════════════
 const AVATARS=["♟️","♞","♝","♜","♛","♚","🦁","🐯","🦊","🐸","🐧","🦄"];
 const PROFILE_COLORS=["#e74c3c","#3498db","#27ae60","#f39c12","#8e44ad","#e91e63"];
 
-const DEFAULT_PROFILE={name:"",avatar:"♟️",color:"#3498db",xp:0,gems:0,streak:0,completed:0,completed2:0,world:1};
+const DEFAULT_PROFILE={name:"",avatar:"♟️",color:"#3498db",xp:0,gems:0,streak:0,completedIds:[]};
 
 // Shared form used for both Add and Edit
 function ProfileForm({title, initial, onSave, onCancel, onDelete}){
@@ -2800,9 +2877,7 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
           <div style={{fontSize:11,color:"rgba(255,255,255,.4)",fontWeight:700,letterSpacing:1,marginBottom:12}}>
             🏆 LEARN CHESS · EARN GEMS · BECOME A MASTER
           </div>
-          <button onClick={async()=>{await _signOut(fbAuth);}} style={{background:"rgba(255,255,255,.08)",border:"2px solid rgba(255,255,255,.15)",borderRadius:12,padding:"8px 20px",fontSize:12,fontWeight:800,color:"rgba(255,255,255,.5)",cursor:"pointer"}}>
-            Sign Out
-          </button>
+
         </div>
       </div>
 
@@ -2832,25 +2907,23 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
 }
 
 function ChessWorld(){
-  // ── Auth disabled — no login required ──
-  const [syncStatus, setSyncStatus]  = useState("");
+  // ── Local storage — load saved profiles on mount ──
+  useEffect(()=>{
+    const saved = loadLocal();
+    if(saved && saved.profiles && saved.profiles.length > 0){
+      setProfiles(saved.profiles);
+    }
+  },[]);
 
-  // Save profiles to localStorage
-  const saveToCloud = (updatedProfiles) => {
-    try { localStorage.setItem("cq_profiles", JSON.stringify(updatedProfiles)); } catch(e){}
+  const saveLocal_ = (updatedProfiles) => {
+    saveLocal({ profiles: updatedProfiles, lastSaved: new Date().toISOString() });
   };
 
   // Profile system
-  const [profiles,setProfiles]=useState(()=>{
-    try{
-      const saved=localStorage.getItem("cq_profiles");
-      if(saved) return JSON.parse(saved);
-    }catch(e){}
-    return [
-      {name:"Alex",  avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0,completed2:0,world:1},
-      {name:"Sam",   avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0,completed2:0,world:1},
-    ];
-  });
+  const [profiles,setProfiles]=useState([
+    {name:"Player 1",avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completedIds:[]},
+    {name:"Player 2",avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completedIds:[]},
+  ]);
   const [activeProfile,setActiveProfile]=useState(null); // null = profile select screen
 
   const profile = activeProfile!==null ? profiles[activeProfile] : null;
@@ -2859,13 +2932,13 @@ function ChessWorld(){
     const updated=[...profiles,p];
     setProfiles(updated);
     setActiveProfile(profiles.length);
-    saveToCloud(updated);
+    saveLocal_(updated);
   };
 
   const editProfile=(i,data)=>{
     const updated=profiles.map((p,idx)=>idx===i?{...p,...data}:p);
     setProfiles(updated);
-    saveToCloud(updated);
+    saveLocal_(updated);
   };
 
   const deleteProfile=i=>{
@@ -2873,27 +2946,22 @@ function ChessWorld(){
     setProfiles(updated);
     if(activeProfile===i) setActiveProfile(null);
     else if(activeProfile>i) setActiveProfile(activeProfile-1);
-    saveToCloud(updated);
+    saveLocal_(updated);
   };
 
   const updateProfile=updates=>{
     if(activeProfile===null)return;
     const updated=profiles.map((p,i)=>i===activeProfile?{...p,...updates}:p);
     setProfiles(updated);
-    saveToCloud(updated);
+    saveLocal_(updated);
   };
 
   // Game state — derived from active profile
   const xp        = profile?.xp        ?? 0;
   const gems      = profile?.gems       ?? 0;
   const streak    = profile?.streak     ?? 0;
-  const completed  = profile?.completed  ?? 0;
-  const completed2 = profile?.completed2 ?? 0;
-  const world      = profile?.world      ?? 1;
-  const world1Done = true; // DEV: always show Continue Adventure for testing
-  const activeZones   = world===1 ? ZONES    : ZONES2;
-  const activePuzzles = world===1 ? PUZZLES  : PUZZLES2;
-  const activeCompleted = world===1 ? completed : completed2;
+  const completedIds = profile?.completedIds ?? [];
+  const completed    = completedIds.length; // total count for display
 
   const [tab,setTab]=useState("home");
   const [activePuzzle,setActivePuzzle]=useState(null);
@@ -2901,8 +2969,11 @@ function ChessWorld(){
   const [xpPop,setXpPop]=useState(null);
   const [puzzleSource,setPuzzleSource]=useState("zones");
   const [zoneCompleteData,setZoneCompleteData]=useState(null);
+  const [showGameComplete,setShowGameComplete]=useState(false);
 
+  const [showSplash,setShowSplash]=useState(true);
   const [confirmLeavePlay,setConfirmLeavePlay]=useState(false);
+  const [showSettings,setShowSettings]=useState(false);
 
   // Free play state — lifted here so game persists when switching tabs
   const [playBoard,setPlayBoard]=useState(INIT);
@@ -2916,6 +2987,69 @@ function ChessWorld(){
   const [playThinking,setPlayThinking]=useState(false);
   const [playMsg,setPlayMsg]=useState("You play White! Tap a piece to start! 🎮");
   const [playMood,setPlayMood]=useState("happy");
+
+  // Show splash screen on first visit
+  if(showSplash) return(
+    <div style={{height:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",position:"relative",overflow:"hidden",fontFamily:'"Fredoka One","Nunito",-apple-system,sans-serif'}}>
+      {/* Background */}
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,#0d1b4b 0%,#1a2a6a 40%,#0f4c2a 100%)",zIndex:0}}/>
+      {/* Stars */}
+      {[...Array(20)].map((_,i)=>(
+        <div key={i} style={{position:"absolute",left:`${(i*47+13)%100}%`,top:`${(i*31+7)%55}%`,width:i%4===0?4:2,height:i%4===0?4:2,borderRadius:"50%",background:"#fff",opacity:.4+Math.sin(i)*.4,animation:`pulse ${1.5+i%3}s ease-in-out infinite`,animationDelay:`${i*.15}s`,zIndex:1}}/>
+      ))}
+      {/* Floating pieces */}
+      {["♟","♞","♝","♜","♛"].map((p,i)=>(
+        <div key={i} style={{position:"absolute",left:`${[8,78,18,65,88][i]}%`,top:`${[15,8,72,78,45][i]}%`,fontSize:28+i*4,opacity:.08,color:"#fff",animation:`mascotFloat ${3+i}s ease-in-out infinite`,animationDelay:`${i*.6}s`,zIndex:1,userSelect:"none"}}>{p}</div>
+      ))}
+      {/* Content */}
+      <div style={{position:"relative",zIndex:2,textAlign:"center",maxWidth:320,width:"100%"}}>
+        {/* Animated logo */}
+        <div style={{marginBottom:8}}>
+          <div style={{position:"relative",display:"inline-block"}}>
+            <div style={{position:"absolute",inset:-16,borderRadius:"50%",background:"radial-gradient(circle,rgba(241,196,15,.4) 0%,transparent 70%)",animation:"pulse 2s ease-in-out infinite"}}/>
+            <div style={{fontSize:90,display:"inline-block",filter:"drop-shadow(0 6px 24px rgba(241,196,15,.7))",animation:"logoBounce 2.5s ease-in-out infinite",lineHeight:1}}>♟️</div>
+          </div>
+        </div>
+        {/* Title */}
+        <div style={{fontFamily:'"Fredoka One",sans-serif',fontSize:56,fontWeight:900,fontStyle:"italic",background:"linear-gradient(180deg,#fff 0%,#ffe566 40%,#ffaa22 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1,lineHeight:1.1,filter:"drop-shadow(0 4px 0 rgba(0,0,0,.4))",marginBottom:8}}>Chess Quest</div>
+        {/* Tagline */}
+        <div style={{fontSize:14,color:"rgba(255,255,255,.7)",fontWeight:700,letterSpacing:1,marginBottom:32}}>🏰 LEARN · PLAY · MASTER ⚔️</div>
+        {/* Three characters — balanced colourful trio */}
+        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:12,marginBottom:32}}>
+          {/* Left — pink girl knight, thinking */}
+          <div style={{animation:"mascotFloat 3.4s ease-in-out infinite",animationDelay:".4s"}}>
+            <KnightMascot mood="thinking" size={72} animate={true} color="pink"/>
+          </div>
+          {/* Centre — blue knight, happy hero */}
+          <div style={{animation:"mascotFloat 3s ease-in-out infinite"}}>
+            <KnightMascot mood="happy" size={100} animate={true} color="blue"/>
+          </div>
+          {/* Right — purple knight, celebrating */}
+          <div style={{animation:"mascotFloat 2.7s ease-in-out infinite",animationDelay:".7s"}}>
+            <KnightMascot mood="celebrating" size={72} animate={true} color="purple"/>
+          </div>
+        </div>
+        {/* Start button */}
+        <button
+          onClick={()=>{SFX.tap();setShowSplash(false);}}
+          style={{
+            background:"linear-gradient(135deg,#f1c40f,#e67e22)",
+            border:"none",borderRadius:24,padding:"18px 48px",
+            fontSize:20,fontWeight:900,color:"#1a1a2e",
+            boxShadow:"0 8px 0 #d4ac0d, 0 12px 32px rgba(241,196,15,.4)",
+            cursor:"pointer",letterSpacing:.5,
+            animation:"bounceIn .6s cubic-bezier(.34,1.56,.64,1) .3s both",
+            display:"inline-flex",alignItems:"center",gap:10,
+          }}>
+          <span>▶</span> Let's Play!
+        </button>
+        <div style={{fontSize:11,color:"rgba(255,255,255,.35)",marginTop:16,fontWeight:700}}>
+          Tap to begin your chess adventure
+        </div>
+      </div>
+      <GlobalStyles/>
+    </div>
+  );
 
   // Show profile select if no active profile
   if(activeProfile===null) return(
@@ -2938,19 +3072,20 @@ function ChessWorld(){
     }
   };
 
-  const earnXp=amount=>{
-    const newCompleted = world===1 ? {completed:completed+1} : {completed2:completed2+1};
-    updateProfile({xp:xp+amount, gems:gems+amount, ...newCompleted});
+  const earnXp=(amount, puzzleId)=>{
+    const newIds = puzzleId && !completedIds.includes(puzzleId)
+      ? [...completedIds, puzzleId]
+      : completedIds;
+    updateProfile({xp:xp+amount, gems:gems+amount, completedIds:newIds});
     setXpPop(amount);
     setTimeout(()=>setXpPop(null),2500);
   };
 
   const startZone=(zoneId,source="zones")=>{
-    const zp=activePuzzles.filter(p=>p.zone===zoneId);
+    const zp=PUZZLES.filter(p=>p.zone===zoneId);
     if(!zp.length) return;
     // Pick first puzzle the player hasn't completed yet; fall back to first
-    const startId = activePuzzles[0]?.id || 1;
-    const next = zp.find(p=>(p.id-startId)>=activeCompleted) || zp[0];
+    const next = zp.find(p=>!completedIds.includes(p.id)) || zp[0];
     setActivePuzzle(next);
     setPuzzleSource(source);
   };
@@ -2982,7 +3117,7 @@ function ChessWorld(){
             {/* Title */}
             <div style={{fontSize:28,fontWeight:900,color:"#6c5ce7",marginBottom:6,letterSpacing:-1}}>Zone Complete!</div>
             <div style={{fontSize:18,fontWeight:800,color:"#2d3436",marginBottom:4}}>{zoneCompleteData.zoneName}</div>
-            <div style={{fontSize:14,color:"#636e72",marginBottom:20}}>You mastered this realm! 🗡️</div>
+            <div style={{fontSize:14,color:"#636e72",marginBottom:20}}>You conquered this village zone! ⚔️</div>
             {/* Stars row */}
             <div style={{fontSize:32,marginBottom:20,letterSpacing:4}}>{"⭐".repeat(3)}</div>
             {/* Buttons */}
@@ -3020,7 +3155,7 @@ function ChessWorld(){
             <div style={{fontSize:9,color:"rgba(255,255,255,.55)",fontWeight:800,letterSpacing:2,marginTop:1}}>KIDS CHESS ⚔️</div>
           </div>
         </div>
-        {/* Stats + profile switcher */}
+        {/* Stats + settings — simplified */}
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <div style={{background:"linear-gradient(145deg,#f1c40f,#e67e22)",borderRadius:16,padding:"4px 10px",border:"2px solid rgba(255,255,255,.3)",boxShadow:"0 3px 0 #d4ac0d",display:"flex",alignItems:"center",gap:3}}>
             <span style={{fontSize:14,display:"inline-block",animation:"starSpin 4s linear infinite"}}>⭐</span>
@@ -3030,24 +3165,22 @@ function ChessWorld(){
             <span style={{fontSize:14,display:"inline-block",animation:"gemPulse 2s ease-in-out infinite"}}>💎</span>
             <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>{gems}</span>
           </div>
-          {/* Cloud sync indicator */}
-          {syncStatus==="saving"&&<div style={{fontSize:11,color:"rgba(255,255,255,.6)",fontWeight:700}}>☁️ saving…</div>}
-          {syncStatus==="saved"&&<div style={{fontSize:11,color:"#00b894",fontWeight:700}}>☁️ saved ✓</div>}
-          {syncStatus==="error"&&<div style={{fontSize:11,color:"#ff7675",fontWeight:700}}>☁️ error</div>}
 
-          {/* Profile switcher button — clearly labelled */}
-          <button onClick={()=>setActiveProfile(null)} style={{
+          {/* Player avatar + settings combined into one tappable button */}
+          <button onClick={()=>{SFX.tap();setShowSettings(true);}} style={{
+            display:"flex",alignItems:"center",gap:6,
             background:`linear-gradient(145deg,${profile.color},${profile.color}88)`,
-            border:"2px solid rgba(255,255,255,.4)",borderRadius:16,
+            border:"2px solid rgba(255,255,255,.4)",borderRadius:18,
             boxShadow:"0 3px 0 rgba(0,0,0,.3)",
-            cursor:"pointer",display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 6px",
+            cursor:"pointer",padding:"4px 10px 4px 4px",
           }}>
-            <span style={{fontSize:18}}>{profile.avatar}</span>
-            <div style={{textAlign:"left"}}>
-              <div style={{fontSize:10,fontWeight:900,color:"rgba(255,255,255,.7)",letterSpacing:.5}}>PLAYER</div>
-              <div style={{fontSize:11,fontWeight:900,color:"#fff",lineHeight:1}}>{profile.name}</div>
-            </div>
-            <span style={{fontSize:10,color:"rgba(255,255,255,.6)",marginLeft:2}}>▼</span>
+            <span style={{
+              width:26,height:26,borderRadius:"50%",
+              background:"rgba(255,255,255,.2)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:15,
+            }}>{profile.avatar}</span>
+            <span style={{fontSize:15}}>⚙️</span>
           </button>
         </div>
       </div>
@@ -3060,17 +3193,24 @@ function ChessWorld(){
               puzzle={activePuzzle}
               onBack={()=>{setActivePuzzle(null);setTab(puzzleSource);}}
               onComplete={earned=>{
-                earnXp(earned);
-                const zonePuzzles=activePuzzles.filter(p=>p.zone===activePuzzle.zone);
+                earnXp(earned, activePuzzle?.id);
+                const zonePuzzles=PUZZLES.filter(p=>p.zone===activePuzzle.zone);
                 const currentIdx=zonePuzzles.findIndex(p=>p.id===activePuzzle.id);
                 const nextPuzzle=zonePuzzles[currentIdx+1];
                 if(nextPuzzle){
                   setActivePuzzle(nextPuzzle);
                 } else {
                   SFX.zoneComplete();
-                  const zone = activeZones.find(z=>z.id===activePuzzle.zone);
-                  setZoneCompleteData({zoneName:zone?.label||"Zone", emoji:zone?.emoji||"🏆"});
-                  setActivePuzzle(null);
+                  const zone = ZONES.find(z=>z.id===activePuzzle.zone);
+                  const lastZone = ZONES[ZONES.length-1];
+                  if(zone?.id === lastZone?.id){
+                    // Last puzzle of the whole game!
+                    setActivePuzzle(null);
+                    setTimeout(()=>setShowGameComplete(true), 600);
+                  } else {
+                    setZoneCompleteData({zoneName:zone?.label||"Zone", emoji:zone?.emoji||"🏆"});
+                    setActivePuzzle(null);
+                  }
                 }
               }}
             />
@@ -3089,9 +3229,9 @@ function ChessWorld(){
               msg={playMsg} setMsg={setPlayMsg}
               mood={playMood} setMood={setPlayMood}
             />
-          : tab==="home"   ? <HomeScreen xp={xp} streak={streak} completedPuzzles={activeCompleted} totalPuzzles={activePuzzles.length} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else if(t==="world2"){updateProfile({world:2});setTab("zones");}else if(t==="world1"){updateProfile({world:1});setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color} world={world} world1Done={world1Done}/>
-          : tab==="zones"  ? <MapScreen  xp={xp} completedPuzzles={activeCompleted} onStartPuzzle={startZone} playerAvatar={profile.avatar} playerColor={profile.color} world={world} zones={activeZones} puzzles={activePuzzles}/>
-          : tab==="awards" ? <AwardsScreen xp={xp} completedPuzzles={completed} completedPuzzles2={completed2} streak={streak} world={world}/>
+          : tab==="home"   ? <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} completedIds={completedIds} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color}/>
+          : tab==="zones"  ? <MapScreen  xp={xp} completedPuzzles={completed} completedIds={completedIds} onStartPuzzle={startZone} playerAvatar={profile.avatar} playerColor={profile.color}/>
+          : tab==="awards" ? <AwardsScreen xp={xp} completedPuzzles={completed} completedIds={completedIds} streak={streak}/>
           : null
         }
       </div>
@@ -3125,6 +3265,133 @@ function ChessWorld(){
           );
         })}
       </div>
+
+      {/* ── GAME COMPLETE OVERLAY ── */}
+      {showGameComplete&&(
+        <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          {/* Dark backdrop */}
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.85)"}}/>
+
+          {/* Confetti rain */}
+          {Array.from({length:40}).map((_,i)=>(
+            <div key={i} style={{
+              position:"absolute",
+              left:`${(i*7+3)%100}%`,
+              top:`-${10+Math.random()*10}%`,
+              fontSize:16+Math.floor(Math.random()*14),
+              animation:`confettiFall ${1.5+Math.random()*2}s ease-in forwards`,
+              animationDelay:`${Math.random()*2}s`,
+              pointerEvents:"none",
+              zIndex:501,
+            }}>{["⭐","🎉","✨","💎","🏆","🌟","🎊","⚡","♟️","♛","♞","🎯"][i%12]}</div>
+          ))}
+
+          {/* Card */}
+          <div style={{
+            position:"relative",zIndex:502,
+            background:"linear-gradient(145deg,#1a1040,#2d1b69)",
+            borderRadius:32,padding:"32px 24px",
+            maxWidth:340,width:"100%",textAlign:"center",
+            border:"4px solid #f1c40f",
+            boxShadow:"0 0 60px rgba(241,196,15,.4), 0 20px 0 rgba(0,0,0,.4)",
+            animation:"bounceIn .6s cubic-bezier(.34,1.56,.64,1)",
+          }}>
+            {/* Stars */}
+            {[["10%","8%"],["85%","6%"],["5%","80%"],["90%","75%"],["50%","3%"]].map(([l,t],i)=>(
+              <div key={i} style={{position:"absolute",left:l,top:t,fontSize:14,animation:`pulse ${1+i*.3}s ease-in-out infinite`,animationDelay:`${i*.2}s`,opacity:.6}}>✨</div>
+            ))}
+
+            {/* Bouncing trophy */}
+            <div style={{fontSize:80,display:"inline-block",animation:"trophyBounce .8s ease-in-out infinite",filter:"drop-shadow(0 0 30px rgba(241,196,15,.8))"}}>🏆</div>
+
+            {/* Title */}
+            <div style={{
+              fontFamily:'"Fredoka One",sans-serif',
+              fontSize:36,fontWeight:900,
+              background:"linear-gradient(180deg,#fff 0%,#ffe566 50%,#ffaa22 100%)",
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+              marginTop:8,marginBottom:4,lineHeight:1.1,
+              filter:"drop-shadow(0 3px 0 rgba(0,0,0,.4))",
+            }}>GRAND MASTER!</div>
+
+            <div style={{fontSize:16,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:16,lineHeight:1.5}}>
+              You completed ALL 65 puzzles!<br/>You're a true Chess Quest champion! ⚔️
+            </div>
+
+            {/* Stats */}
+            <div style={{display:"flex",gap:10,marginBottom:20,justifyContent:"center"}}>
+              <div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"10px 16px",textAlign:"center"}}>
+                <div style={{fontSize:22,fontWeight:900,color:"#f1c40f"}}>{xp}</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.6)",fontWeight:700}}>TOTAL XP</div>
+              </div>
+              <div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"10px 16px",textAlign:"center"}}>
+                <div style={{fontSize:22,fontWeight:900,color:"#74b9ff"}}>65</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.6)",fontWeight:700}}>PUZZLES</div>
+              </div>
+              <div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"10px 16px",textAlign:"center"}}>
+                <div style={{fontSize:22,fontWeight:900,color:"#00d9a3"}}>♔</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.6)",fontWeight:700}}>RANK: KING</div>
+              </div>
+            </div>
+
+            {/* Rank icons */}
+            <div style={{fontSize:24,letterSpacing:8,marginBottom:20,filter:"drop-shadow(0 2px 8px rgba(255,215,0,.6))"}}>♙♘♗♖♕♔</div>
+
+            {/* Knight mascot */}
+            <div style={{marginBottom:20}}>
+              <KnightMascot mood="celebrating" size={80} animate={true}/>
+            </div>
+
+            {/* Buttons */}
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>{SFX.tap();setShowGameComplete(false);setTab("awards");}} style={{
+                flex:1,background:"linear-gradient(135deg,#f1c40f,#e67e22)",
+                border:"none",borderRadius:16,padding:"14px",
+                fontSize:14,fontWeight:900,color:"#1a1a2e",cursor:"pointer",
+                boxShadow:"0 5px 0 #d4ac0d",
+              }}>🏆 Awards</button>
+              <button onClick={()=>{SFX.tap();setShowGameComplete(false);setTab("home");}} style={{
+                flex:1,background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",
+                border:"none",borderRadius:16,padding:"14px",
+                fontSize:14,fontWeight:900,color:"#fff",cursor:"pointer",
+                boxShadow:"0 5px 0 #4a3ab5",
+              }}>🏠 Home</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SETTINGS PANEL ── */}
+      {showSettings&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn .2s ease"}} onClick={()=>setShowSettings(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:28,padding:"24px",maxWidth:320,width:"100%",boxShadow:"0 20px 0 rgba(0,0,0,.2)",border:"4px solid #6c5ce7",maxHeight:"80vh",overflowY:"auto"}}>
+
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+              <div style={{fontSize:20,fontWeight:900,color:"#2d3436"}}>⚙️ Settings</div>
+              <button onClick={()=>setShowSettings(false)} style={{width:30,height:30,borderRadius:"50%",background:"#dfe6e9",border:"none",fontSize:14,fontWeight:900,color:"#636e72",cursor:"pointer"}}>✕</button>
+            </div>
+
+            {/* Current player card */}
+            <div style={{background:`linear-gradient(135deg,${profile.color},${profile.color}cc)`,borderRadius:18,padding:16,marginBottom:14,textAlign:"center"}}>
+              <div style={{width:54,height:54,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,margin:"0 auto 8px"}}>{profile.avatar}</div>
+              <div style={{fontSize:16,fontWeight:900,color:"#fff",textShadow:"0 2px 4px rgba(0,0,0,.3)"}}>{profile.name}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,.85)",fontWeight:700,marginTop:2}}>⭐ {xp} XP · 💎 {gems} gems</div>
+            </div>
+
+            {/* Switch player */}
+            <button onClick={()=>{SFX.tap();setShowSettings(false);setActiveProfile(null);}} style={{width:"100%",background:"#f0f4ff",border:"2px solid #6c5ce7",borderRadius:14,padding:"13px",fontSize:14,fontWeight:900,color:"#6c5ce7",cursor:"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              👥 Switch Player
+            </button>
+
+            {/* Saved locally info */}
+            <div style={{background:"#f0fff8",border:"2px solid #00d9a3",borderRadius:16,padding:14,marginBottom:14,textAlign:"center"}}>
+              <div style={{fontSize:24,marginBottom:4}}>📱</div>
+              <div style={{fontSize:13,fontWeight:800,color:"#2d3436",marginBottom:2}}>Saved on this device</div>
+              <div style={{fontSize:11,color:"#636e72",lineHeight:1.5}}>Progress saves automatically whenever you earn XP or complete a puzzle.</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── LEAVE GAME CONFIRMATION ── */}
       {confirmLeavePlay&&(
@@ -3203,7 +3470,18 @@ function GlobalStyles(){
   );
 }
 
-const APP={height:"100dvh",maxHeight:"100dvh",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:'"Fredoka One","Nunito","SF Pro Rounded",-apple-system,BlinkMacSystemFont,sans-serif',WebkitOverflowScrolling:"touch"};
+const APP={
+  height:"100dvh",maxHeight:"100dvh",
+  display:"flex",flexDirection:"column",overflow:"hidden",
+  fontFamily:'"Fredoka One","Nunito","SF Pro Rounded",-apple-system,BlinkMacSystemFont,sans-serif',
+  WebkitOverflowScrolling:"touch",
+  // Push content below Dynamic Island / notch on iPhone
+  paddingTop:"env(safe-area-inset-top)",
+  paddingBottom:"env(safe-area-inset-bottom)",
+  paddingLeft:"env(safe-area-inset-left)",
+  paddingRight:"env(safe-area-inset-right)",
+  boxSizing:"border-box",
+};
 
 
 // Mount the app
