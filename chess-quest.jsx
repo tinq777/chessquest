@@ -2832,55 +2832,25 @@ function ProfileSelect({profiles, onSelect, onAdd, onEdit, onDelete}){
 }
 
 function ChessWorld(){
-  // ── Auth state ──
-  const [authUser,   setAuthUser]   = useState(undefined); // undefined=loading, null=not logged in
-  const [authLoading,setAuthLoading] = useState(true);
-  const [syncStatus, setSyncStatus]  = useState(""); // "saving" | "saved" | "error"
+  // ── Auth disabled — no login required ──
+  const [syncStatus, setSyncStatus]  = useState("");
 
-  useEffect(()=>{
-    let unsub = ()=>{};
-    initFirebase().then(ok=>{
-      if(!ok){ setAuthLoading(false); return; }
-      unsub = _onAuthStateChanged(fbAuth, async user => {
-        setAuthUser(user);
-        setAuthLoading(false);
-        if(user){
-          try {
-            const snap = await _getDoc(_doc(fbDb,"users",user.uid));
-            if(snap.exists() && snap.data().profiles){
-              setProfiles(snap.data().profiles);
-            }
-          } catch(e){ console.error("Load error",e); }
-        }
-      });
-    });
-    return ()=>unsub();
-  },[]);
-
-  // Save profiles to Firestore whenever they change
-  const saveToCloud = async (updatedProfiles) => {
-    if(!authUser) return;
-    setSyncStatus("saving");
-    try {
-      await _setDoc(_doc(fbDb,"users",authUser.uid), {
-        profiles: updatedProfiles,
-        lastSaved: new Date().toISOString(),
-        email: authUser.email || "",
-        displayName: authUser.displayName || "",
-      }, {merge:true});
-      setSyncStatus("saved");
-      setTimeout(()=>setSyncStatus(""),2000);
-    } catch(e){
-      setSyncStatus("error");
-      console.error("Save error",e);
-    }
+  // Save profiles to localStorage
+  const saveToCloud = (updatedProfiles) => {
+    try { localStorage.setItem("cq_profiles", JSON.stringify(updatedProfiles)); } catch(e){}
   };
 
   // Profile system
-  const [profiles,setProfiles]=useState([
-    {name:"Alex",  avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0,completed2:0,world:1},
-    {name:"Sam",   avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0,completed2:0,world:1},
-  ]);
+  const [profiles,setProfiles]=useState(()=>{
+    try{
+      const saved=localStorage.getItem("cq_profiles");
+      if(saved) return JSON.parse(saved);
+    }catch(e){}
+    return [
+      {name:"Alex",  avatar:"♞",color:"#e74c3c",xp:0,gems:0,streak:0,completed:0,completed2:0,world:1},
+      {name:"Sam",   avatar:"♛",color:"#3498db",xp:0,gems:0,streak:0,completed:0,completed2:0,world:1},
+    ];
+  });
   const [activeProfile,setActiveProfile]=useState(null); // null = profile select screen
 
   const profile = activeProfile!==null ? profiles[activeProfile] : null;
@@ -2946,18 +2916,6 @@ function ChessWorld(){
   const [playThinking,setPlayThinking]=useState(false);
   const [playMsg,setPlayMsg]=useState("You play White! Tap a piece to start! 🎮");
   const [playMood,setPlayMood]=useState("happy");
-
-  // Show loading spinner while checking auth
-  if(authLoading) return(
-    <div style={{height:"100dvh",background:"linear-gradient(180deg,#0d1b4b,#1a2a6a)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
-      <div style={{fontSize:64,animation:"logoBounce 1.5s ease-in-out infinite"}}>♟️</div>
-      <div style={{fontSize:16,fontWeight:900,color:"rgba(255,255,255,.7)",letterSpacing:2}}>LOADING…</div>
-      <GlobalStyles/>
-    </div>
-  );
-
-  // Show login screen if not authenticated
-  if(!authUser) return <LoginScreen onLogin={user=>{setAuthUser(user);}}/>;
 
   // Show profile select if no active profile
   if(activeProfile===null) return(
