@@ -1698,6 +1698,11 @@ function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems,
 
       <div style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"12px 16px 20px",WebkitOverflowScrolling:"touch"}}>
 
+        {/* DEBUG — remove after testing */}
+        <div style={{background:"#000",color:"#0f0",padding:"6px 10px",borderRadius:8,marginBottom:8,fontSize:11,fontFamily:"monospace"}}>
+          world={world} | world1Done={String(world1Done)} | completed={completedPuzzles}
+        </div>
+
         {/* Continue Adventure banner — top of page, always visible */}
         {world===1&&world1Done&&(
           <button onClick={()=>onNav("world2")} style={{width:"100%",background:"linear-gradient(135deg,#922b21,#c0392b)",border:"3px solid rgba(255,120,120,.4)",borderRadius:18,padding:"12px 16px",cursor:"pointer",boxShadow:"0 6px 0 #7b241c",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:14}}>
