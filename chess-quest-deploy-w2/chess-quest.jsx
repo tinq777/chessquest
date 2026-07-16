@@ -1698,33 +1698,6 @@ function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems,
 
       <div style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"12px 16px 20px",WebkitOverflowScrolling:"touch"}}>
 
-        {/* DEBUG — remove after testing */}
-        <div style={{background:"#000",color:"#0f0",padding:"6px 10px",borderRadius:8,marginBottom:8,fontSize:11,fontFamily:"monospace"}}>
-          world={world} | world1Done={String(world1Done)} | completed={completedPuzzles}
-        </div>
-
-        {/* Continue Adventure banner — top of page, always visible */}
-        {world===1&&world1Done&&(
-          <button onClick={()=>onNav("world2")} style={{width:"100%",background:"linear-gradient(135deg,#922b21,#c0392b)",border:"3px solid rgba(255,120,120,.4)",borderRadius:18,padding:"12px 16px",cursor:"pointer",boxShadow:"0 6px 0 #7b241c",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:14}}>
-            <span style={{fontSize:26}}>🐉</span>
-            <div style={{textAlign:"left"}}>
-              <div style={{fontSize:14,fontWeight:900,color:"#fff"}}>Continue Adventure!</div>
-              <div style={{fontSize:11,color:"rgba(255,200,200,.9)",fontWeight:700}}>Enter Chess Dungeon — World 2 🏰</div>
-            </div>
-            <span style={{fontSize:18,color:"rgba(255,200,200,.8)",marginLeft:"auto"}}>→</span>
-          </button>
-        )}
-        {world===2&&(
-          <div style={{display:"flex",gap:8,marginBottom:14}}>
-            <button onClick={()=>onNav("world1")} style={{flex:1,background:"linear-gradient(135deg,#1a3a6a,#0d2040)",border:"2px solid rgba(100,150,255,.3)",borderRadius:14,padding:"10px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:16}}>🏰</span><div style={{fontSize:12,fontWeight:900,color:"#fff"}}>World 1</div>
-            </button>
-            <div style={{flex:2,background:"linear-gradient(135deg,#7b241c,#c0392b)",border:"2px solid rgba(255,100,100,.3)",borderRadius:14,padding:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:16}}>🐉</span><div style={{fontSize:12,fontWeight:900,color:"#fff"}}>Chess Dungeon — Active</div>
-            </div>
-          </div>
-        )}
-
         {/* Header row */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
           {/* Player avatar bubble */}
@@ -1787,8 +1760,7 @@ function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems,
           ))}
         </div>
 
-
-        {/* Zone icons */}
+        {/* Zone icons — all 5 zones, locked ones greyed */}
         <div style={{background:"rgba(255,255,255,.15)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:"2px solid rgba(255,255,255,.3)",marginBottom:8}}>
           <div style={{fontSize:12,fontWeight:900,color:"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center",textShadow:"0 1px 3px rgba(0,0,0,.3)"}}>
             <span style={{display:"inline-block",animation:"swordSlash 1.5s ease-in-out infinite"}}>⚔️</span>
@@ -1811,7 +1783,31 @@ function HomeScreen({xp, streak, completedPuzzles, totalPuzzles=65, onNav, gems,
             ))}
           </div>
         </div>
-
+        {/* Continue Adventure / World Switcher */}
+        {world===1&&world1Done&&(
+          <div style={{marginTop:12,padding:"0 4px"}}>
+            <button onClick={()=>onNav("world2")} style={{width:"100%",background:"linear-gradient(135deg,#922b21,#c0392b)",border:"3px solid rgba(255,120,120,.4)",borderRadius:18,padding:"14px 20px",cursor:"pointer",boxShadow:"0 6px 0 #7b241c,0 8px 24px rgba(192,57,43,.5)",display:"flex",alignItems:"center",justifyContent:"center",gap:12,animation:"bounceIn .5s cubic-bezier(.34,1.56,.64,1)"}}>
+              <span style={{fontSize:28,animation:"logoBounce 2s ease-in-out infinite"}}>🐉</span>
+              <div style={{textAlign:"left"}}>
+                <div style={{fontSize:15,fontWeight:900,color:"#fff",letterSpacing:-0.5}}>Continue Adventure!</div>
+                <div style={{fontSize:11,color:"rgba(255,200,200,.9)",fontWeight:700}}>Enter Chess Dungeon — World 2 🏰</div>
+              </div>
+              <span style={{fontSize:18,color:"rgba(255,200,200,.8)"}}>→</span>
+            </button>
+          </div>
+        )}
+        {world===2&&(
+          <div style={{marginTop:12,padding:"0 4px",display:"flex",gap:8}}>
+            <button onClick={()=>onNav("world1")} style={{flex:1,background:"linear-gradient(135deg,#1a3a6a,#0d2040)",border:"2px solid rgba(100,150,255,.3)",borderRadius:14,padding:"10px 14px",cursor:"pointer",boxShadow:"0 4px 0 #091628",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <span style={{fontSize:18}}>🏰</span>
+              <div style={{textAlign:"left"}}><div style={{fontSize:12,fontWeight:900,color:"#fff"}}>Chess Village</div><div style={{fontSize:10,color:"rgba(255,255,255,.6)"}}>World 1</div></div>
+            </button>
+            <div style={{flex:1,background:"linear-gradient(135deg,#7b241c,#c0392b)",border:"2px solid rgba(255,100,100,.3)",borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <span style={{fontSize:18}}>🐉</span>
+              <div style={{textAlign:"left"}}><div style={{fontSize:12,fontWeight:900,color:"#fff"}}>Chess Dungeon</div><div style={{fontSize:10,color:"rgba(255,200,200,.8)"}}>World 2 ✓</div></div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2920,7 +2916,7 @@ function ChessWorld(){
   const completed  = profile?.completed  ?? 0;
   const completed2 = profile?.completed2 ?? 0;
   const world      = profile?.world      ?? 1;
-  const world1Done = true; // DEV: always show Continue Adventure for testing
+  const world1Done = completed >= PUZZLES.length;
   const activeZones   = world===1 ? ZONES    : ZONES2;
   const activePuzzles = world===1 ? PUZZLES  : PUZZLES2;
   const activeCompleted = world===1 ? completed : completed2;
