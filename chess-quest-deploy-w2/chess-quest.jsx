@@ -2916,7 +2916,7 @@ function ChessWorld(){
   const completed  = profile?.completed  ?? 0;
   const completed2 = profile?.completed2 ?? 0;
   const world      = profile?.world      ?? 1;
-  const world1Done = completed >= PUZZLES.length;
+  const world1Done = completed >= PUZZLES.length || completed >= 5; // DEV: unlock after 5 puzzles for testing
   const activeZones   = world===1 ? ZONES    : ZONES2;
   const activePuzzles = world===1 ? PUZZLES  : PUZZLES2;
   const activeCompleted = world===1 ? completed : completed2;
