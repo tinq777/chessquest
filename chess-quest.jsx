@@ -1656,13 +1656,13 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
   const xpPct = next ? ((xp-rank.min)/(next.min-rank.min))*100 : 100;
 
   return (
-    <div style={{height:"100%", background:"#5dade2", position:"relative", display:"flex", flexDirection:"column", overflow:"hidden"}}>
+    <div style={{height:"100%", background:world===2?"#0d0010":"#5dade2", position:"relative", display:"flex", flexDirection:"column", overflow:"hidden"}}>
 
-      {/* Sky background */}
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,#85c1e9 0%,#5dade2 50%,#27ae60 50%,#1e8449 100%)"}}/>
+      {/* Sky/dungeon background */}
+      <div style={{position:"absolute",inset:0,background:world===2?"linear-gradient(180deg,#0d0010 0%,#1a0a0a 40%,#3d0000 40%,#1a0000 100%)":"linear-gradient(180deg,#85c1e9 0%,#5dade2 50%,#27ae60 50%,#1e8449 100%)"}}/>
 
-      {/* Clouds */}
-      {[[8,8,0.9],[55,5,0.7],[72,12,0.8]].map(([x,y,o],i)=>(
+      {/* Clouds (W1) / Embers (W2) */}
+      {world===1&&[[8,8,0.9],[55,5,0.7],[72,12,0.8]].map(([x,y,o],i)=>(
         <div key={i} style={{position:"absolute",left:`${x}%`,top:`${y}%`,opacity:o,animation:`cloudDrift ${6+i*2}s ease-in-out infinite alternate`}}>
           <div style={{position:"relative",width:70+i*20,height:30+i*5}}>
             <div style={{position:"absolute",bottom:0,left:0,right:0,height:"60%",background:"#fff",borderRadius:999}}/>
@@ -1671,11 +1671,14 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
           </div>
         </div>
       ))}
+      {world===2&&["🔥","💀","🐉","⚔️","🔥"].map((e,i)=>(
+        <div key={i} style={{position:"absolute",left:`${10+i*20}%`,top:`${5+i*4}%`,fontSize:18+i*4,opacity:0.25,animation:`cloudDrift ${4+i*1.5}s ease-in-out infinite alternate`}}>{e}</div>
+      ))}
 
-      {/* Curved divider — sky meets grass */}
+      {/* Curved divider */}
       <div style={{position:"absolute",top:"38%",left:0,right:0,height:60,overflow:"hidden"}}>
         <svg viewBox="0 0 400 60" preserveAspectRatio="none" style={{width:"100%",height:"100%"}}>
-          <path d="M0,30 Q100,0 200,30 Q300,60 400,30 L400,60 L0,60 Z" fill="#27ae60"/>
+          <path d="M0,30 Q100,0 200,30 Q300,60 400,30 L400,60 L0,60 Z" fill={world===2?"#3d0000":"#27ae60"}/>
         </svg>
       </div>
 
@@ -1788,13 +1791,13 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
           ))}
         </div>
 
-        {/* Chess Village zone grid */}
-        <div style={{background:"rgba(255,255,255,.12)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:"2px solid rgba(255,255,255,.2)",marginBottom:8}}>
+        {/* Zone grid */}
+        <div style={{background:world===2?"rgba(80,0,0,.4)":"rgba(255,255,255,.12)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:world===2?"2px solid rgba(255,80,80,.25)":"2px solid rgba(255,255,255,.2)",marginBottom:8}}>
           {/* Title */}
-          <div style={{fontSize:12,fontWeight:900,color:"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center"}}>
-            <span style={{display:"inline-block",animation:"mascotFloat 2s ease-in-out infinite"}}>🏰</span>
-            {" CHESS VILLAGE "}
-            <span style={{display:"inline-block",animation:"mascotFloat 2.5s ease-in-out infinite reverse"}}>🏠</span>
+          <div style={{fontSize:12,fontWeight:900,color:world===2?"rgba(255,150,150,.95)":"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center"}}>
+            <span style={{display:"inline-block",animation:"mascotFloat 2s ease-in-out infinite"}}>{world===2?"🐉":"🏰"}</span>
+            {world===2?" CHESS DUNGEON ":" CHESS VILLAGE "}
+            <span style={{display:"inline-block",animation:"mascotFloat 2.5s ease-in-out infinite reverse"}}>{world===2?"🏰":"🏠"}</span>
           </div>
           {/* 3-column grid of zones */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
@@ -1916,14 +1919,14 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           <defs>
             {/* Sky gradient — golden hour light */}
             <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#87ceeb"/>
-              <stop offset="55%"  stopColor="#b0dff5"/>
-              <stop offset="100%" stopColor="#ddeeff"/>
+              <stop offset="0%"   stopColor={world===2?"#0d0010":"#87ceeb"}/>
+              <stop offset="55%"  stopColor={world===2?"#1a0010":"#b0dff5"}/>
+              <stop offset="100%" stopColor={world===2?"#2d0000":"#ddeeff"}/>
             </linearGradient>
             {/* Ground/grass */}
             <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%"   stopColor="#4caf50"/>
-              <stop offset="100%" stopColor="#2e7d32"/>
+              <stop offset="100%" stopColor={world===2?"#1a0000":"#2e7d32"}/>
             </linearGradient>
             {/* River */}
             <linearGradient id="riverG" x1="0" y1="0" x2="1" y2="1">
@@ -1989,7 +1992,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
 
           {/* ── CASTLE HILL ── */}
           <ellipse cx="160" cy="110" rx="105" ry="60" fill="url(#hillG)"/>
-          <ellipse cx="160" cy="95"  rx="80"  ry="45" fill="#2e7d32"/>
+          <ellipse cx="160" cy="95"  rx="80"  ry="45" fill={world===2?"#3d0000":"#2e7d32"}/>
           {/* Rocky cliff face */}
           <polygon points="80,115 100,75 125,110"  fill="#5d6e7a" opacity=".6"/>
           <polygon points="200,115 220,70 240,110" fill="#546e7a" opacity=".55"/>
@@ -2098,9 +2101,9 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           {[[15,300],[295,290],[22,420],[302,400],[18,480],[300,460],[14,540],[298,525]].map(([tx,ty],i)=>(
             <g key={i} transform={`translate(${tx},${ty})`} opacity=".9">
               <rect x="-3" y="14" width="6" height="12" rx="1" fill="#5d4037"/>
-              <circle cx="0" cy="8"  r="11" fill={i%3===0?"#2e7d32":i%3===1?"#388e3c":"#43a047"}/>
+              <circle cx="0" cy="8"  r="11" fill={world===2?(i%3===0?"#5c0000":i%3===1?"#7a0000":"#990000"):(i%3===0?"#2e7d32":i%3===1?"#388e3c":"#43a047")}/>
               <circle cx="0" cy="2"  r="8"  fill={i%3===0?"#388e3c":i%3===1?"#43a047":"#4caf50"}/>
-              <circle cx="0" cy="-3" r="5"  fill="#66bb6a"/>
+              <circle cx="0" cy="-3" r="5"  fill={world===2?"#ff4400":"#66bb6a"}/>
             </g>
           ))}
 
@@ -2369,7 +2372,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           <g transform="translate(160,572)">
             <rect x="-55" y="-12" width="110" height="22" rx="5" fill="#5d4037"/>
             <rect x="-52" y="-9"  width="104" height="16" rx="3" fill="#8d6e63"/>
-            <text x="0" y="2" textAnchor="middle" fill="#fff8e1" fontSize="9" fontWeight="900" fontFamily="sans-serif">🏰 CHESS VILLAGE 🏰</text>
+            <text x="0" y="2" textAnchor="middle" fill="#fff8e1" fontSize="9" fontWeight="900" fontFamily="sans-serif">{world===2?"🐉 DARK CASTLE 🐉":"🏰 CHESS VILLAGE 🏰"}</text>
           </g>
         </svg>
       </div>
