@@ -217,6 +217,17 @@ function pickBlack(board, difficulty="medium"){
 // ═══════════════════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+// WORLDS REGISTRY — add World 3/4 here only. Everything else
+// (awards, world switcher, completion) is auto-generated.
+// ═══════════════════════════════════════════════════════════
+const WORLDS=[
+  {id:1, label:"Chess Village", emoji:"🏰", zones:ZONES,  puzzles:PUZZLES,  color:"#27ae60", bg:"#1e8449"},
+  {id:2, label:"Chess Dungeon", emoji:"🐉", zones:ZONES2, puzzles:PUZZLES2, color:"#c0392b", bg:"#7b241c"},
+];
+function getWorld(id){ return WORLDS.find(w=>w.id===id)||WORLDS[0]; }
+
 const RANKS=[{name:"Pawn",min:0,icon:"♙",color:"#95a5a6"},{name:"Knight",min:300,icon:"♘",color:"#27ae60"},{name:"Bishop",min:600,icon:"♗",color:"#2980b9"},{name:"Rook",min:900,icon:"♖",color:"#8e44ad"},{name:"Queen",min:1200,icon:"♕",color:"#e67e22"},{name:"King",min:1500,icon:"♔",color:"#f1c40f"}];
 const getRank=xp=>[...RANKS].reverse().find(r=>xp>=r.min)||RANKS[0];
 const getNextRank=xp=>{const i=RANKS.findIndex(r=>r.min>xp);return i>=0?RANKS[i]:null;};
@@ -1650,7 +1661,7 @@ function ZoneIcon({zone, size=70}){
 // ═══════════════════════════════════════════════════════════
 // HOME SCREEN — Reading Eggs style
 // ═══════════════════════════════════════════════════════════
-function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, playerName, playerAvatar, playerColor, world=1, world1Done=false, activeZones=ZONES, activePuzzles=PUZZLES}){
+function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, playerName, playerAvatar, playerColor, world=1, world1Done=false, activeZones=ZONES, activePuzzles=PUZZLES, activeWorld=null}){
   const rank = getRank(xp);
   const next = getNextRank(xp);
   const xpPct = next ? ((xp-rank.min)/(next.min-rank.min))*100 : 100;
@@ -1684,29 +1695,39 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
 
       <div style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"12px 16px 20px",WebkitOverflowScrolling:"touch"}}>
 
-        {/* World banner */}
-        {world===1&&world1Done&&(
-          <button onClick={()=>onNav("world2")} style={{width:"100%",background:"linear-gradient(135deg,#922b21,#c0392b)",border:"3px solid rgba(255,120,120,.4)",borderRadius:18,padding:"12px 16px",cursor:"pointer",boxShadow:"0 6px 0 #7b241c",display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-            <span style={{fontSize:28}}>🐉</span>
-            <div style={{flex:1,textAlign:"left"}}>
-              <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>Continue Adventure!</div>
-              <div style={{fontSize:11,color:"rgba(255,200,200,.9)",fontWeight:700}}>Enter Chess Dungeon — World 2 🏰</div>
+        {/* World banner — auto-generated from WORLDS registry */}
+        {WORLDS.map((w,i)=>{
+          const prevDone = i===0 ? true : WORLDS[i-1].puzzles.every(p=>(completedIds||[]).includes(p.id));
+          const isActive = world===w.id;
+          const isUnlocked = prevDone;
+          if(isActive) return(
+            <div key={w.id} style={{display:"flex",gap:8,marginBottom:14}}>
+              {i>0&&<button onClick={()=>onNav(`switchWorld:${WORLDS[i-1].id}`)} style={{background:"linear-gradient(135deg,#1a3a6a,#0d2040)",border:"2px solid rgba(100,150,255,.3)",borderRadius:14,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                <span>{WORLDS[i-1].emoji}</span><div style={{fontSize:11,fontWeight:900,color:"#fff"}}>← W{i}</div>
+              </button>}
+              <div style={{flex:1,background:`linear-gradient(135deg,${w.color}cc,${w.color})`,border:"2px solid rgba(255,255,255,.2)",borderRadius:14,padding:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <span style={{fontSize:16}}>{w.emoji}</span>
+                <div style={{fontSize:12,fontWeight:900,color:"#fff"}}>{w.label} — Active</div>
+              </div>
+              {WORLDS[i+1]&&WORLDS[i].puzzles.every(p=>(completedIds||[]).includes(p.id))&&(
+                <button onClick={()=>onNav(`switchWorld:${WORLDS[i+1].id}`)} style={{background:`linear-gradient(135deg,${WORLDS[i+1].color}cc,${WORLDS[i+1].color})`,border:"2px solid rgba(255,255,255,.2)",borderRadius:14,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                  <span>{WORLDS[i+1].emoji}</span><div style={{fontSize:11,fontWeight:900,color:"#fff"}}>W{i+2} →</div>
+                </button>
+              )}
             </div>
-            <span style={{fontSize:18,color:"rgba(255,200,200,.8)"}}>→</span>
-          </button>
-        )}
-        {world===2&&(
-          <div style={{display:"flex",gap:8,marginBottom:14}}>
-            <button onClick={()=>onNav("world1")} style={{flex:1,background:"linear-gradient(135deg,#1a3a6a,#0d2040)",border:"2px solid rgba(100,150,255,.3)",borderRadius:14,padding:"10px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:16}}>🏰</span>
-              <div style={{fontSize:12,fontWeight:900,color:"#fff"}}>← World 1</div>
+          );
+          if(!isActive&&isUnlocked&&i===world) return(
+            <button key={w.id} onClick={()=>onNav(`switchWorld:${w.id}`)} style={{width:"100%",background:`linear-gradient(135deg,${w.color}cc,${w.color})`,border:"3px solid rgba(255,255,255,.3)",borderRadius:18,padding:"12px 16px",cursor:"pointer",boxShadow:`0 6px 0 ${w.color}88`,display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+              <span style={{fontSize:28}}>{w.emoji}</span>
+              <div style={{flex:1,textAlign:"left"}}>
+                <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>Continue Adventure!</div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,.8)",fontWeight:700}}>Enter {w.label} — World {w.id}</div>
+              </div>
+              <span style={{fontSize:18,color:"rgba(255,255,255,.7)"}}>→</span>
             </button>
-            <div style={{flex:2,background:"linear-gradient(135deg,#7b241c,#c0392b)",border:"2px solid rgba(255,100,100,.3)",borderRadius:14,padding:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:16}}>🐉</span>
-              <div style={{fontSize:12,fontWeight:900,color:"#fff"}}>Chess Dungeon — Active</div>
-            </div>
-          </div>
-        )}
+          );
+          return null;
+        })}
         {/* Header row */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
           {/* Player avatar bubble */}
@@ -1742,18 +1763,18 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
 
         {/* Next Zone Challenge */}
         {(()=>{
-          const nextZoneIdx = ZONES.findIndex((z,i)=>{
-            const prevZ = i>0 ? ZONES[i-1] : null;
+          const nextZoneIdx = activeZones.findIndex((z,i)=>{
+            const prevZ = i>0 ? activeZones[i-1] : null;
             const prevPs = prevZ ? activePuzzles.filter(p=>p.zone===prevZ.id) : [];
             const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
             return i>0 && prevD<prevPs.length ? false : activePuzzles.filter(p=>p.zone===z.id).some(p=>!(completedIds||[]).includes(p.id));
           });
-          const currentZone = nextZoneIdx>=0 ? ZONES[nextZoneIdx] : null;
+          const currentZone = nextZoneIdx>=0 ? activeZones[nextZoneIdx] : null;
           if(!currentZone) return(
             <div style={{background:"linear-gradient(135deg,#f1c40f,#e67e22)",borderRadius:20,padding:"14px",marginBottom:14,border:"3px solid rgba(255,255,255,.3)",boxShadow:"0 6px 0 #d4ac0d",textAlign:"center"}}>
               <div style={{fontSize:28,marginBottom:4}}>🏆</div>
-              <div style={{fontSize:15,fontWeight:900,color:"#1a1a2e"}}>All 63 puzzles complete!</div>
-              <div style={{fontSize:12,color:"rgba(0,0,0,.6)",fontWeight:700}}>You are a Chess Grand Master!</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#1a1a2e"}}>All {activePuzzles.length} puzzles complete!</div>
+              <div style={{fontSize:12,color:"rgba(0,0,0,.6)",fontWeight:700}}>{world===2?"You are a Dragon Slayer! 🐉":"You are a Chess Grand Master! 👑"}</div>
             </div>
           );
           const zonePuzzles = activePuzzles.filter(p=>p.zone===currentZone.id);
@@ -1860,8 +1881,8 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
 function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAvatar, playerColor, world=1, activeZones=ZONES, activePuzzles=PUZZLES}){
 
   const youAreHere = (() => {
-    for(let i=0; i<ZONES.length; i++){
-      const prevZ2 = i>0 ? ZONES[i-1] : null;
+    for(let i=0; i<activeZones.length; i++){
+      const prevZ2 = i>0 ? activeZones[i-1] : null;
       const prevPs2 = prevZ2 ? activePuzzles.filter(p=>p.zone===prevZ2.id) : [];
       const prevD2 = prevPs2.filter(p=>(completedIds||[]).includes(p.id)).length;
       if(i>0 && prevD2 < prevPs2.length) return Math.max(0,i-1);
@@ -1869,7 +1890,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
       const zoneDone = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
       if(zoneDone < zonePuzzles.length) return i;
     }
-    return ZONES.length-1;
+    return activeZones.length-1;
   })();
 
   // Building positions — spread across the village along the river
@@ -2742,32 +2763,31 @@ function PlayScreen({onBack,board,setBoard,turn,setTurn,sel,setSel,tgts,setTgts,
 // ═══════════════════════════════════════════════════════════
 function AwardsScreen({xp, completedPuzzles, completedIds, streak, world=1}){
   const rank=getRank(xp);
+  // Auto-generate awards from WORLDS registry — adding World 3/4 automatically adds awards
+  const ids = completedIds||[];
   const awards=[
-    // Zone completion achievements — thresholds match actual cumulative puzzle counts
-    // pieces=8, pawns=7, openings=7, tactics=7, checkmate=7, strategy=8, endgame=7, master=7, rush=7
-    // Cumulative: 8, 15, 22, 29, 36, 44, 51, 58, 65
-    {title:"First Move!",     desc:"Complete your first puzzle",     icon:"🎯", earned:completedPuzzles>=1,  color:"#e74c3c", shadow:"#c0392b"},
-    {title:"Piece Master",    desc:"Complete Piece Power zone",      icon:"♞", earned:PUZZLES.filter(p=>p.zone==="pieces").every(p=>(completedIds||[]).includes(p.id)),  color:"#e67e22", shadow:"#ba6b09"},
-    {title:"Pawn Power",      desc:"Complete Pawn Kingdom zone",     icon:"♟️", earned:PUZZLES.filter(p=>p.zone==="pawns").every(p=>(completedIds||[]).includes(p.id)), color:"#f39c12", shadow:"#d4890a"},
-    {title:"Opening Expert",  desc:"Complete Open Strong zone",      icon:"🏰", earned:PUZZLES.filter(p=>p.zone==="openings").every(p=>(completedIds||[]).includes(p.id)), color:"#27ae60", shadow:"#1e8449"},
-    {title:"Tactics Ace",     desc:"Complete Tactics zone",          icon:"⚔️", earned:PUZZLES.filter(p=>p.zone==="tactics").every(p=>(completedIds||[]).includes(p.id)), color:"#00b894", shadow:"#00896e"},
-    {title:"Checkmate Hunter",desc:"Complete Checkmate Hunt zone",   icon:"🎯", earned:PUZZLES.filter(p=>p.zone==="checkmate").every(p=>(completedIds||[]).includes(p.id)), color:"#8e44ad", shadow:"#6c3483"},
-    {title:"Strategist",      desc:"Complete Strategy zone",         icon:"🧠", earned:PUZZLES.filter(p=>p.zone==="strategy").every(p=>(completedIds||[]).includes(p.id)), color:"#2980b9", shadow:"#1a5276"},
-    {title:"Endgame Pro",     desc:"Complete Endgame zone",          icon:"👑", earned:PUZZLES.filter(p=>p.zone==="endgame").every(p=>(completedIds||[]).includes(p.id)), color:"#16a085", shadow:"#0e6655"},
-    {title:"Master Class",    desc:"Complete Master Moves zone",     icon:"🌟", earned:PUZZLES.filter(p=>p.zone==="master").every(p=>(completedIds||[]).includes(p.id)), color:"#2c3e50", shadow:"#1a252f"},
-    {title:"Grand Master!",   desc:"Complete ALL 65 puzzles!",       icon:"🏆", earned:PUZZLES.every(p=>(completedIds||[]).includes(p.id)), color:"#f1c40f", shadow:"#d4ac0d"},
-    {title:"Dragon's Gate",  desc:"Complete Dragon's Gate zone",     icon:"🐉", earned:PUZZLES2.filter(p=>p.zone==="gate").every(p=>(completedIds||[]).includes(p.id)),    color:"#c0392b", shadow:"#922b21"},
-    {title:"Dark Armory",    desc:"Complete Dark Armory zone",       icon:"⚔️",  earned:PUZZLES2.filter(p=>p.zone==="armory").every(p=>(completedIds||[]).includes(p.id)),  color:"#7d3c98", shadow:"#6c3483"},
-    {title:"Dark Tower",     desc:"Complete Dark Tower zone",        icon:"🗼", earned:PUZZLES2.filter(p=>p.zone==="tower").every(p=>(completedIds||[]).includes(p.id)),   color:"#1a5276", shadow:"#154360"},
-    {title:"Shadow Crypt",   desc:"Complete Shadow Crypt zone",      icon:"💀", earned:PUZZLES2.filter(p=>p.zone==="crypt").every(p=>(completedIds||[]).includes(p.id)),   color:"#117a65", shadow:"#0e6655"},
-    {title:"Lava Forge",     desc:"Complete Lava Forge zone",        icon:"🌋", earned:PUZZLES2.filter(p=>p.zone==="lava").every(p=>(completedIds||[]).includes(p.id)),    color:"#d35400", shadow:"#b7440a"},
-    {title:"Spider Web",     desc:"Complete Spider Web zone",        icon:"🕷️", earned:PUZZLES2.filter(p=>p.zone==="spider").every(p=>(completedIds||[]).includes(p.id)),  color:"#4a235a", shadow:"#3b1a47"},
-    {title:"Dragon's Eye",   desc:"Complete Dragon's Eye zone",      icon:"👁️", earned:PUZZLES2.filter(p=>p.zone==="eye").every(p=>(completedIds||[]).includes(p.id)),     color:"#7b241c", shadow:"#641e16"},
-    {title:"Dragon's Lair",  desc:"Complete Dragon's Lair zone",     icon:"🐲", earned:PUZZLES2.filter(p=>p.zone==="lair").every(p=>(completedIds||[]).includes(p.id)),    color:"#784212", shadow:"#6e2c00"},
-    {title:"Dragon Slayer!", desc:"Complete ALL 63 Dungeon puzzles!",icon:"🏆", earned:PUZZLES2.every(p=>(completedIds||[]).includes(p.id)),                                color:"#c0392b", shadow:"#7b241c"},
-    // XP milestones
-    {title:"Star Collector",  desc:"Earn 300 XP",                   icon:"⭐", earned:xp>=300,             color:"#f39c12", shadow:"#d4890a"},
-    {title:"Champion!",       desc:"Earn 1000 XP",                  icon:"♕", earned:xp>=1000,            color:"#8e44ad", shadow:"#6c3483"},
+    {title:"First Move!",    desc:"Complete your first puzzle",   icon:"🎯", earned:completedPuzzles>=1, color:"#e74c3c", shadow:"#c0392b"},
+    {title:"Star Collector", desc:"Earn 300 XP",                  icon:"⭐", earned:xp>=300,            color:"#f39c12", shadow:"#d4890a"},
+    {title:"Champion!",      desc:"Earn 1000 XP",                 icon:"♕", earned:xp>=1000,           color:"#8e44ad", shadow:"#6c3483"},
+    // Per-zone awards for every world — auto-generated
+    ...WORLDS.flatMap(w=>([
+      ...w.zones.map(z=>({
+        title: z.label,
+        desc: `Complete ${z.label}`,
+        icon: z.emoji,
+        earned: w.puzzles.filter(p=>p.zone===z.id).every(p=>ids.includes(p.id)),
+        color: z.color,
+        shadow: z.bg||z.color,
+      })),
+      {
+        title: w.id===1?"Grand Master! 👑":`${w.label} Champion!`,
+        desc: `Complete ALL ${w.puzzles.length} ${w.label} puzzles!`,
+        icon: "🏆",
+        earned: w.puzzles.every(p=>ids.includes(p.id)),
+        color: w.color,
+        shadow: w.color,
+      },
+    ])),
   ];
 
   const nextRank = getNextRank(xp);
@@ -3211,9 +3231,11 @@ function ChessWorld(){
   const streak    = profile?.streak     ?? 0;
   const completedIds  = profile?.completedIds ?? [];
   const world         = profile?.world ?? 1;
-  const world1Done    = true; // DEV: always true for testing — change to PUZZLES.every(p=>completedIds.includes(p.id)) for release
-  const activeZones   = world===1 ? ZONES   : ZONES2;
-  const activePuzzles = world===1 ? PUZZLES : PUZZLES2;
+  const activeWorld   = getWorld(world);
+  const activeZones   = activeWorld.zones;
+  const activePuzzles = activeWorld.puzzles;
+  const world1Done    = WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id));
+  const prevWorldDone = world > 1 ? getWorld(world-1).puzzles.every(p=>(completedIds||[]).includes(p.id)) : true;
   const completed    = completedIds.length; // total count for display
 
   const [tab,setTab]=useState("home");
@@ -3446,15 +3468,16 @@ function ChessWorld(){
               puzzle={activePuzzle}
               onBack={()=>{setActivePuzzle(null);setTab(puzzleSource);}}
               onComplete={earned=>{
-                earnXp(earned, activePuzzle?.id);
-                const zonePuzzles=activePuzzles.filter(p=>p.zone===activePuzzle.zone);
+                if(!activePuzzle) return;
+                earnXp(earned, activePuzzle.id);
+                const zonePuzzles=activePuzzles.filter(p=>p.zone===activePuzzle?.zone);
                 const currentIdx=zonePuzzles.findIndex(p=>p.id===activePuzzle.id);
                 const nextPuzzle=zonePuzzles[currentIdx+1];
                 if(nextPuzzle){
                   setActivePuzzle(nextPuzzle);
                 } else {
                   SFX.zoneComplete();
-                  const zone = activeZones.find(z=>z.id===activePuzzle.zone);
+                  const zone = activeZones.find(z=>z.id===activePuzzle?.zone);
                   const lastZone = activeZones[activeZones.length-1];
                   if(zone?.id === lastZone?.id){
                     // Last puzzle of the whole world!
@@ -3482,7 +3505,7 @@ function ChessWorld(){
               msg={playMsg} setMsg={setPlayMsg}
               mood={playMood} setMood={setPlayMood}
             />
-          : tab==="home"   ? <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} completedIds={completedIds} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else if(t==="world2"){updateProfile({world:2});setTab("zones");}else if(t==="world1"){updateProfile({world:1});setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color} world={world} world1Done={world1Done} activeZones={activeZones} activePuzzles={activePuzzles}/>
+          : tab==="home"   ? <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} completedIds={completedIds} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else if(t.startsWith("switchWorld:")){const wid=parseInt(t.split(":")[1]);updateProfile({world:wid});setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color} world={world} world1Done={world1Done} activeZones={activeZones} activePuzzles={activePuzzles} activeWorld={activeWorld}/>
           : tab==="zones"  ? <MapScreen  xp={xp} completedPuzzles={completed} completedIds={completedIds} onStartPuzzle={startZone} playerAvatar={profile.avatar} playerColor={profile.color} world={world} activeZones={activeZones} activePuzzles={activePuzzles}/>
           : tab==="awards" ? <AwardsScreen xp={xp} completedPuzzles={completed} completedIds={completedIds} streak={streak} world={world}/>
           : null
