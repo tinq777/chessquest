@@ -1940,8 +1940,12 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             </linearGradient>
             {/* Castle hill */}
             <linearGradient id="hillG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#388e3c"/>
-              <stop offset="100%" stopColor="#1b5e20"/>
+              <stop offset="0%"   stopColor={world===2?"#4a0000":"#388e3c"}/>
+              <stop offset="100%" stopColor={world===2?"#1a0000":"#1b5e20"}/>
+            </linearGradient>
+            <linearGradient id="lavaG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#2d0000"/>
+              <stop offset="100%" stopColor="#0d0000"/>
             </linearGradient>
             <filter id="shadow">
               <feDropShadow dx="1" dy="3" stdDeviation="3" floodOpacity="0.3"/>
@@ -1956,99 +1960,125 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           {/* ── SKY ── */}
           <rect width="320" height="590" fill="url(#skyG)"/>
 
-          {/* Clouds */}
+          {/* Clouds (W1) / Smoke (W2) */}
           {[[55,30,1],[160,18,.85],[250,42,.75],[110,65,.7],[285,25,.8]].map(([cx,cy,op],i)=>(
             <g key={i} opacity={op}>
-              <ellipse cx={cx}    cy={cy}    rx={28+i*4} ry={10+i*2} fill="#fff"/>
-              <ellipse cx={cx-10} cy={cy-5}  rx={15+i*2} ry={12+i*2} fill="#fff"/>
-              <ellipse cx={cx+12} cy={cy-4}  rx={16+i*2} ry={10+i*1} fill="#fff"/>
+              <ellipse cx={cx}    cy={cy}    rx={28+i*4} ry={10+i*2} fill={world===2?"#1a0000":"#fff"}/>
+              <ellipse cx={cx-10} cy={cy-5}  rx={15+i*2} ry={12+i*2} fill={world===2?"#2d0000":"#fff"}/>
+              <ellipse cx={cx+12} cy={cy-4}  rx={16+i*2} ry={10+i*1} fill={world===2?"#220000":"#fff"}/>
             </g>
           ))}
 
-          {/* Sun with warm glow */}
-          <circle cx="40" cy="45" r="28" fill="#fff9c4" opacity=".6" filter="url(#softglow)"/>
-          <circle cx="40" cy="45" r="20" fill="#ffee58" opacity=".9"/>
-          <circle cx="40" cy="45" r="14" fill="#fdd835"/>
+          {/* Sun (W1) / Blood Moon (W2) */}
+          <circle cx="40" cy="45" r="28" fill={world===2?"#5c0000":"#fff9c4"} opacity=".6" filter="url(#softglow)"/>
+          <circle cx="40" cy="45" r="20" fill={world===2?"#8b0000":"#ffee58"} opacity=".9"/>
+          <circle cx="40" cy="45" r="14" fill={world===2?"#cc0000":"#fdd835"}/>
+          {world===2&&<text x="40" y="52" textAnchor="middle" fontSize="16">🌑</text>}
 
           {/* ── FAR BACKGROUND MOUNTAINS ── */}
-          <polygon points="0,200 60,90 120,200"   fill="#90a4ae" opacity=".45"/>
-          <polygon points="50,200 140,75 230,200"  fill="#78909c" opacity=".4"/>
-          <polygon points="180,200 270,88 320,200" fill="#90a4ae" opacity=".38"/>
-          {/* Snow caps */}
-          <polygon points="60,90 50,125 70,125"   fill="#eceff1" opacity=".8"/>
-          <polygon points="140,75 128,114 152,114" fill="#eceff1" opacity=".85"/>
-          <polygon points="270,88 260,120 280,120" fill="#eceff1" opacity=".75"/>
+          <polygon points="0,200 60,90 120,200"   fill={world===2?"#2d0000":"#90a4ae"} opacity=".45"/>
+          <polygon points="50,200 140,75 230,200"  fill={world===2?"#1a0000":"#78909c"} opacity=".4"/>
+          <polygon points="180,200 270,88 320,200" fill={world===2?"#2d0000":"#90a4ae"} opacity=".38"/>
+          {/* Snow caps (W1) / Lava peaks (W2) */}
+          <polygon points="60,90 50,125 70,125"   fill={world===2?"#ff2200":"#eceff1"} opacity={world===2?.4:.8}/>
+          <polygon points="140,75 128,114 152,114" fill={world===2?"#ff4400":"#eceff1"} opacity={world===2?.35:.85}/>
+          <polygon points="270,88 260,120 280,120" fill={world===2?"#ff2200":"#eceff1"} opacity={world===2?.3:.75}/>
 
           {/* Mist at mountain base */}
           <ellipse cx="160" cy="200" rx="200" ry="25" fill="#fff" opacity=".18"/>
 
-          {/* ── GRASSY TERRAIN ── */}
-          {/* Main ground layer */}
-          <rect x="0" y="190" width="320" height="400" fill="url(#grassG)" opacity=".7"/>
-          {/* Rolling hills */}
-          <ellipse cx="60"  cy="210" rx="100" ry="35" fill="#4caf50" opacity=".6"/>
-          <ellipse cx="260" cy="205" rx="100" ry="32" fill="#4caf50" opacity=".55"/>
-          <ellipse cx="160" cy="220" rx="140" ry="28" fill="#43a047" opacity=".5"/>
+          {/* ── TERRAIN ── */}
+          <rect x="0" y="190" width="320" height="400" fill={world===2?"url(#lavaG)":"url(#grassG)"} opacity=".7"/>
+          <ellipse cx="60"  cy="210" rx="100" ry="35" fill={world===2?"#3d0000":"#4caf50"} opacity=".6"/>
+          <ellipse cx="260" cy="205" rx="100" ry="32" fill={world===2?"#2d0000":"#4caf50"} opacity=".55"/>
+          <ellipse cx="160" cy="220" rx="140" ry="28" fill={world===2?"#350000":"#43a047"} opacity=".5"/>
 
           {/* ── CASTLE HILL ── */}
           <ellipse cx="160" cy="110" rx="105" ry="60" fill="url(#hillG)"/>
+          {world===2&&<ellipse cx="160" cy="118" rx="85" ry="18" fill="#ff2200" opacity=".12"/>}{/* lava glow */}
           <ellipse cx="160" cy="95"  rx="80"  ry="45" fill={world===2?"#3d0000":"#2e7d32"}/>
           {/* Rocky cliff face */}
           <polygon points="80,115 100,75 125,110"  fill="#5d6e7a" opacity=".6"/>
           <polygon points="200,115 220,70 240,110" fill="#546e7a" opacity=".55"/>
 
-          {/* ── CASTLE (on the hill) ── */}
+          {/* ── CASTLE (on the hill) — World 1: medieval, World 2: dark dragon ── */}
+          {world===1 ? (
           <g transform="translate(95,18)" filter="url(#shadow)">
-            {/* Castle base wall */}
             <rect x="5"  y="60" width="120" height="55" rx="2" fill="#b0bec5"/>
             <rect x="5"  y="60" width="120" height="55" rx="2" fill="#cfd8dc" opacity=".4"/>
-            {/* Stone texture lines */}
-            {[0,1,2,3,4].map(row=>(
-              <rect key={row} x="5" y={60+row*11} width="120" height="1" fill="#90a4ae" opacity=".4"/>
-            ))}
-            {/* Left tower */}
+            {[0,1,2,3,4].map(row=>(<rect key={row} x="5" y={60+row*11} width="120" height="1" fill="#90a4ae" opacity=".4"/>))}
             <rect x="0"  y="35" width="30" height="82" rx="3" fill="#b0bec5"/>
             <rect x="0"  y="35" width="30" height="82" rx="3" fill="#cfd8dc" opacity=".3"/>
-            {/* Right tower */}
             <rect x="100" y="35" width="30" height="82" rx="3" fill="#b0bec5"/>
-            {/* Centre tower (tallest) */}
             <rect x="45" y="15" width="40" height="102" rx="3" fill="#bdbdbd"/>
             <rect x="45" y="15" width="40" height="102" rx="3" fill="#fff" opacity=".15"/>
-            {/* Battlements — left tower */}
-            {[1,7,13,21].map(bx=>(
-              <rect key={bx} x={bx} y="28" width="5" height="9" rx="1" fill="#90a4ae"/>
-            ))}
-            {/* Battlements — right tower */}
-            {[101,107,113,121].map(bx=>(
-              <rect key={bx} x={bx} y="28" width="5" height="9" rx="1" fill="#90a4ae"/>
-            ))}
-            {/* Battlements — centre */}
-            {[46,54,62,70,78].map(bx=>(
-              <rect key={bx} x={bx} y="8" width="5" height="9" rx="1" fill="#9e9e9e"/>
-            ))}
-            {/* Conical roofs */}
+            {[1,7,13,21].map(bx=>(<rect key={bx} x={bx} y="28" width="5" height="9" rx="1" fill="#90a4ae"/>))}
+            {[101,107,113,121].map(bx=>(<rect key={bx} x={bx} y="28" width="5" height="9" rx="1" fill="#90a4ae"/>))}
+            {[46,54,62,70,78].map(bx=>(<rect key={bx} x={bx} y="8" width="5" height="9" rx="1" fill="#9e9e9e"/>))}
             <polygon points="15,35 0,35 30,35 15,5"   fill="#546e7a"/>
             <polygon points="115,35 100,35 130,35 115,5" fill="#546e7a"/>
             <polygon points="65,15 45,15 85,15 65,-18"  fill="#455a64"/>
-            {/* Flags */}
             <rect x="14" y="4"  width="2" height="12" fill="#fdd835"/>
             <polygon points="16,4 26,7 16,10" fill="#e53935"/>
             <rect x="64" y="-20" width="2" height="14" fill="#fdd835"/>
             <polygon points="66,-20 78,-17 66,-14" fill="#e53935"/>
-            {/* Gate arch */}
             <path d="M55,117 L55,95 Q65,84 75,95 L75,117" fill="#37474f"/>
-            {/* Gate portcullis */}
-            {[57,61,65,69,73].map(gx=>(
-              <rect key={gx} x={gx} y="90" width="1.5" height="26" fill="#78909c" opacity=".7"/>
-            ))}
-            {/* Windows */}
+            {[57,61,65,69,73].map(gx=>(<rect key={gx} x={gx} y="90" width="1.5" height="26" fill="#78909c" opacity=".7"/>))}
             <rect x="8"  y="50" width="12" height="16" rx="6" fill="#ffd54f" opacity=".8"/>
             <rect x="110" y="50" width="12" height="16" rx="6" fill="#ffd54f" opacity=".8"/>
             <rect x="54" y="28" width="22" height="18" rx="4" fill="#ffd54f" opacity=".9"/>
-            {/* Wall connecting towers */}
             <rect x="30" y="55" width="16" height="60" rx="1" fill="#b0bec5"/>
             <rect x="84" y="55" width="16" height="60" rx="1" fill="#b0bec5"/>
           </g>
+          ) : (
+          <g transform="translate(95,18)" filter="url(#shadow)">
+            {/* Dark Dragon Castle */}
+            {/* Lava moat glow */}
+            <ellipse cx="65" cy="122" rx="68" ry="10" fill="#ff2200" opacity=".25"/>
+            <ellipse cx="65" cy="122" rx="50" ry="6"  fill="#ff4400" opacity=".2"/>
+            {/* Castle base wall — dark obsidian */}
+            <rect x="5"  y="60" width="120" height="55" rx="2" fill="#1a0a0a"/>
+            <rect x="5"  y="60" width="120" height="55" rx="2" fill="#3d0000" opacity=".4"/>
+            {/* Stone crack lines */}
+            {[0,1,2,3,4].map(row=>(<rect key={row} x="5" y={60+row*11} width="120" height="1" fill="#4a0000" opacity=".5"/>))}
+            {/* Left tower */}
+            <rect x="0"  y="28" width="30" height="89" rx="3" fill="#1a0a0a"/>
+            <rect x="0"  y="28" width="30" height="89" rx="3" fill="#2d0000" opacity=".3"/>
+            {/* Right tower */}
+            <rect x="100" y="28" width="30" height="89" rx="3" fill="#1a0a0a"/>
+            {/* Centre tower (tallest) */}
+            <rect x="45" y="8" width="40" height="109" rx="3" fill="#0d0000"/>
+            {/* Jagged battlements — left */}
+            {[0,6,12,20].map(bx=>(<polygon key={bx} points={`${bx},28 ${bx+3},18 ${bx+6},28`} fill="#2c0000"/>))}
+            {/* Jagged battlements — right */}
+            {[100,106,112,120].map(bx=>(<polygon key={bx} points={`${bx},28 ${bx+3},18 ${bx+6},28`} fill="#2c0000"/>))}
+            {/* Jagged battlements — centre */}
+            {[45,53,61,69,77].map(bx=>(<polygon key={bx} points={`${bx},8 ${bx+3},-4 ${bx+6},8`} fill="#1a0000"/>))}
+            {/* Dragon skull flags */}
+            <rect x="14" y="2"  width="2" height="14" fill="#3d0000"/>
+            <text x="15" y="2" textAnchor="middle" fontSize="8">💀</text>
+            <rect x="64" y="-14" width="2" height="16" fill="#3d0000"/>
+            <text x="65" y="-14" textAnchor="middle" fontSize="10">🐉</text>
+            {/* Pointed dark spires */}
+            <polygon points="15,28 0,28 30,28 15,-4"   fill="#2c0000"/>
+            <polygon points="115,28 100,28 130,28 115,-4" fill="#2c0000"/>
+            <polygon points="65,8 45,8 85,8 65,-22"  fill="#1a0000"/>
+            {/* Gate arch — lava glow */}
+            <path d="M50,117 L50,88 Q65,72 80,88 L80,117" fill="#0d0000"/>
+            <path d="M53,117 L53,90 Q65,77 77,90 L77,117" fill="#ff2200" opacity=".3"/>
+            {/* Portcullis */}
+            {[52,57,62,67,72,77].map(gx=>(<rect key={gx} x={gx} y="84" width="1.5" height="32" fill="#4a0000" opacity=".8"/>))}
+            {/* Glowing red windows */}
+            <rect x="6"  y="44" width="14" height="18" rx="7" fill="#ff0000" opacity=".5"/>
+            <rect x="110" y="44" width="14" height="18" rx="7" fill="#ff0000" opacity=".5"/>
+            <rect x="52" y="22" width="26" height="20" rx="4" fill="#ff2200" opacity=".6"/>
+            {/* Wall connecting towers */}
+            <rect x="30" y="52" width="16" height="63" rx="1" fill="#150505"/>
+            <rect x="84" y="52" width="16" height="63" rx="1" fill="#150505"/>
+            {/* Lava drips */}
+            {[20,45,85,110].map(lx=>(<ellipse key={lx} cx={lx} cy="117" rx="3" ry="5" fill="#ff4400" opacity=".5"/>))}
+          </g>
+          )}
 
           {/* ── RIVER winding through village ── */}
           {/* River bank / shadow */}
@@ -2091,9 +2121,9 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           {/* ── ROAD / PATH — two segments, hill area left blank ── */}
           {[roadBottom, roadTop].map((seg,i)=>(
             <g key={i}>
-              <path d={seg} fill="none" stroke="#5d4037" strokeWidth="13" strokeLinecap="round" opacity=".4"/>
-              <path d={seg} fill="none" stroke="#bcaaa4" strokeWidth="10" strokeLinecap="round" opacity=".9"/>
-              <path d={seg} fill="none" stroke="#d7ccc8" strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
+              <path d={seg} fill="none" stroke={world===2?"#1a0000":"#5d4037"} strokeWidth="13" strokeLinecap="round" opacity=".4"/>
+              <path d={seg} fill="none" stroke={world===2?"#3d1010":"#bcaaa4"} strokeWidth="10" strokeLinecap="round" opacity=".9"/>
+              <path d={seg} fill="none" stroke={world===2?"#6b0000":"#d7ccc8"} strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
             </g>
           ))}
 
@@ -2446,8 +2476,8 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                   </g>
                 )}
                 {/* Label */}
-                <rect x="120" y="140" width="80" height="16" rx="8" fill={locked?"rgba(30,40,30,.8)":"#e53935"} opacity=".95"/>
-                <text x="160" y="152" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900" fontFamily="sans-serif">PUZZLE RUSH ⚡</text>
+                <rect x="120" y="140" width="80" height="16" rx="8" fill={locked?"rgba(30,40,30,.8)":zoneColor||"#e53935"} opacity=".95"/>
+                <text x="160" y="152" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900" fontFamily="sans-serif">{b.label.toUpperCase()} {b.emoji}</text>
                 {/* YOU ARE HERE on castle */}
                 {isHere&&(
                   <g style={{animation:"mascotFloat 2s ease-in-out infinite"}}>
