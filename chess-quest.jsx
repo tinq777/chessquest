@@ -2543,7 +2543,7 @@ function PuzzleScreen({puzzle, onComplete, onBack}){
     if(mine(p,"w")){setSelected({r,c});setTargets(legalFor(board,r,c,"w"));return;}
     const move=targets.find(m=>m.to.r===r&&m.to.c===c);
     if(!move){setSelected(null);setTargets([]);return;}
-    const sol=puzzle.solution;
+    const sol=puzzle.solution || {from:{r:puzzle.fromRow,c:puzzle.fromCol},to:{r:puzzle.toRow,c:puzzle.toCol}};
     const ok=move.from.r===sol.from.r&&move.from.c===sol.from.c&&move.to.r===sol.to.r&&move.to.c===sol.to.c;
     const nb=applyM(board,move);
     setBoard(nb);setLastMove({from:move.from,to:move.to});setSelected(null);setTargets([]);
