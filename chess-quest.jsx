@@ -1741,7 +1741,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
         {(()=>{
           const nextZoneIdx = ZONES.findIndex((z,i)=>{
             const prevZ = i>0 ? ZONES[i-1] : null;
-            const prevPs = prevZ ? PUZZLES.filter(p=>p.zone===prevZ.id) : [];
+            const prevPs = prevZ ? activePuzzles.filter(p=>p.zone===prevZ.id) : [];
             const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
             return i>0 && prevD<prevPs.length ? false : activePuzzles.filter(p=>p.zone===z.id).some(p=>!(completedIds||[]).includes(p.id));
           });
@@ -1753,7 +1753,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
               <div style={{fontSize:12,color:"rgba(0,0,0,.6)",fontWeight:700}}>You are a Chess Grand Master!</div>
             </div>
           );
-          const zonePuzzles = PUZZLES.filter(p=>p.zone===currentZone.id);
+          const zonePuzzles = activePuzzles.filter(p=>p.zone===currentZone.id);
           const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
           const pct = (done/zonePuzzles.length)*100;
           return(
@@ -1798,12 +1798,12 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
           </div>
           {/* 3-column grid of zones */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-            {ZONES.map((z,i)=>{
-              const prevZ = i>0 ? ZONES[i-1] : null;
-              const prevPs = prevZ ? PUZZLES.filter(p=>p.zone===prevZ.id) : [];
+            {activeZones.map((z,i)=>{
+              const prevZ = i>0 ? activeZones[i-1] : null;
+              const prevPs = prevZ ? activePuzzles.filter(p=>p.zone===prevZ.id) : [];
               const prevD = prevPs.filter(p=>(completedIds||[]).includes(p.id)).length;
               const isLocked = i>0 && prevD<prevPs.length;
-              const zonePuzzles = PUZZLES.filter(p=>p.zone===z.id);
+              const zonePuzzles = activePuzzles.filter(p=>p.zone===z.id);
               const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
               const isComplete = done===zonePuzzles.length;
               return(
@@ -1859,10 +1859,10 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
   const youAreHere = (() => {
     for(let i=0; i<ZONES.length; i++){
       const prevZ2 = i>0 ? ZONES[i-1] : null;
-      const prevPs2 = prevZ2 ? PUZZLES.filter(p=>p.zone===prevZ2.id) : [];
+      const prevPs2 = prevZ2 ? activePuzzles.filter(p=>p.zone===prevZ2.id) : [];
       const prevD2 = prevPs2.filter(p=>(completedIds||[]).includes(p.id)).length;
       if(i>0 && prevD2 < prevPs2.length) return Math.max(0,i-1);
-      const zonePuzzles = PUZZLES.filter(p=>p.zone===ZONES[i].id);
+      const zonePuzzles = activePuzzles.filter(p=>p.zone===activeZones[i].id);
       const zoneDone = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
       if(zoneDone < zonePuzzles.length) return i;
     }
@@ -1870,7 +1870,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
   })();
 
   // Building positions — spread across the village along the river
-  const buildings = [
+  const w1Buildings = [
     {x:240, y:530, zone:"pieces",    label:"Piece Power",    emoji:"♞"},
     {x:70,  y:470, zone:"pawns",     label:"Pawn Kingdom",   emoji:"♟️"},
     {x:242, y:442, zone:"openings",  label:"Open Strong",    emoji:"🏰"},
@@ -1881,6 +1881,18 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
     {x:75,  y:152, zone:"master",    label:"Master Moves",   emoji:"🌟"},
     {x:160, y:58,  zone:"rush",      label:"Puzzle Rush",    emoji:"⚡"},
   ];
+  const w2Buildings = [
+    {x:240, y:530, zone:"gate",    label:"Dragon's Gate",  emoji:"🐉"},
+    {x:70,  y:470, zone:"armory",  label:"Dark Armory",    emoji:"⚔️"},
+    {x:242, y:442, zone:"tower",   label:"Dark Tower",     emoji:"🗼"},
+    {x:68,  y:348, zone:"crypt",   label:"Shadow Crypt",   emoji:"💀"},
+    {x:232, y:285, zone:"lava",    label:"Lava Forge",     emoji:"🌋"},
+    {x:72,  y:228, zone:"spider",  label:"Spider Web",     emoji:"🕷️"},
+    {x:228, y:172, zone:"eye",     label:"Dragon's Eye",   emoji:"👁️"},
+    {x:75,  y:152, zone:"lair",    label:"Dragon's Lair",  emoji:"🐲"},
+    {x:160, y:58,  zone:"castle2", label:"Dark Castle",    emoji:"🏰"},
+  ];
+  const buildings = world===1 ? w1Buildings : w2Buildings;
 
   // Stone road winding through the village
   // Road split into two segments — bottom village + short approach to castle gate
@@ -1892,10 +1904,10 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
     <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       {/* Header */}
-      <div style={{background:"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px",flexShrink:0,boxShadow:"0 4px 0 #1b5e20",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-        <span style={{fontSize:16}}>🏰</span>
-        <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>CHESS VILLAGE</span>
-        <span style={{fontSize:16}}>🗺️</span>
+      <div style={{background:world===2?"linear-gradient(135deg,#7b241c,#c0392b)":"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px",flexShrink:0,boxShadow:world===2?"0 4px 0 #641e16":"0 4px 0 #1b5e20",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        <span style={{fontSize:16}}>{world===2?"🐉":"🏰"}</span>
+        <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>{world===2?"CHESS DUNGEON":"CHESS VILLAGE"}</span>
+        <span style={{fontSize:16}}>{world===2?"🗺️":"🗺️"}</span>
       </div>
 
       {/* Scrollable map */}
@@ -2103,19 +2115,19 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
 
           {/* ── ZONE BUILDINGS ── */}
           {buildings.map((b,i)=>{
-            const prevZone = i>0 ? ZONES[i-1] : null;
-            const prevPuzzles = prevZone ? PUZZLES.filter(p=>p.zone===prevZone.id) : [];
+            const prevZone = i>0 ? activeZones[i-1] : null;
+            const prevPuzzles = prevZone ? activePuzzles.filter(p=>p.zone===prevZone.id) : [];
             const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const locked = i===0 ? false : prevDone < prevPuzzles.length;
-            const zonePuzzles = PUZZLES.filter(p=>p.zone===b.zone);
+            const zonePuzzles = activePuzzles.filter(p=>p.zone===b.zone);
             const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const isHere = i===youAreHere;
             const pct = zonePuzzles.length ? (done/zonePuzzles.length)*100 : 0;
             const isComplete = done===zonePuzzles.length;
-            const zoneColor = ZONES[i]?.color || "#888";
+            const zoneColor = activeZones[i]?.color || "#888";
 
-            // Skip zone 9 (rush/castle) — drawn separately above
-            if(b.zone==="rush") return null;
+            // Skip last zone — drawn separately above
+            if(b.zone==="rush"||b.zone==="castle2") return null;
 
             return(
               <g key={b.zone} onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
@@ -2307,13 +2319,13 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
 
           {/* ── CASTLE ZONE (rush) — clickable overlay ── */}
           {(()=>{
-            const i = 8; // rush is index 8
+            const i = 8; // last zone index
             const b = buildings[i];
-            const prevZone = ZONES[i-1];
-            const prevPuzzles = PUZZLES.filter(p=>p.zone===prevZone.id);
+            const prevZone = activeZones[i-1];
+            const prevPuzzles = activePuzzles.filter(p=>p.zone===prevZone?.id);
             const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const locked = prevDone < prevPuzzles.length;
-            const zonePuzzles = PUZZLES.filter(p=>p.zone===b.zone);
+            const zonePuzzles = activePuzzles.filter(p=>p.zone===b.zone);
             const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const isHere = i===youAreHere;
             const isComplete = done===zonePuzzles.length;
@@ -2467,7 +2479,7 @@ function PuzzleScreen({puzzle, onComplete, onBack}){
               <button onClick={onBack} style={{flex:1,background:"#dfe6e9",border:"none",borderRadius:14,padding:"14px",color:"#2d3436",fontWeight:800,fontSize:14,cursor:"pointer",boxShadow:"0 4px 0 #b2bec3"}}>← Back</button>
               <button onClick={()=>{SFX.collect();onComplete(earned);}} style={{flex:2,background:"linear-gradient(135deg,#27ae60,#2ecc71)",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontWeight:900,fontSize:16,cursor:"pointer",boxShadow:"0 5px 0 #1e8449",animation:"bounceIn .4s .2s both"}}>
                 {(()=>{
-                  const zp=PUZZLES.filter(p=>p.zone===puzzle.zone);
+                  const zp=activePuzzles.filter(p=>p.zone===puzzle.zone);
                   const idx=zp.findIndex(p=>p.id===puzzle.id);
                   return idx<zp.length-1 ? "Next Puzzle →" : "Zone Complete! 🎉";
                 })()}
@@ -3309,7 +3321,7 @@ function ChessWorld(){
               onBack={()=>{setActivePuzzle(null);setTab(puzzleSource);}}
               onComplete={earned=>{
                 earnXp(earned, activePuzzle?.id);
-                const zonePuzzles=PUZZLES.filter(p=>p.zone===activePuzzle.zone);
+                const zonePuzzles=activePuzzles.filter(p=>p.zone===activePuzzle.zone);
                 const currentIdx=zonePuzzles.findIndex(p=>p.id===activePuzzle.id);
                 const nextPuzzle=zonePuzzles[currentIdx+1];
                 if(nextPuzzle){
