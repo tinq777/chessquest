@@ -3454,10 +3454,10 @@ function ChessWorld(){
                   setActivePuzzle(nextPuzzle);
                 } else {
                   SFX.zoneComplete();
-                  const zone = ZONES.find(z=>z.id===activePuzzle.zone);
-                  const lastZone = ZONES[ZONES.length-1];
+                  const zone = activeZones.find(z=>z.id===activePuzzle.zone);
+                  const lastZone = activeZones[activeZones.length-1];
                   if(zone?.id === lastZone?.id){
-                    // Last puzzle of the whole game!
+                    // Last puzzle of the whole world!
                     setActivePuzzle(null);
                     setTimeout(()=>setShowGameComplete(true), 600);
                   } else {
