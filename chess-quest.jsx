@@ -2254,6 +2254,99 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                         <text x="27" y="14" textAnchor="middle" fontSize="10">{lo?"🔒":"⛪"}</text>
                       </g>
                     );
+                    // ── World 2 dungeon buildings ──
+                    if(b.zone==="gate") return( // Dragon gate — stone arch
+                      <g>
+                        <rect x="8" y="20" width="16" height="34" rx="2" fill={lo?"#455a64":"#4a3728"}/>{/* left pillar */}
+                        <rect x="30" y="20" width="16" height="34" rx="2" fill={lo?"#455a64":"#4a3728"}/>{/* right pillar */}
+                        <path d="M8,22 Q27,6 46,22" fill={lo?"#37474f":"#6b4c3b"}/>{/* arch */}
+                        {!lo&&<><text x="27" y="19" textAnchor="middle" fontSize="12">🐉</text>
+                        <rect x="18" y="30" width="18" height="24" rx="2" fill="#2c1810"/>
+                        <rect x="21" y="32" width="12" height="18" rx="1" fill="#ff4400" opacity=".4"/>{/* lava glow */}
+                        {[10,20,30,40].map(bx=><rect key={bx} x={bx} y="16" width="4" height="6" rx="1" fill={lo?"#546e7a":"#6b4c3b"}/>)}</>}
+                        <text x="27" y="13" textAnchor="middle" fontSize="10">{lo?"🔒":"🔥"}</text>
+                      </g>
+                    );
+                    if(b.zone==="armory") return( // Dark forge/armory
+                      <g>
+                        <rect x="6" y="24" width="42" height="30" rx="3" fill={lo?"#546e7a":"#2d2d2d"}/>
+                        <polygon points="4,26 27,6 50,26" fill={lo?"#37474f":"#1a1a1a"}/>
+                        {!lo&&<><rect x="14" y="30" width="10" height="8" rx="1" fill="#ff6600" opacity=".7"/>
+                        <rect x="30" y="30" width="10" height="8" rx="1" fill="#ff4400" opacity=".6"/>
+                        <text x="27" y="46" textAnchor="middle" fontSize="9">⚔️🛡️</text></>}
+                        <rect x="20" y="40" width="14" height="14" rx="2" fill={lo?"#37474f":"#111"}/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"⚔️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="tower") return( // Dark tower — tall and narrow
+                      <g>
+                        <rect x="14" y="12" width="26" height="44" rx="3" fill={lo?"#546e7a":"#2d2d40"}/>
+                        {[14,20,26,32,38].map(bx=><rect key={bx} x={bx} y="8" width="4" height="8" rx="1" fill={lo?"#455a64":"#1a1a2e"}/>)}
+                        {!lo&&<><rect x="22" y="24" width="10" height="12" rx="5" fill="#6c5ce7" opacity=".8"/>
+                        <text x="27" y="33" textAnchor="middle" fontSize="9">🗼</text>
+                        <ellipse cx="27" cy="14" rx="10" ry="5" fill="#4a0080" opacity=".5"/></>}
+                        <rect x="20" y="44" width="14" height="12" rx="3" fill={lo?"#37474f":"#1a1a2e"}/>
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🌑"}</text>
+                      </g>
+                    );
+                    if(b.zone==="crypt") return( // Crypt — low stone tomb
+                      <g>
+                        <rect x="6" y="30" width="42" height="24" rx="2" fill={lo?"#546e7a":"#2c2c2c"}/>
+                        <polygon points="4,32 27,14 50,32" fill={lo?"#37474f":"#1c1c1c"}/>
+                        {!lo&&<><text x="27" y="28" textAnchor="middle" fontSize="10">💀</text>
+                        <rect x="22" y="36" width="10" height="14" rx="1" fill="#111"/>
+                        <rect x="25" y="34" width="4" height="2" fill="#666"/>{/* cross */}
+                        <rect x="23" y="36" width="8" height="2" fill="#666"/></>}
+                        {[8,14,30,36].map(cx=><rect key={cx} x={cx} y="34" width="5" height="8" rx="1" fill={lo?"#455a64":"#111"} opacity=".8"/>)}
+                        <text x="27" y="14" textAnchor="middle" fontSize="10">{lo?"🔒":"☠️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="lava") return( // Lava forge — volcanic
+                      <g>
+                        <rect x="8" y="26" width="38" height="28" rx="3" fill={lo?"#546e7a":"#3d1a00"}/>
+                        <polygon points="4,28 27,6 50,28" fill={lo?"#37474f":"#5c1a00"}/>
+                        {!lo&&<><ellipse cx="27" cy="52" rx="18" ry="5" fill="#ff4400" opacity=".5"/>
+                        <ellipse cx="27" cy="50" rx="10" ry="4" fill="#ff6600" opacity=".6"/>
+                        <text x="27" y="24" textAnchor="middle" fontSize="10">🌋</text>
+                        <text x="27" y="44" textAnchor="middle" fontSize="9">🔥</text></>}
+                        <rect x="20" y="36" width="14" height="14" rx="2" fill={lo?"#37474f":"#2c0f00"}/>
+                        <text x="27" y="6" textAnchor="middle" fontSize="10">{lo?"🔒":"🌋"}</text>
+                      </g>
+                    );
+                    if(b.zone==="spider") return( // Spider den — cave with webs
+                      <g>
+                        <path d="M4,54 Q10,20 27,14 Q44,20 50,54 Z" fill={lo?"#546e7a":"#1a1a1a"}/>{/* cave */}
+                        {!lo&&<><text x="27" y="26" textAnchor="middle" fontSize="12">🕷️</text>
+                        <line x1="16" y1="20" x2="38" y2="38" stroke="#555" strokeWidth="1" opacity=".6"/>
+                        <line x1="38" y1="20" x2="16" y2="38" stroke="#555" strokeWidth="1" opacity=".6"/>
+                        <line x1="27" y1="16" x2="27" y2="42" stroke="#555" strokeWidth="1" opacity=".6"/>
+                        <ellipse cx="27" cy="46" rx="8" ry="4" fill="#111" opacity=".8"/></>}
+                        <rect x="20" y="46" width="14" height="8" rx="4" fill={lo?"#37474f":"#0d0d0d"}/>
+                        <text x="27" y="12" textAnchor="middle" fontSize="10">{lo?"🔒":"🕸️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="eye") return( // Dragon's eye — ominous tower with eye
+                      <g>
+                        <rect x="12" y="16" width="30" height="40" rx="4" fill={lo?"#546e7a":"#2c0020"}/>
+                        {[12,18,24,30,36,42].map(bx=><rect key={bx} x={bx} y="12" width="4" height="8" rx="1" fill={lo?"#455a64":"#1a0014"}/>)}
+                        {!lo&&<><ellipse cx="27" cy="30" rx="10" ry="12" fill="#4a0060" opacity=".8"/>
+                        <ellipse cx="27" cy="30" rx="5" ry="7" fill="#cc00cc" opacity=".9"/>
+                        <ellipse cx="27" cy="30" rx="2" ry="4" fill="#111"/>
+                        <ellipse cx="27" cy="28" rx="1.5" ry="1.5" fill="#fff" opacity=".8"/></>}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"👁️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="lair") return( // Dragon's lair — cave mouth
+                      <g>
+                        <ellipse cx="27" cy="48" rx="24" ry="16" fill={lo?"#546e7a":"#1a0000"}/>{/* cave */}
+                        <path d="M4,48 Q6,28 14,20 Q20,14 27,12 Q34,14 40,20 Q48,28 50,48" fill={lo?"#455a64":"#2d0000"}/>
+                        {!lo&&<><text x="27" y="30" textAnchor="middle" fontSize="14">🐲</text>
+                        <ellipse cx="27" cy="50" rx="14" ry="5" fill="#ff2200" opacity=".4"/>
+                        {[10,20,34,44].map(fx=><text key={fx} x={fx} y="52" fontSize="8" opacity=".7">🔥</text>)}</>}
+                        {[8,16,24,30,38,46].map(tx=><polygon key={tx} points={`${tx},46 ${tx+3},38 ${tx+6},46`} fill={lo?"#37474f":"#4a0000"}/>)}{/* teeth */}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🔥"}</text>
+                      </g>
+                    );
                     if(b.zone==="master") return( // Grand manor
                       <g>
                         <rect x="4"  y="24" width="46" height="28" rx="3" fill={lo?"#546e7a":"#8B4513"}/>
