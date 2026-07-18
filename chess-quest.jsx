@@ -1713,7 +1713,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
               )}
             </div>
           );
-          if(!isActive&&isUnlocked&&i===world) return(
+          if(!isActive&&isUnlocked&&w.id===world+1) return(
             <button key={w.id} onClick={()=>onNav(`switchWorld:${w.id}`)} style={{width:"100%",background:`linear-gradient(135deg,${w.color}cc,${w.color})`,border:"3px solid rgba(255,255,255,.3)",borderRadius:18,padding:"12px 16px",cursor:"pointer",boxShadow:`0 6px 0 ${w.color}88`,display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
               <span style={{fontSize:28}}>{w.emoji}</span>
               <div style={{flex:1,textAlign:"left"}}>
@@ -3231,7 +3231,7 @@ function ChessWorld(){
   const activeWorld   = getWorld(world);
   const activeZones   = activeWorld.zones;
   const activePuzzles = activeWorld.puzzles;
-  const world1Done    = WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id));
+  const world1Done    = (completedIds||[]).length >= 3 || WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id));
   const prevWorldDone = world > 1 ? getWorld(world-1).puzzles.every(p=>(completedIds||[]).includes(p.id)) : true;
   const completed    = completedIds.length; // total count for display
 
