@@ -2554,7 +2554,7 @@ function BoardContainer({children}){
   );
 }
 
-function PuzzleScreen({puzzle, onComplete, onBack}){
+function PuzzleScreen({puzzle, onComplete, onBack, isLastInZone=false}){
   const [board,setBoard]=useState(puzzle.board.map(r=>r.slice()));
   const [selected,setSelected]=useState(null);
   const [targets,setTargets]=useState([]);
@@ -2640,11 +2640,7 @@ function PuzzleScreen({puzzle, onComplete, onBack}){
             <div style={{display:"flex",gap:10}}>
               <button onClick={onBack} style={{flex:1,background:"#dfe6e9",border:"none",borderRadius:14,padding:"14px",color:"#2d3436",fontWeight:800,fontSize:14,cursor:"pointer",boxShadow:"0 4px 0 #b2bec3"}}>← Back</button>
               <button onClick={()=>{SFX.collect();onComplete(earned);}} style={{flex:2,background:"linear-gradient(135deg,#27ae60,#2ecc71)",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontWeight:900,fontSize:16,cursor:"pointer",boxShadow:"0 5px 0 #1e8449",animation:"bounceIn .4s .2s both"}}>
-                {(()=>{
-                  const zp=activePuzzles.filter(p=>p.zone===puzzle.zone);
-                  const idx=zp.findIndex(p=>p.id===puzzle.id);
-                  return idx<zp.length-1 ? "Next Puzzle →" : "Zone Complete! 🎉";
-                })()}
+                {isLastInZone ? "Zone Complete! 🎉" : "Next Puzzle →"}
               </button>
             </div>
           </div>
@@ -3481,6 +3477,7 @@ function ChessWorld(){
           ? <PuzzleScreen
               key={activePuzzle.id}
               puzzle={activePuzzle}
+              isLastInZone={activePuzzles.filter(p=>p.zone===activePuzzle.zone).findIndex(p=>p.id===activePuzzle.id) >= activePuzzles.filter(p=>p.zone===activePuzzle.zone).length-1}
               onBack={()=>{setActivePuzzle(null);setTab(puzzleSource);}}
               onComplete={earned=>{
                 if(!activePuzzle) return;
