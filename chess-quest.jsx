@@ -1710,9 +1710,9 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
 
         {/* World banner — auto-generated from WORLDS registry */}
         {WORLDS.map((w,i)=>{
-          const prevDone = i===0 ? true : WORLDS[i-1].puzzles.every(p=>(completedIds||[]).includes(p.id));
           const isActive = world===w.id;
-          const isUnlocked = prevDone;
+          // For unlock: use world1Done prop (has dev threshold) for W2, real completion for later worlds
+          const isUnlocked = i===0 ? true : i===1 ? world1Done : WORLDS[i-1].puzzles.every(p=>(completedIds||[]).includes(p.id));
           if(isActive) return(
             <div key={w.id} style={{display:"flex",gap:8,marginBottom:14}}>
               {i>0&&<button onClick={()=>onNav(`switchWorld:${WORLDS[i-1].id}`)} style={{background:"linear-gradient(135deg,#1a3a6a,#0d2040)",border:"2px solid rgba(100,150,255,.3)",borderRadius:14,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
