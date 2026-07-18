@@ -217,17 +217,6 @@ function pickBlack(board, difficulty="medium"){
 // ═══════════════════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════════
-// WORLDS REGISTRY — add World 3/4 here only. Everything else
-// (awards, world switcher, completion) is auto-generated.
-// ═══════════════════════════════════════════════════════════
-const WORLDS=[
-  {id:1, label:"Chess Village", emoji:"🏰", zones:ZONES,  puzzles:PUZZLES,  color:"#27ae60", bg:"#1e8449"},
-  {id:2, label:"Chess Dungeon", emoji:"🐉", zones:ZONES2, puzzles:PUZZLES2, color:"#c0392b", bg:"#7b241c"},
-];
-function getWorld(id){ return WORLDS.find(w=>w.id===id)||WORLDS[0]; }
-
 const RANKS=[{name:"Pawn",min:0,icon:"♙",color:"#95a5a6"},{name:"Knight",min:300,icon:"♘",color:"#27ae60"},{name:"Bishop",min:600,icon:"♗",color:"#2980b9"},{name:"Rook",min:900,icon:"♖",color:"#8e44ad"},{name:"Queen",min:1200,icon:"♕",color:"#e67e22"},{name:"King",min:1500,icon:"♔",color:"#f1c40f"}];
 const getRank=xp=>[...RANKS].reverse().find(r=>xp>=r.min)||RANKS[0];
 const getNextRank=xp=>{const i=RANKS.findIndex(r=>r.min>xp);return i>=0?RANKS[i]:null;};
@@ -1304,7 +1293,15 @@ const PUZZLES=[
     solution:{from:{r:7,c:3},to:{r:5,c:4}},
     hint:"The Knight at d1 jumps in an L — 2 squares up and 1 across to reach e3!",xp:15},
 ];
-
+// ═══════════════════════════════════════════════════════════
+// WORLDS REGISTRY — add World 3/4 here only. Everything else
+// (awards, world switcher, completion) is auto-generated.
+// ═══════════════════════════════════════════════════════════
+const WORLDS=[
+  {id:1, label:"Chess Village", emoji:"🏰", zones:ZONES,  puzzles:PUZZLES,  color:"#27ae60", bg:"#1e8449"},
+  {id:2, label:"Chess Dungeon", emoji:"🐉", zones:ZONES2, puzzles:PUZZLES2, color:"#c0392b", bg:"#7b241c"},
+];
+function getWorld(id){ return WORLDS.find(w=>w.id===id)||WORLDS[0]; }
 
 
 function SpeechBubble({msg, mood="happy", showSpeaker=false}){
