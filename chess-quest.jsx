@@ -2025,7 +2025,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
       {/* Header */}
       <div style={{background:world===3?"linear-gradient(135deg,#880e4f,#e91e8c)":world===2?"linear-gradient(135deg,#7b241c,#c0392b)":"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px",flexShrink:0,boxShadow:world===3?"0 4px 0 #880e4f":world===2?"0 4px 0 #641e16":"0 4px 0 #1b5e20",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
         <span style={{fontSize:16}}>{world===3?"👸":world===2?"🐉":"🏰"}</span>
-        <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>{world===2?"CHESS DUNGEON":"CHESS VILLAGE"}</span>
+        <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>{world===3?"CHESS FAIRYTALE ✨":world===2?"CHESS DUNGEON":"CHESS VILLAGE"}</span>
         <span style={{fontSize:16}}>{world===2?"🗺️":"🗺️"}</span>
       </div>
 
@@ -2118,7 +2118,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           <polygon points="80,115 100,75 125,110"  fill="#5d6e7a" opacity=".6"/>
           <polygon points="200,115 220,70 240,110" fill="#546e7a" opacity=".55"/>
 
-          {/* ── CASTLE (on the hill) — World 1: medieval, World 2: dark dragon ── */}
+          {/* ── CASTLE (on the hill) — W1: medieval, W2: dark dragon, W3: fairytale ── */}
           {world===1 ? (
           <g transform="translate(95,18)" filter="url(#shadow)">
             <rect x="5"  y="60" width="120" height="55" rx="2" fill="#b0bec5"/>
@@ -2147,7 +2147,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             <rect x="30" y="55" width="16" height="60" rx="1" fill="#b0bec5"/>
             <rect x="84" y="55" width="16" height="60" rx="1" fill="#b0bec5"/>
           </g>
-          ) : (
+          ) : world===2 ? (
           <g transform="translate(95,18)" filter="url(#shadow)">
             {/* Dark Dragon Castle */}
             {/* Lava moat glow */}
@@ -2194,6 +2194,52 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             <rect x="84" y="52" width="16" height="63" rx="1" fill="#150505"/>
             {/* Lava drips */}
             {[20,45,85,110].map(lx=>(<ellipse key={lx} cx={lx} cy="117" rx="3" ry="5" fill="#ff4400" opacity=".5"/>))}
+          </g>
+          ) : (
+          <g transform="translate(95,18)" filter="url(#shadow)">
+            {/* Fairytale Castle — pink and magical */}
+            {/* Sparkle moat */}
+            <ellipse cx="65" cy="122" rx="68" ry="10" fill="#f48fb1" opacity=".3"/>
+            <ellipse cx="65" cy="122" rx="50" ry="6"  fill="#fce4ec" opacity=".25"/>
+            {/* Castle base — soft pink */}
+            <rect x="5"  y="60" width="120" height="55" rx="2" fill="#f8bbd9"/>
+            <rect x="5"  y="60" width="120" height="55" rx="2" fill="#fce4ec" opacity=".4"/>
+            {[0,1,2,3,4].map(row=>(<rect key={row} x="5" y={60+row*11} width="120" height="1" fill="#f48fb1" opacity=".4"/>))}
+            {/* Left tower */}
+            <rect x="0"  y="28" width="30" height="89" rx="3" fill="#f48fb1"/>
+            <rect x="100" y="28" width="30" height="89" rx="3" fill="#f48fb1"/>
+            {/* Centre tower */}
+            <rect x="45" y="8" width="40" height="109" rx="3" fill="#e91e8c"/>
+            <rect x="45" y="8" width="40" height="109" rx="3" fill="#fce4ec" opacity=".2"/>
+            {/* Rounded turret tops */}
+            <ellipse cx="15" cy="28" rx="16" ry="10" fill="#e91e8c"/>
+            <ellipse cx="115" cy="28" rx="16" ry="10" fill="#e91e8c"/>
+            <ellipse cx="65" cy="8" rx="22" ry="12" fill="#c2185b"/>
+            {/* Star battlements */}
+            {[2,8,14,22].map(bx=>(<text key={bx} x={bx} y="26" fontSize="7" fill="#fce4ec">⭐</text>))}
+            {[102,108,114,122].map(bx=>(<text key={bx} x={bx} y="26" fontSize="7" fill="#fce4ec">⭐</text>))}
+            {[46,54,62,70,78].map(bx=>(<text key={bx} x={bx} y="6" fontSize="6" fill="#fce4ec">✨</text>))}
+            {/* Princess flags */}
+            <rect x="14" y="2"  width="2" height="14" fill="#fff"/>
+            <text x="16" y="4" fontSize="9">👑</text>
+            <rect x="64" y="-14" width="2" height="16" fill="#fff"/>
+            <text x="66" y="-14" fontSize="11">👸</text>
+            {/* Pointed pink spires */}
+            <polygon points="15,28 0,28 30,28 15,4"   fill="#c2185b"/>
+            <polygon points="115,28 100,28 130,28 115,4" fill="#c2185b"/>
+            <polygon points="65,8 45,8 85,8 65,-18"  fill="#880e4f"/>
+            {/* Gate arch — sparkle glow */}
+            <path d="M50,117 L50,88 Q65,72 80,88 L80,117" fill="#c2185b"/>
+            <path d="M53,117 L53,90 Q65,77 77,90 L77,117" fill="#f8bbd9" opacity=".5"/>
+            {/* Heart windows */}
+            <text x="9"   y="56" textAnchor="middle" fontSize="12">💖</text>
+            <text x="115" y="56" textAnchor="middle" fontSize="12">💖</text>
+            <text x="65"  y="35" textAnchor="middle" fontSize="14">💎</text>
+            {/* Connecting walls */}
+            <rect x="30" y="52" width="16" height="63" rx="1" fill="#f06292"/>
+            <rect x="84" y="52" width="16" height="63" rx="1" fill="#f06292"/>
+            {/* Sparkle drips */}
+            {[15,40,90,115].map(lx=>(<text key={lx} x={lx} y="118" fontSize="8" opacity=".7">✨</text>))}
           </g>
           )}
 
