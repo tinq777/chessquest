@@ -2461,18 +2461,20 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             );
           })}
 
-          {/* ── CASTLE ZONE (rush) — clickable overlay ── */}
+          {/* ── CASTLE ZONE (last zone) — clickable overlay ── */}
           {(()=>{
-            const i = 8; // last zone index
+            const i = buildings.length - 1;
             const b = buildings[i];
-            const prevZone = activeZones[i-1];
-            const prevPuzzles = activePuzzles.filter(p=>p.zone===prevZone?.id);
+            if(!b) return null;
+            const prevZone = i>0 ? activeZones[i-1] : null;
+            const prevPuzzles = prevZone ? activePuzzles.filter(p=>p.zone===prevZone.id) : [];
             const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
-            const locked = prevDone < prevPuzzles.length;
+            const locked = i>0 && prevDone < prevPuzzles.length;
             const zonePuzzles = activePuzzles.filter(p=>p.zone===b.zone);
             const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const isHere = i===youAreHere;
-            const isComplete = done===zonePuzzles.length;
+            const isComplete = done===zonePuzzles.length && zonePuzzles.length>0;
+            const castleZoneColor = activeZones[i]?.color || "#e53935";
             return(
               <g onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
                 {/* Clickable area over castle */}
@@ -2494,7 +2496,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                   </g>
                 )}
                 {/* Label */}
-                <rect x="120" y="140" width="80" height="16" rx="8" fill={locked?"rgba(30,40,30,.8)":zoneColor||"#e53935"} opacity=".95"/>
+                <rect x="120" y="140" width="80" height="16" rx="8" fill={locked?"rgba(30,40,30,.8)":castleZoneColor} opacity=".95"/>
                 <text x="160" y="152" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900" fontFamily="sans-serif">{b.label.toUpperCase()} {b.emoji}</text>
                 {/* YOU ARE HERE on castle */}
                 {isHere&&(
