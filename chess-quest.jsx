@@ -1790,39 +1790,28 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
 
       <div style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"12px 16px 20px",WebkitOverflowScrolling:"touch"}}>
 
-        {/* World banner — auto-generated from WORLDS registry */}
-        {WORLDS.map((w,i)=>{
-          const isActive = world===w.id;
-          // For unlock: use world1Done prop (has dev threshold) for W2, real completion for later worlds
-          const isUnlocked = i===0 ? true : i===1 ? world1Done : WORLDS[i-1].puzzles.every(p=>(completedIds||[]).includes(p.id));
-          if(isActive) return(
-            <div key={w.id} style={{display:"flex",gap:8,marginBottom:14}}>
-              {i>0&&<button onClick={()=>onNav(`switchWorld:${WORLDS[i-1].id}`)} style={{background:"linear-gradient(135deg,#1a3a6a,#0d2040)",border:"2px solid rgba(100,150,255,.3)",borderRadius:14,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
-                <span>{WORLDS[i-1].emoji}</span><div style={{fontSize:11,fontWeight:900,color:"#fff"}}>← W{i}</div>
-              </button>}
-              <div style={{flex:1,background:`linear-gradient(135deg,${w.color}cc,${w.color})`,border:"2px solid rgba(255,255,255,.2)",borderRadius:14,padding:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                <span style={{fontSize:16}}>{w.emoji}</span>
-                <div style={{fontSize:12,fontWeight:900,color:"#fff"}}>{w.label} — Active</div>
-              </div>
-              {WORLDS[i+1]&&WORLDS[i].puzzles.every(p=>(completedIds||[]).includes(p.id))&&(
-                <button onClick={()=>onNav(`switchWorld:${WORLDS[i+1].id}`)} style={{background:`linear-gradient(135deg,${WORLDS[i+1].color}cc,${WORLDS[i+1].color})`,border:"2px solid rgba(255,255,255,.2)",borderRadius:14,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
-                  <span>{WORLDS[i+1].emoji}</span><div style={{fontSize:11,fontWeight:900,color:"#fff"}}>W{i+2} →</div>
-                </button>
-              )}
-            </div>
-          );
-          if(!isActive&&isUnlocked&&w.id===world+1) return(
-            <button key={w.id} onClick={()=>onNav(`switchWorld:${w.id}`)} style={{width:"100%",background:`linear-gradient(135deg,${w.color}cc,${w.color})`,border:"3px solid rgba(255,255,255,.3)",borderRadius:18,padding:"12px 16px",cursor:"pointer",boxShadow:`0 6px 0 ${w.color}88`,display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-              <span style={{fontSize:28}}>{w.emoji}</span>
-              <div style={{flex:1,textAlign:"left"}}>
-                <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>Continue Adventure!</div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,.8)",fontWeight:700}}>Enter {w.label} — World {w.id}</div>
-              </div>
-              <span style={{fontSize:18,color:"rgba(255,255,255,.7)"}}>→</span>
-            </button>
-          );
-          return null;
-        })}
+        {/* World selector — always visible, all worlds shown */}
+        <div style={{display:"flex",gap:6,marginBottom:14}}>
+          {WORLDS.map((w,i)=>{
+            const isActive = world===w.id;
+            const isUnlocked = i===0 ? true : i===1 ? world1Done : true; // all unlocked for testing
+            return(
+              <button key={w.id} onClick={()=>isUnlocked&&onNav(`switchWorld:${w.id}`)}
+                style={{flex:1,background:isActive?`linear-gradient(135deg,${w.color},${w.bg||w.color})`:"rgba(255,255,255,.1)",
+                  border:isActive?`3px solid rgba(255,255,255,.4)`:"2px solid rgba(255,255,255,.15)",
+                  borderRadius:14,padding:"10px 6px",cursor:isUnlocked?"pointer":"default",
+                  display:"flex",flexDirection:"column",alignItems:"center",gap:3,
+                  boxShadow:isActive?`0 4px 0 ${w.bg||w.color}88`:"none",
+                  opacity:isUnlocked?1:.4,
+                  transform:isActive?"scale(1.04)":"scale(1)",transition:"all .2s"}}>
+                <span style={{fontSize:20}}>{w.emoji}</span>
+                <div style={{fontSize:9,fontWeight:900,color:"#fff",letterSpacing:.5,textAlign:"center",lineHeight:1.2}}>
+                  W{w.id}{isActive?" ✓":""}
+                </div>
+              </button>
+            );
+          })}
+        </div>
         {/* Header row */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
           {/* Player avatar bubble */}
