@@ -1309,13 +1309,92 @@ const PUZZLES=[
     solution:{from:{r:7,c:3},to:{r:5,c:4}},
     hint:"The Knight at d1 jumps in an L — 2 squares up and 1 across to reach e3!",xp:15},
 ];
+
+const ZONES3=[
+  {id:"garden",  label:"Fairy Garden",  emoji:"🌸", color:"#e91e8c", light:"#f48fb1", bg:"#880e4f", desc:"Enchanted garden puzzles!"},
+  {id:"tower3",  label:"Princess Tower",emoji:"🏰", color:"#9c27b0", light:"#ce93d8", bg:"#6a1b9a", desc:"Tower of spells and pins!"},
+  {id:"forest",  label:"Magic Forest",  emoji:"🦄", color:"#2e7d32", light:"#a5d6a7", bg:"#1b5e20", desc:"Unicorn knight combos!"},
+  {id:"castle3", label:"Fairy Castle",  emoji:"👸", color:"#1565c0", light:"#90caf9", bg:"#0d47a1", desc:"Back rank attacks!"},
+  {id:"lake",    label:"Enchanted Lake",emoji:"🌊", color:"#00838f", light:"#80deea", bg:"#006064", desc:"Queen combinations!"},
+  {id:"dragon3", label:"Friendly Dragon",emoji:"🐉",color:"#e65100", light:"#ffcc80", bg:"#bf360c", desc:"Endgame tactics!"},
+  {id:"spell",   label:"Spell Tower",   emoji:"✨", color:"#6a1b9a", light:"#e1bee7", bg:"#4a148c", desc:"Advanced magic tactics!"},
+  {id:"palace",  label:"Royal Palace",  emoji:"👑", color:"#f57f17", light:"#fff176", bg:"#e65100", desc:"Complex checkmates!"},
+  {id:"crown",   label:"Crown Jewels",  emoji:"💎", color:"#880e4f", light:"#f48fb1", bg:"#4a0026", desc:"Master fairy moves!"},
+];
+const PUZZLES3=[
+  {id:201,zone:"garden",title:"Princess Fork!",desc:"The Princess Queen can attack King AND Rook at once!",emoji:"👸",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"br",null,null],[null,null,null,null,null,null,null,null],[null,"wq",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:1,toRow:1,toCol:5,hint:"Queen b3 swoops to f7 — checks King AND attacks the Rook!",xp:30},
+  {id:202,zone:"garden",title:"Magic Bishop!",desc:"Your enchanted Bishop captures the enemy piece!",emoji:"🔮",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bb",null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wb",null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:1,toRow:4,toCol:3,hint:"Bishop b2 glides to d4 — captures the enemy Bishop!",xp:30},
+  {id:203,zone:"garden",title:"Fairy Rook!",desc:"Your Rook flies to the back rank — the King is trapped!",emoji:"🧚",board:[["bk",null,null,null,null,null,null,null],["bp","bp",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wr",null]],fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 flies to g8 — the King is trapped!",xp:30},
+  {id:204,zone:"garden",title:"Enchanted Knight!",desc:"Your Knight leaps to fork King and Queen!",emoji:"🦄",board:[[null,null,null,null,null,null,null,null],[null,null,"bk",null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:4,fromCol:5,toRow:3,toCol:3,hint:"Knight f4 leaps to d5 — forks King on c7 AND Queen on e7!",xp:35},
+  {id:205,zone:"garden",title:"Crystal Queen!",desc:"Your Queen shines across the board to win material!",emoji:"💎",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wq",null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:3,toRow:3,toCol:3,hint:"Queen d3 swoops to d5 — captures the enemy Queen!",xp:35},
+  {id:206,zone:"garden",title:"Wishing Well Check!",desc:"Give check and the Rook is yours!",emoji:"⭐",board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 flies to h8 — gives check AND wins the Rook!",xp:30},
+  {id:207,zone:"garden",title:"Flower Pin!",desc:"The enemy Knight is pinned to its King — take it!",emoji:"🌸",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,"bn",null,null,null,null,null],[null,null,null,null,null,null,null,null],["wb",null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:0,toRow:4,toCol:2,hint:"Bishop a2 steps to c4 — the pinned Knight falls!",xp:35},
+  {id:208,zone:"tower3",title:"Rapunzel's Rook!",desc:"Rook climbs to the 7th rank and wins the pawn!",emoji:"🏰",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:7,fromCol:4,toRow:1,toCol:4,hint:"Rook e1 charges to e7 — wins the pawn!",xp:35},
+  {id:209,zone:"tower3",title:"Magic Skewer!",desc:"Attack the King — the piece behind it is yours!",emoji:"✨",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk","wq",null,null,null,null,null,null]],fromRow:7,fromCol:1,toRow:1,toCol:7,hint:"Queen b1 streaks to h7 — skewers the King!",xp:40},
+  {id:210,zone:"tower3",title:"Spell of the Pin!",desc:"The Queen is pinned — your Rook takes it!",emoji:"🔮",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:7,fromCol:4,toRow:1,toCol:4,hint:"Rook e1 charges to e7 — the pinned Queen falls!",xp:40},
+  {id:211,zone:"tower3",title:"Princess Knight Fork!",desc:"One Knight move attacks King AND Rook!",emoji:"👑",board:[[null,null,null,null,null,null,null,null],[null,null,null,"bk",null,"br",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"wn",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:4,fromCol:2,toRow:3,toCol:4,hint:"Knight c4 hops to e5 — forks King on d7 AND Rook on f7!",xp:40},
+  {id:212,zone:"tower3",title:"Fairy Discovered Attack!",desc:"Move the Bishop to reveal a hidden attack!",emoji:"🧚",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wb",null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:6,fromCol:4,toRow:4,toCol:6,hint:"Bishop e2 steps to g4 — reveals the Rook's attack!",xp:40},
+  {id:213,zone:"tower3",title:"Tower Checkmate!",desc:"Rook to the 8th gives check — King is trapped!",emoji:"🏰",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,"wr",null,null]],fromRow:7,fromCol:5,toRow:0,toCol:5,hint:"Rook f1 slams to f8 — the King is trapped!",xp:40},
+  {id:214,zone:"tower3",title:"Magic Queen Invasion!",desc:"Your Queen storms the 7th rank!",emoji:"💫",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wq",null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:3,toRow:1,toCol:3,hint:"Queen d3 advances to d7 — a crushing invasion!",xp:40},
+  {id:215,zone:"forest",title:"Unicorn Knight!",desc:"Your Knight gallops to fork King and Queen!",emoji:"🦄",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"wn",null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:2,toRow:3,toCol:3,hint:"Knight c3 leaps to d5 — threatens the Queen AND controls the centre!",xp:35},
+  {id:216,zone:"forest",title:"Pixie Fork!",desc:"Your Knight attacks King AND Rook in one leap!",emoji:"🧚",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"br"],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:4,toRow:3,toCol:5,hint:"Knight e3 hops to f5 — forks King on g7 AND Rook on h4!",xp:40},
+  {id:217,zone:"forest",title:"Forest Knight Wins!",desc:"Capture the undefended enemy Knight!",emoji:"🌲",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bn",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:4,toRow:3,toCol:3,hint:"Knight e3 jumps to d5 — captures the enemy Knight!",xp:35},
+  {id:218,zone:"forest",title:"Fairy Check!",desc:"Knight springs forward to give a powerful check!",emoji:"✨",board:[[null,null,null,null,null,null,null,null],[null,null,null,"bk",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:5,toRow:3,toCol:4,hint:"Knight f3 springs to e5 — checks the King on d7!",xp:35},
+  {id:219,zone:"forest",title:"Woodland Fork!",desc:"Knight attacks King AND Queen — a fairy fork!",emoji:"🌸",board:[[null,null,null,null,null,null,null,null],[null,null,"bk",null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:4,fromCol:5,toRow:3,toCol:3,hint:"Knight f4 leaps to d5 — forks King AND Queen!",xp:45},
+  {id:220,zone:"forest",title:"Magic Capture!",desc:"Your Knight takes the unguarded Rook!",emoji:"🔮",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"br",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wn",null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:6,toRow:3,toCol:5,hint:"Knight g3 jumps to f5 — captures the Rook!",xp:40},
+  {id:221,zone:"forest",title:"Enchanted Fork!",desc:"One move forks the enemy King and Rook!",emoji:"🦄",board:[[null,null,null,null,null,null,null,null],[null,null,null,"bk",null,"br",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"wn",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:4,fromCol:2,toRow:3,toCol:4,hint:"Knight c4 hops to e5 — forks King AND Rook!",xp:45},
+  {id:222,zone:"castle3",title:"Castle Rook!",desc:"Storm the back rank with your Rook!",emoji:"🏰",board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,"bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:7,fromCol:4,toRow:1,toCol:4,hint:"Rook e1 storms to e7 — wins the pawn!",xp:40},
+  {id:223,zone:"castle3",title:"Princess Checkmate!",desc:"Rook to the 8th — the King is cornered!",emoji:"👸",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,"wr",null,null]],fromRow:7,fromCol:5,toRow:0,toCol:5,hint:"Rook f1 slams to f8 — the King is trapped!",xp:40},
+  {id:224,zone:"castle3",title:"Royal Invasion!",desc:"Queen storms the 7th — a royal decree!",emoji:"👑",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wq",null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:3,toRow:1,toCol:3,hint:"Queen d3 invades to d7!",xp:40},
+  {id:225,zone:"castle3",title:"Enchanted Net!",desc:"Rook to the 8th — checkmate!",emoji:"✨",board:[["bk",null,null,null,null,null,null,null],["bp",null,null,null,null,null,null,null],[null,null,"wk",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 charges to h8 — checkmate!",xp:45},
+  {id:226,zone:"castle3",title:"Fairy Queen Mate!",desc:"Queen delivers smothered checkmate!",emoji:"🧚",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 sweeps to g7 — checkmate!",xp:45},
+  {id:227,zone:"castle3",title:"Magic Rook Check!",desc:"Give check AND win the enemy Rook!",emoji:"💫",board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 flies to h8 — check AND wins the Rook!",xp:40},
+  {id:228,zone:"castle3",title:"Princess Invasion!",desc:"Queen storms the back rank for a decisive check!",emoji:"👸",board:[[null,null,null,"bk",null,null,null,null],[null,null,null,"bp",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wq",null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:3,toRow:1,toCol:3,hint:"Queen d3 rockets to d7 — check!",xp:45},
+  {id:229,zone:"lake",title:"Lake Queen Check!",desc:"Drive your Queen for a powerful check!",emoji:"🌊",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wq",null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:4,toRow:1,toCol:4,hint:"Queen e3 charges to e7 — check!",xp:35},
+  {id:230,zone:"lake",title:"Mermaid Fork!",desc:"Queen checks King AND attacks the Rook!",emoji:"🧜",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"br",null,null],[null,null,null,null,null,null,null,null],[null,"wq",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:1,toRow:1,toCol:5,hint:"Queen b3 swoops to f7 — fork!",xp:45},
+  {id:231,zone:"lake",title:"Waterfall Slash!",desc:"Queen slices diagonally to win the Rook!",emoji:"💧",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"br",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wq",null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:6,toRow:3,toCol:3,hint:"Queen g2 slashes to d5 — captures the Rook!",xp:40},
+  {id:232,zone:"lake",title:"Lake Magic Wins!",desc:"Your Queen captures the undefended enemy Bishop!",emoji:"🌙",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bb",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wq",null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:0,toRow:3,toCol:3,hint:"Queen a2 slices to d5 — captures the Bishop!",xp:40},
+  {id:233,zone:"lake",title:"Crystal Check!",desc:"Queen gives a dazzling check!",emoji:"💎",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"bk",null,null,null,null,null],[null,"bp",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wq",null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:5,toRow:3,toCol:3,hint:"Queen f3 sweeps to d5 — check!",xp:40},
+  {id:234,zone:"lake",title:"Mirror Queen!",desc:"Capture the enemy Queen for a huge gain!",emoji:"🪞",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wq",null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:6,toRow:3,toCol:3,hint:"Queen g2 slices to d5 — captures the Queen!",xp:45},
+  {id:235,zone:"lake",title:"Lake Invasion!",desc:"Queen invades the back rank!",emoji:"🌊",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Queen g1 rockets to g8 — back rank invasion!",xp:45},
+  {id:236,zone:"dragon3",title:"Dragon's Treasure!",desc:"Win the enemy pawn — take the treasure!",emoji:"🐉",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:7,fromCol:4,toRow:1,toCol:4,hint:"Rook e1 to e7 — wins the pawn!",xp:40},
+  {id:237,zone:"dragon3",title:"Dragon Fire Bishop!",desc:"Bishop fires down the longest diagonal!",emoji:"🔥",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wb",null,null,null,null,null,null,"wk"]],fromRow:7,fromCol:0,toRow:1,toCol:6,hint:"Bishop a1 fires all the way to g7!",xp:40},
+  {id:238,zone:"dragon3",title:"Dragon Rook 7th!",desc:"Rook invades the 7th rank!",emoji:"🐲",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,"bp",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk","wr",null,null,null,null,null,null]],fromRow:7,fromCol:1,toRow:1,toCol:1,hint:"Rook b1 invades to b7 — rules the 7th!",xp:40},
+  {id:239,zone:"dragon3",title:"Firebreath Bishop!",desc:"Bishop captures the unguarded Rook!",emoji:"🔥",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wb",null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:4,toRow:3,toCol:7,hint:"Bishop e2 slices to h5 — captures the Rook!",xp:40},
+  {id:240,zone:"dragon3",title:"Dragon Cuts Off King!",desc:"Your Rook cuts off the enemy King!",emoji:"⚔️",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:1,toCol:7,hint:"Rook h1 to h7 — cuts the King off!",xp:40},
+  {id:241,zone:"dragon3",title:"Dragon's Eye!",desc:"Bishop to the centre — a powerful outpost!",emoji:"👁️",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wb",null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:1,toRow:4,toCol:3,hint:"Bishop b2 glides to d4 — powerful central outpost!",xp:35},
+  {id:242,zone:"dragon3",title:"Dragon Wins Rook!",desc:"Rook captures the unprotected enemy Rook!",emoji:"🐉",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"br",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:7,fromCol:4,toRow:3,toCol:4,hint:"Rook e1 slides to e5 — captures the undefended Rook!",xp:40},
+  {id:243,zone:"spell",title:"Spell of the Queen!",desc:"Your Queen captures the hanging enemy Queen!",emoji:"✨",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"bq",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wq",null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:5,fromCol:3,toRow:3,toCol:1,hint:"Queen d3 swoops to b5 — captures enemy Queen and gives check!",xp:45},
+  {id:244,zone:"spell",title:"Unicorn Discovery!",desc:"Move your Bishop to reveal a hidden attack!",emoji:"🦄",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wb",null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:6,fromCol:4,toRow:4,toCol:6,hint:"Bishop e2 steps to g4 — reveals the Rook attack!",xp:45},
+  {id:245,zone:"spell",title:"Fairy Checkmate!",desc:"Queen delivers checkmate — King smothered!",emoji:"🧚",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 sweeps to g7 — checkmate!",xp:50},
+  {id:246,zone:"spell",title:"Magic Rook!",desc:"Rook cuts to the 8th — King is trapped!",emoji:"🔮",board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 cuts to h8 — the King is trapped!",xp:45},
+  {id:247,zone:"spell",title:"Pixie Invasion!",desc:"Queen deep into enemy territory!",emoji:"🌟",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Queen g1 blasts to g8 — back rank invasion!",xp:45},
+  {id:248,zone:"spell",title:"Crystal Bishop!",desc:"Bishop captures the enemy Queen!",emoji:"💎",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wb",null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:6,toRow:3,toCol:3,hint:"Bishop g2 slashes to d5 — captures the Queen!",xp:50},
+  {id:249,zone:"spell",title:"Knight Enchantment!",desc:"Knight springs to give a magical check!",emoji:"✨",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,"bk",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wn",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:4,fromCol:3,toRow:2,toCol:4,hint:"Knight d4 springs to e6 — forking check!",xp:45},
+  {id:250,zone:"palace",title:"Royal Corridor Mate!",desc:"Rook to the back rank — corridor checkmate!",emoji:"👑",board:[["bk",null,null,null,null,null,null,null],["bp",null,null,null,null,null,null,null],[null,null,"wk",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wr",null]],fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 to g8 — checkmate!",xp:50},
+  {id:251,zone:"palace",title:"Arabian Mate!",desc:"Knight and Rook — the classic Arabian Mate!",emoji:"⚔️",board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wn"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wr",null]],fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Rook g1 to g7 — Arabian Mate!",xp:50},
+  {id:252,zone:"palace",title:"Princess Smothered!",desc:"Knight delivers smothered checkmate!",emoji:"👸",board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,"wr",null,null]],fromRow:3,fromCol:4,toRow:1,toCol:5,hint:"Knight e5 leaps to f7 — smothered checkmate!",xp:55},
+  {id:253,zone:"palace",title:"Queen Diagonal Check!",desc:"Queen gives a diagonal check — King in danger!",emoji:"💫",board:[["bk",null,null,null,null,null,null,null],[null,"bp",null,null,null,null,null,null],[null,null,null,"wk",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wq"]],fromRow:7,fromCol:7,toRow:1,toCol:1,hint:"Queen h1 slices to b7 — check!",xp:50},
+  {id:254,zone:"palace",title:"Back Rank Palace!",desc:"Rook crashes to the back rank!",emoji:"🏰",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,"bp","bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wr",null]],fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 crashes to g8 — the King is caught!",xp:50},
+  {id:255,zone:"palace",title:"Fairy Queen Smothers!",desc:"Queen delivers the royal checkmate!",emoji:"🧚",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 blazes to g7 — checkmate!",xp:55},
+  {id:256,zone:"palace",title:"Anastasia's Mate!",desc:"Knight and Rook — the classic pattern!",emoji:"⚔️",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 to h8 — Anastasia's Mate!",xp:50},
+  {id:257,zone:"crown",title:"Crown Discovery!",desc:"Bishop reveals a hidden Rook attack!",emoji:"👑",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wb",null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:6,fromCol:4,toRow:4,toCol:6,hint:"Bishop e2 steps to g4 — reveals the Rook!",xp:55},
+  {id:258,zone:"crown",title:"Royal Rook Wins!",desc:"Rook captures and gives check!",emoji:"👸",board:[[null,null,null,null,"bk",null,null,"br"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null]],fromRow:7,fromCol:4,toRow:0,toCol:4,hint:"Rook e1 to e8 — captures AND gives check!",xp:55},
+  {id:259,zone:"crown",title:"Crown Windmill!",desc:"Launch your Rook to the back rank!",emoji:"✨",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 to h8 — check!",xp:55},
+  {id:260,zone:"crown",title:"Fairy Final Mate!",desc:"Deliver the checkmate — smothered!",emoji:"🧚",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 sweeps to g7 — smothered checkmate!",xp:60},
+  {id:261,zone:"crown",title:"Princess Rook Mate!",desc:"Rook to the 8th — back rank checkmate!",emoji:"👸",board:[["bk",null,null,null,null,null,null,null],["bp",null,null,null,null,null,null,null],[null,null,"wk",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wr",null]],fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 to g8 — checkmate!",xp:55},
+  {id:262,zone:"crown",title:"Dragon Bishop Mate!",desc:"Bishop fires the long diagonal — checkmate!",emoji:"🐉",board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,"bp","bp",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wb",null,null,null,null,null,null,"wk"]],fromRow:7,fromCol:0,toRow:1,toCol:6,hint:"Bishop a1 fires to g7 — checkmate!",xp:60},
+  {id:263,zone:"crown",title:"The Fairytale Champion!",desc:"Deliver the final checkmate — you win the Fairytale!",emoji:"👑",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 blazes to g7 — CHECKMATE! The Fairytale is complete!",xp:60},
+];
+
 // ═══════════════════════════════════════════════════════════
 // WORLDS REGISTRY — add World 3/4 here only. Everything else
 // (awards, world switcher, completion) is auto-generated.
 // ═══════════════════════════════════════════════════════════
 const WORLDS=[
-  {id:1, label:"Chess Village", emoji:"🏰", zones:ZONES,  puzzles:PUZZLES,  color:"#27ae60", bg:"#1e8449"},
-  {id:2, label:"Chess Dungeon", emoji:"🐉", zones:ZONES2, puzzles:PUZZLES2, color:"#c0392b", bg:"#7b241c"},
+  {id:1, label:"Chess Village",  emoji:"🏰", zones:ZONES,  puzzles:PUZZLES,  color:"#27ae60", bg:"#1e8449"},
+  {id:2, label:"Chess Dungeon",  emoji:"🐉", zones:ZONES2, puzzles:PUZZLES2, color:"#c0392b", bg:"#7b241c"},
+  {id:3, label:"Chess Fairytale",emoji:"👸", zones:ZONES3, puzzles:PUZZLES3, color:"#e91e8c", bg:"#880e4f"},
 ];
 function getWorld(id){ return WORLDS.find(w=>w.id===id)||WORLDS[0]; }
 
@@ -1683,7 +1762,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
     <div style={{height:"100%", background:world===2?"#0d0010":"#5dade2", position:"relative", display:"flex", flexDirection:"column", overflow:"hidden"}}>
 
       {/* Sky/dungeon background */}
-      <div style={{position:"absolute",inset:0,background:world===2?"linear-gradient(180deg,#0d0010 0%,#1a0a0a 40%,#3d0000 40%,#1a0000 100%)":"linear-gradient(180deg,#85c1e9 0%,#5dade2 50%,#27ae60 50%,#1e8449 100%)"}}/>
+      <div style={{position:"absolute",inset:0,background:world===3?"linear-gradient(180deg,#fce4ec 0%,#f8bbd9 40%,#a5d6a7 40%,#81c784 100%)":world===2?"linear-gradient(180deg,#0d0010 0%,#1a0a0a 40%,#3d0000 40%,#1a0000 100%)":"linear-gradient(180deg,#85c1e9 0%,#5dade2 50%,#27ae60 50%,#1e8449 100%)"}}/>
 
       {/* Clouds (W1) / Embers (W2) */}
       {world===1&&[[8,8,0.9],[55,5,0.7],[72,12,0.8]].map(([x,y,o],i)=>(
@@ -1695,6 +1774,9 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
           </div>
         </div>
       ))}
+      {world===3&&["🌸","✨","🦄","💫","🌟"].map((e,i)=>(
+        <div key={i} style={{position:"absolute",left:`${10+i*20}%`,top:`${5+i*4}%`,fontSize:18+i*4,opacity:0.3,animation:`cloudDrift ${4+i*1.5}s ease-in-out infinite alternate`}}>{e}</div>
+      ))}
       {world===2&&["🔥","💀","🐉","⚔️","🔥"].map((e,i)=>(
         <div key={i} style={{position:"absolute",left:`${10+i*20}%`,top:`${5+i*4}%`,fontSize:18+i*4,opacity:0.25,animation:`cloudDrift ${4+i*1.5}s ease-in-out infinite alternate`}}>{e}</div>
       ))}
@@ -1702,7 +1784,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
       {/* Curved divider */}
       <div style={{position:"absolute",top:"38%",left:0,right:0,height:60,overflow:"hidden"}}>
         <svg viewBox="0 0 400 60" preserveAspectRatio="none" style={{width:"100%",height:"100%"}}>
-          <path d="M0,30 Q100,0 200,30 Q300,60 400,30 L400,60 L0,60 Z" fill={world===2?"#3d0000":"#27ae60"}/>
+          <path d="M0,30 Q100,0 200,30 Q300,60 400,30 L400,60 L0,60 Z" fill={world===3?"#81c784":world===2?"#3d0000":"#27ae60"}/>
         </svg>
       </div>
 
@@ -1826,12 +1908,12 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
         </div>
 
         {/* Zone grid */}
-        <div style={{background:world===2?"rgba(80,0,0,.4)":"rgba(255,255,255,.12)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:world===2?"2px solid rgba(255,80,80,.25)":"2px solid rgba(255,255,255,.2)",marginBottom:8}}>
+        <div style={{background:world===3?"rgba(233,30,140,.15)":world===2?"rgba(80,0,0,.4)":"rgba(255,255,255,.12)",backdropFilter:"blur(8px)",borderRadius:24,padding:"16px 12px",border:world===3?"2px solid rgba(233,30,140,.3)":world===2?"2px solid rgba(255,80,80,.25)":"2px solid rgba(255,255,255,.2)",marginBottom:8}}>
           {/* Title */}
-          <div style={{fontSize:12,fontWeight:900,color:world===2?"rgba(255,150,150,.95)":"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center"}}>
-            <span style={{display:"inline-block",animation:"mascotFloat 2s ease-in-out infinite"}}>{world===2?"🐉":"🏰"}</span>
-            {world===2?" CHESS DUNGEON ":" CHESS VILLAGE "}
-            <span style={{display:"inline-block",animation:"mascotFloat 2.5s ease-in-out infinite reverse"}}>{world===2?"🏰":"🏠"}</span>
+          <div style={{fontSize:12,fontWeight:900,color:world===3?"rgba(233,30,140,.95)":world===2?"rgba(255,150,150,.95)":"rgba(255,255,255,.95)",letterSpacing:2,marginBottom:12,textAlign:"center"}}>
+            <span style={{display:"inline-block",animation:"mascotFloat 2s ease-in-out infinite"}}>{world===3?"👸":world===2?"🐉":"🏰"}</span>
+            {world===3?" CHESS FAIRYTALE ✨":world===2?" CHESS DUNGEON ":" CHESS VILLAGE "}
+            <span style={{display:"inline-block",animation:"mascotFloat 2.5s ease-in-out infinite reverse"}}>{world===3?"🌸":world===2?"🏰":"🏠"}</span>
           </div>
           {/* 3-column grid of zones */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
@@ -1929,7 +2011,18 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
     {x:75,  y:152, zone:"lair",    label:"Dragon's Lair",  emoji:"🐲"},
     {x:160, y:58,  zone:"castle2", label:"Dark Castle",    emoji:"🏰"},
   ];
-  const buildings = world===1 ? w1Buildings : w2Buildings;
+  const w3Buildings = [
+    {x:240, y:530, zone:"garden",  label:"Fairy Garden",   emoji:"🌸"},
+    {x:70,  y:470, zone:"tower3",  label:"Princess Tower", emoji:"🏰"},
+    {x:242, y:442, zone:"forest",  label:"Magic Forest",   emoji:"🦄"},
+    {x:68,  y:348, zone:"castle3", label:"Fairy Castle",   emoji:"👸"},
+    {x:232, y:285, zone:"lake",    label:"Enchanted Lake", emoji:"🌊"},
+    {x:72,  y:228, zone:"dragon3", label:"Friendly Dragon",emoji:"🐉"},
+    {x:228, y:172, zone:"spell",   label:"Spell Tower",    emoji:"✨"},
+    {x:75,  y:152, zone:"palace",  label:"Royal Palace",   emoji:"👑"},
+    {x:160, y:58,  zone:"crown",   label:"Crown Jewels",   emoji:"💎"},
+  ];
+  const buildings = world===1 ? w1Buildings : world===2 ? w2Buildings : w3Buildings;
 
   // Stone road winding through the village
   // Road split into two segments — bottom village + short approach to castle gate
@@ -1941,8 +2034,8 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
     <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       {/* Header */}
-      <div style={{background:world===2?"linear-gradient(135deg,#7b241c,#c0392b)":"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px",flexShrink:0,boxShadow:world===2?"0 4px 0 #641e16":"0 4px 0 #1b5e20",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-        <span style={{fontSize:16}}>{world===2?"🐉":"🏰"}</span>
+      <div style={{background:world===3?"linear-gradient(135deg,#880e4f,#e91e8c)":world===2?"linear-gradient(135deg,#7b241c,#c0392b)":"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px",flexShrink:0,boxShadow:world===3?"0 4px 0 #880e4f":world===2?"0 4px 0 #641e16":"0 4px 0 #1b5e20",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        <span style={{fontSize:16}}>{world===3?"👸":world===2?"🐉":"🏰"}</span>
         <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>{world===2?"CHESS DUNGEON":"CHESS VILLAGE"}</span>
         <span style={{fontSize:16}}>{world===2?"🗺️":"🗺️"}</span>
       </div>
@@ -1953,9 +2046,9 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           <defs>
             {/* Sky gradient — golden hour light */}
             <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor={world===2?"#0d0010":"#87ceeb"}/>
-              <stop offset="55%"  stopColor={world===2?"#1a0010":"#b0dff5"}/>
-              <stop offset="100%" stopColor={world===2?"#2d0000":"#ddeeff"}/>
+              <stop offset="0%"   stopColor={world===3?"#fce4ec":world===2?"#0d0010":"#87ceeb"}/>
+              <stop offset="55%"  stopColor={world===3?"#f8bbd9":world===2?"#1a0010":"#b0dff5"}/>
+              <stop offset="100%" stopColor={world===3?"#f48fb1":world===2?"#2d0000":"#ddeeff"}/>
             </linearGradient>
             {/* Ground/grass */}
             <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1">
@@ -1997,35 +2090,36 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           {/* Clouds (W1) / Smoke (W2) */}
           {[[55,30,1],[160,18,.85],[250,42,.75],[110,65,.7],[285,25,.8]].map(([cx,cy,op],i)=>(
             <g key={i} opacity={op}>
-              <ellipse cx={cx}    cy={cy}    rx={28+i*4} ry={10+i*2} fill={world===2?"#1a0000":"#fff"}/>
-              <ellipse cx={cx-10} cy={cy-5}  rx={15+i*2} ry={12+i*2} fill={world===2?"#2d0000":"#fff"}/>
-              <ellipse cx={cx+12} cy={cy-4}  rx={16+i*2} ry={10+i*1} fill={world===2?"#220000":"#fff"}/>
+              <ellipse cx={cx}    cy={cy}    rx={28+i*4} ry={10+i*2} fill={world===3?"#fce4ec":world===2?"#1a0000":"#fff"}/>
+              <ellipse cx={cx-10} cy={cy-5}  rx={15+i*2} ry={12+i*2} fill={world===3?"#fce4ec":world===2?"#2d0000":"#fff"}/>
+              <ellipse cx={cx+12} cy={cy-4}  rx={16+i*2} ry={10+i*1} fill={world===3?"#fce4ec":world===2?"#220000":"#fff"}/>
             </g>
           ))}
 
           {/* Sun (W1) / Blood Moon (W2) */}
-          <circle cx="40" cy="45" r="28" fill={world===2?"#5c0000":"#fff9c4"} opacity=".6" filter="url(#softglow)"/>
-          <circle cx="40" cy="45" r="20" fill={world===2?"#8b0000":"#ffee58"} opacity=".9"/>
-          <circle cx="40" cy="45" r="14" fill={world===2?"#cc0000":"#fdd835"}/>
+          <circle cx="40" cy="45" r="28" fill={world===3?"#fce4ec":world===2?"#5c0000":"#fff9c4"} opacity=".6" filter="url(#softglow)"/>
+          <circle cx="40" cy="45" r="20" fill={world===3?"#f48fb1":world===2?"#8b0000":"#ffee58"} opacity=".9"/>
+          <circle cx="40" cy="45" r="14" fill={world===3?"#e91e8c":world===2?"#cc0000":"#fdd835"}/>
           {world===2&&<text x="40" y="52" textAnchor="middle" fontSize="16">🌑</text>}
+          {world===3&&<text x="40" y="52" textAnchor="middle" fontSize="16">🌸</text>}
 
           {/* ── FAR BACKGROUND MOUNTAINS ── */}
-          <polygon points="0,200 60,90 120,200"   fill={world===2?"#2d0000":"#90a4ae"} opacity=".45"/>
-          <polygon points="50,200 140,75 230,200"  fill={world===2?"#1a0000":"#78909c"} opacity=".4"/>
-          <polygon points="180,200 270,88 320,200" fill={world===2?"#2d0000":"#90a4ae"} opacity=".38"/>
+          <polygon points="0,200 60,90 120,200"   fill={world===3?"#f48fb1":world===2?"#2d0000":"#90a4ae"} opacity=".45"/>
+          <polygon points="50,200 140,75 230,200"  fill={world===3?"#f06292":world===2?"#1a0000":"#78909c"} opacity=".4"/>
+          <polygon points="180,200 270,88 320,200" fill={world===3?"#f48fb1":world===2?"#2d0000":"#90a4ae"} opacity=".38"/>
           {/* Snow caps (W1) / Lava peaks (W2) */}
-          <polygon points="60,90 50,125 70,125"   fill={world===2?"#ff2200":"#eceff1"} opacity={world===2?.4:.8}/>
-          <polygon points="140,75 128,114 152,114" fill={world===2?"#ff4400":"#eceff1"} opacity={world===2?.35:.85}/>
-          <polygon points="270,88 260,120 280,120" fill={world===2?"#ff2200":"#eceff1"} opacity={world===2?.3:.75}/>
+          <polygon points="60,90 50,125 70,125"   fill={world===3?"#fff9c4":world===2?"#ff2200":"#eceff1"} opacity={world===3||world===2?.4:.8}/>
+          <polygon points="140,75 128,114 152,114" fill={world===3?"#fff9c4":world===2?"#ff4400":"#eceff1"} opacity={world===3||world===2?.35:.85}/>
+          <polygon points="270,88 260,120 280,120" fill={world===3?"#fff9c4":world===2?"#ff2200":"#eceff1"} opacity={world===3||world===2?.3:.75}/>
 
           {/* Mist at mountain base */}
           <ellipse cx="160" cy="200" rx="200" ry="25" fill="#fff" opacity=".18"/>
 
           {/* ── TERRAIN ── */}
           <rect x="0" y="190" width="320" height="400" fill={world===2?"url(#lavaG)":"url(#grassG)"} opacity=".7"/>
-          <ellipse cx="60"  cy="210" rx="100" ry="35" fill={world===2?"#3d0000":"#4caf50"} opacity=".6"/>
-          <ellipse cx="260" cy="205" rx="100" ry="32" fill={world===2?"#2d0000":"#4caf50"} opacity=".55"/>
-          <ellipse cx="160" cy="220" rx="140" ry="28" fill={world===2?"#350000":"#43a047"} opacity=".5"/>
+          <ellipse cx="60"  cy="210" rx="100" ry="35" fill={world===3?"#c8e6c9":world===2?"#3d0000":"#4caf50"} opacity=".6"/>
+          <ellipse cx="260" cy="205" rx="100" ry="32" fill={world===3?"#c8e6c9":world===2?"#2d0000":"#4caf50"} opacity=".55"/>
+          <ellipse cx="160" cy="220" rx="140" ry="28" fill={world===3?"#b2dfdb":world===2?"#350000":"#43a047"} opacity=".5"/>
 
           {/* ── CASTLE HILL ── */}
           <ellipse cx="160" cy="110" rx="105" ry="60" fill="url(#hillG)"/>
@@ -2155,9 +2249,9 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           {/* ── ROAD / PATH — two segments, hill area left blank ── */}
           {[roadBottom, roadTop].map((seg,i)=>(
             <g key={i}>
-              <path d={seg} fill="none" stroke={world===2?"#1a0000":"#5d4037"} strokeWidth="13" strokeLinecap="round" opacity=".4"/>
-              <path d={seg} fill="none" stroke={world===2?"#3d1010":"#bcaaa4"} strokeWidth="10" strokeLinecap="round" opacity=".9"/>
-              <path d={seg} fill="none" stroke={world===2?"#6b0000":"#d7ccc8"} strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
+              <path d={seg} fill="none" stroke={world===3?"#f06292":world===2?"#1a0000":"#5d4037"} strokeWidth="13" strokeLinecap="round" opacity=".4"/>
+              <path d={seg} fill="none" stroke={world===3?"#f8bbd9":world===2?"#3d1010":"#bcaaa4"} strokeWidth="10" strokeLinecap="round" opacity=".9"/>
+              <path d={seg} fill="none" stroke={world===3?"#fce4ec":world===2?"#6b0000":"#d7ccc8"} strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
             </g>
           ))}
 
@@ -2194,7 +2288,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             const zoneColor = activeZones[i]?.color || "#888";
 
             // Skip last zone — drawn separately above
-            if(b.zone==="rush"||b.zone==="castle2") return null;
+            if(b.zone==="rush"||b.zone==="castle2"||b.zone==="crown") return null;
 
             return(
               <g key={b.zone} onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
@@ -2411,6 +2505,93 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                         <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🔥"}</text>
                       </g>
                     );
+                    // ── World 3 fairytale buildings ──
+                    if(b.zone==="garden") return(
+                      <g>
+                        <rect x="8" y="28" width="38" height="26" rx="3" fill={lo?"#78909c":"#f8bbd9"}/>
+                        <polygon points="4,30 27,8 50,30" fill={lo?"#546e7a":"#e91e8c"}/>
+                        {!lo&&<><circle cx="12" cy="32" r="5" fill="#ff4081" opacity=".7"/>
+                        <circle cx="42" cy="32" r="5" fill="#ff4081" opacity=".7"/>
+                        <text x="27" y="44" textAnchor="middle" fontSize="9">🌸🌷</text></>}
+                        <rect x="19" y="38" width="16" height="16" rx="2" fill={lo?"#37474f":"#f48fb1"}/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🌸"}</text>
+                      </g>
+                    );
+                    if(b.zone==="tower3") return(
+                      <g>
+                        <rect x="14" y="12" width="26" height="44" rx="3" fill={lo?"#546e7a":"#ce93d8"}/>
+                        {[14,20,26,32,38,42].map(bx=><rect key={bx} x={bx} y="8" width="4" height="8" rx="1" fill={lo?"#455a64":"#ba68c8"}/>)}
+                        {!lo&&<><rect x="22" y="24" width="10" height="12" rx="5" fill="#f8bbd9" opacity=".8"/>
+                        <text x="27" y="33" textAnchor="middle" fontSize="9">👸</text></>}
+                        <rect x="20" y="44" width="14" height="12" rx="3" fill={lo?"#37474f":"#9c27b0"}/>
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"✨"}</text>
+                      </g>
+                    );
+                    if(b.zone==="forest") return(
+                      <g>
+                        <ellipse cx="27" cy="30" rx="20" ry="22" fill={lo?"#546e7a":"#a5d6a7"}/>
+                        {!lo&&<><ellipse cx="27" cy="20" rx="14" ry="16" fill="#c8e6c9"/>
+                        <text x="27" y="26" textAnchor="middle" fontSize="12">🦄</text>
+                        <text x="14" y="46" textAnchor="middle" fontSize="8">🌿</text>
+                        <text x="40" y="46" textAnchor="middle" fontSize="8">🍃</text></>}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🌲"}</text>
+                      </g>
+                    );
+                    if(b.zone==="castle3") return(
+                      <g>
+                        <rect x="5" y="28" width="44" height="26" rx="2" fill={lo?"#546e7a":"#90caf9"}/>
+                        <rect x="0" y="20" width="14" height="34" rx="2" fill={lo?"#455a64":"#42a5f5"}/>
+                        <rect x="40" y="20" width="14" height="34" rx="2" fill={lo?"#455a64":"#42a5f5"}/>
+                        <rect x="18" y="10" width="18" height="44" rx="2" fill={lo?"#37474f":"#1565c0"}/>
+                        {!lo&&<><text x="7" y="18" textAnchor="middle" fontSize="7">🌸</text>
+                        <text x="47" y="18" textAnchor="middle" fontSize="7">🌸</text>
+                        <rect x="23" y="20" width="8" height="10" rx="4" fill="#fce4ec"/></>}
+                        <text x="27" y="8" textAnchor="middle" fontSize="10">{lo?"🔒":"👸"}</text>
+                      </g>
+                    );
+                    if(b.zone==="lake") return(
+                      <g>
+                        <ellipse cx="27" cy="44" rx="22" ry="12" fill={lo?"#546e7a":"#80deea"}/>
+                        <ellipse cx="27" cy="42" rx="16" ry="8" fill={lo?"#455a64":"#26c6da"}/>
+                        {!lo&&<><text x="27" y="30" textAnchor="middle" fontSize="12">🧜</text>
+                        <ellipse cx="15" cy="44" rx="4" ry="2" fill="#fff" opacity=".5"/>
+                        <ellipse cx="38" cy="46" rx="3" ry="1.5" fill="#fff" opacity=".4"/></>}
+                        <text x="27" y="18" textAnchor="middle" fontSize="10">{lo?"🔒":"🌊"}</text>
+                      </g>
+                    );
+                    if(b.zone==="dragon3") return(
+                      <g>
+                        <ellipse cx="27" cy="44" rx="22" ry="14" fill={lo?"#546e7a":"#ffcc80"}/>
+                        <path d="M6,44 Q10,24 18,18 Q27,12 36,18 Q44,24 48,44" fill={lo?"#455a64":"#ffa726"}/>
+                        {!lo&&<><text x="27" y="32" textAnchor="middle" fontSize="14">🐉</text>
+                        <text x="12" y="50" textAnchor="middle" fontSize="8">💛</text>
+                        <text x="42" y="50" textAnchor="middle" fontSize="8">💛</text></>}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🐲"}</text>
+                      </g>
+                    );
+                    if(b.zone==="spell") return(
+                      <g>
+                        <rect x="12" y="16" width="30" height="40" rx="4" fill={lo?"#546e7a":"#ce93d8"}/>
+                        {[12,18,24,30,36,42].map(bx=><rect key={bx} x={bx} y="12" width="4" height="8" rx="1" fill={lo?"#455a64":"#ba68c8"}/>)}
+                        {!lo&&<><ellipse cx="27" cy="30" rx="8" ry="10" fill="#f8bbd9" opacity=".8"/>
+                        <text x="27" y="33" textAnchor="middle" fontSize="9">✨</text>
+                        <text x="19" y="18" fontSize="6" opacity=".8">⭐</text>
+                        <text x="33" y="20" fontSize="6" opacity=".8">💫</text></>}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🔮"}</text>
+                      </g>
+                    );
+                    if(b.zone==="palace") return(
+                      <g>
+                        <rect x="4" y="22" width="46" height="32" rx="2" fill={lo?"#546e7a":"#fff9c4"}/>
+                        <rect x="0" y="16" width="12" height="38" rx="2" fill={lo?"#455a64":"#ffd54f"}/>
+                        <rect x="42" y="16" width="12" height="38" rx="2" fill={lo?"#455a64":"#ffd54f"}/>
+                        <rect x="17" y="8" width="20" height="46" rx="2" fill={lo?"#37474f":"#f57f17"}/>
+                        {!lo&&<><text x="27" y="24" textAnchor="middle" fontSize="10">👑</text>
+                        <rect x="23" y="34" width="8" height="12" rx="4" fill="#fce4ec"/>
+                        {[1,7,13,19,35,41,47].map(bx=><rect key={bx} x={bx} y="12" width="4" height="6" rx="1" fill="#f9a825"/>)}</>}
+                        <text x="27" y="6" textAnchor="middle" fontSize="10">{lo?"🔒":"👑"}</text>
+                      </g>
+                    );
                     if(b.zone==="master") return( // Grand manor
                       <g>
                         <rect x="4"  y="24" width="46" height="28" rx="3" fill={lo?"#546e7a":"#8B4513"}/>
@@ -2531,7 +2712,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           <g transform="translate(160,572)">
             <rect x="-55" y="-12" width="110" height="22" rx="5" fill="#5d4037"/>
             <rect x="-52" y="-9"  width="104" height="16" rx="3" fill="#8d6e63"/>
-            <text x="0" y="2" textAnchor="middle" fill="#fff8e1" fontSize="9" fontWeight="900" fontFamily="sans-serif">{world===2?"🐉 DARK CASTLE 🐉":"🏰 CHESS VILLAGE 🏰"}</text>
+            <text x="0" y="2" textAnchor="middle" fill="#fff8e1" fontSize="9" fontWeight="900" fontFamily="sans-serif">{world===3?"👸 FAIRY PALACE 👸":world===2?"🐉 DARK CASTLE 🐉":"🏰 CHESS VILLAGE 🏰"}</text>
           </g>
         </svg>
       </div>
@@ -3245,7 +3426,7 @@ function ChessWorld(){
   const activeWorld   = getWorld(world);
   const activeZones   = activeWorld.zones;
   const activePuzzles = activeWorld.puzzles;
-  const world1Done    = (completedIds||[]).length >= 3 || WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id));
+  const world1Done    = true; // Always show — real condition: WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id))
   const prevWorldDone = world > 1 ? getWorld(world-1).puzzles.every(p=>(completedIds||[]).includes(p.id)) : true;
   const completed    = completedIds.length; // total count for display
 
