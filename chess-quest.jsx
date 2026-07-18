@@ -2,6 +2,22 @@
 // All data saved to device localStorage. No login, no Firebase, no network needed.
 const { useState, useCallback, useRef, useEffect } = React;
 
+class ErrorBoundary extends React.Component {
+  constructor(props){ super(props); this.state={error:null}; }
+  static getDerivedStateFromError(e){ return {error:e}; }
+  componentDidCatch(e,info){ console.error("CRASH:",e,info); }
+  render(){
+    if(this.state.error) return(
+      <div style={{padding:20,background:"#1a0000",color:"#ff6b6b",fontFamily:"monospace",fontSize:12,height:"100%",overflow:"auto"}}>
+        <div style={{fontSize:16,fontWeight:900,color:"#ff4444",marginBottom:8}}>💥 Crash Report</div>
+        <div style={{marginBottom:8,color:"#ffaa00"}}>{this.state.error.message}</div>
+        <pre style={{fontSize:10,color:"#ff9999",whiteSpace:"pre-wrap"}}>{this.state.error.stack}</pre>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 const STORAGE_KEY = "chess_quest_data";
 
 function loadLocal(){
@@ -3504,7 +3520,7 @@ function ChessWorld(){
               msg={playMsg} setMsg={setPlayMsg}
               mood={playMood} setMood={setPlayMood}
             />
-          : tab==="home"   ? <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} completedIds={completedIds} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else if(t.startsWith("switchWorld:")){const wid=parseInt(t.split(":")[1]);updateProfile({world:wid});setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color} world={world} world1Done={world1Done} activeZones={activeZones} activePuzzles={activePuzzles} activeWorld={activeWorld}/>
+          : tab==="home"   ?  <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} completedIds={completedIds} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else if(t.startsWith("switchWorld:")){const wid=parseInt(t.split(":")[1]);updateProfile({world:wid});setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color} world={world} world1Done={world1Done} activeZones={activeZones} activePuzzles={activePuzzles} activeWorld={activeWorld}/>
           : tab==="zones"  ? <MapScreen  xp={xp} completedPuzzles={completed} completedIds={completedIds} onStartPuzzle={startZone} playerAvatar={profile.avatar} playerColor={profile.color} world={world} activeZones={activeZones} activePuzzles={activePuzzles}/>
           : tab==="awards" ? <AwardsScreen xp={xp} completedPuzzles={completed} completedIds={completedIds} streak={streak} world={world}/>
           : null
@@ -3762,6 +3778,6 @@ const APP={
 // Mount the app
 const _root = document.getElementById('root');
 if(_root) {
-  ReactDOM.createRoot(_root).render(React.createElement(ChessWorld));
+  ReactDOM.createRoot(_root).render(React.createElement(ErrorBoundary, null, React.createElement(ChessWorld)));
   if(window.__chessQuestReady) window.__chessQuestReady();
 }
