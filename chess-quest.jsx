@@ -3463,7 +3463,7 @@ function ChessWorld(){
   const activePuzzles = activeWorld.puzzles;
   const world1Done    = true; // Always show — real condition: WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id))
   const prevWorldDone = world > 1 ? getWorld(world-1).puzzles.every(p=>(completedIds||[]).includes(p.id)) : true;
-  const completed    = completedIds.length; // total count for display
+  const completed    = activePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
 
   const [tab,setTab]=useState("home");
   const [activePuzzle,setActivePuzzle]=useState(null);
