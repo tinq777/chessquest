@@ -1951,7 +1951,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
           </div>
           {/* Progress summary */}
           <div style={{marginTop:12,textAlign:"center",fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:700}}>
-            {completedPuzzles}/65 puzzles complete 🏆
+            {completedPuzzles}/{activePuzzles.length} puzzles complete 🏆
           </div>
         </div>
       </div>
@@ -3819,7 +3819,7 @@ function ChessWorld(){
             }}>GRAND MASTER!</div>
 
             <div style={{fontSize:16,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:16,lineHeight:1.5}}>
-              You completed ALL 65 puzzles!<br/>You're a true Chess Quest champion! ⚔️
+              You completed ALL {activePuzzles.length} puzzles!<br/>You're a true Chess Quest champion! ⚔️
             </div>
 
             {/* Stats */}
