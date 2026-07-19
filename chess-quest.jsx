@@ -1790,23 +1790,24 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
 
       <div style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"12px 16px 20px",WebkitOverflowScrolling:"touch"}}>
 
-        {/* World selector — always visible, all worlds shown */}
+        {/* World selector — all worlds shown, locked ones greyed with padlock */}
         <div style={{display:"flex",gap:6,marginBottom:14}}>
           {WORLDS.map((w,i)=>{
             const isActive = world===w.id;
-            const isUnlocked = i===0 ? true : i===1 ? world1Done : true; // all unlocked for testing
+            const isUnlocked = i===0 ? true : WORLDS[i-1].puzzles.every(p=>(completedIds||[]).includes(p.id));
             return(
-              <button key={w.id} onClick={()=>isUnlocked&&onNav(`switchWorld:${w.id}`)}
-                style={{flex:1,background:isActive?`linear-gradient(135deg,${w.color},${w.bg||w.color})`:"rgba(255,255,255,.1)",
-                  border:isActive?`3px solid rgba(255,255,255,.4)`:"2px solid rgba(255,255,255,.15)",
-                  borderRadius:14,padding:"10px 6px",cursor:isUnlocked?"pointer":"default",
+              <button key={w.id}
+                onClick={()=>isUnlocked&&!isActive&&onNav(`switchWorld:${w.id}`)}
+                style={{flex:1,background:isActive?`linear-gradient(135deg,${w.color},${w.bg||w.color})`:isUnlocked?"rgba(255,255,255,.12)":"rgba(0,0,0,.25)",
+                  border:isActive?`3px solid rgba(255,255,255,.4)`:isUnlocked?"2px solid rgba(255,255,255,.2)":"2px solid rgba(255,255,255,.05)",
+                  borderRadius:14,padding:"10px 6px",cursor:isUnlocked&&!isActive?"pointer":"default",
                   display:"flex",flexDirection:"column",alignItems:"center",gap:3,
                   boxShadow:isActive?`0 4px 0 ${w.bg||w.color}88`:"none",
-                  opacity:isUnlocked?1:.4,
-                  transform:isActive?"scale(1.04)":"scale(1)",transition:"all .2s"}}>
-                <span style={{fontSize:20}}>{w.emoji}</span>
+                  opacity:isUnlocked?1:.45,
+                  transform:isActive?"scale(1.06)":"scale(1)",transition:"all .2s"}}>
+                <span style={{fontSize:20}}>{isUnlocked?w.emoji:"🔒"}</span>
                 <div style={{fontSize:9,fontWeight:900,color:"#fff",letterSpacing:.5,textAlign:"center",lineHeight:1.2}}>
-                  W{w.id}{isActive?" ✓":""}
+                  {isUnlocked?`W${w.id}${isActive?" ✓":""}`:`W${w.id}`}
                 </div>
               </button>
             );
@@ -3461,7 +3462,7 @@ function ChessWorld(){
   const activeWorld   = getWorld(world);
   const activeZones   = activeWorld.zones;
   const activePuzzles = activeWorld.puzzles;
-  const world1Done    = true; // Always show — real condition: WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id))
+  const world1Done    = WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id));
   const prevWorldDone = world > 1 ? getWorld(world-1).puzzles.every(p=>(completedIds||[]).includes(p.id)) : true;
   const completed    = activePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
 
