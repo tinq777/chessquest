@@ -313,9 +313,9 @@ const PUZZLES2=[
   {id:148,zone:"eye",title:"Bishop Captures the Queen!",desc:"Your Bishop can take the enemy Queen — spot it!",emoji:"👁️",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"bq",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wb",null],["wk",null,null,null,null,null,null,null]],fromRow:6,fromCol:6,toRow:3,toCol:3,hint:"Bishop g2 slashes diagonally to d5 — captures the Queen!",xp:50},
   {id:149,zone:"eye",title:"Knight Springs into Action!",desc:"Find the square where your Knight gives a powerful check!",emoji:"👁️",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wn",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:4,fromCol:3,toRow:2,toCol:4,hint:"Knight d4 springs to e6 — check! The King on g7 is under attack!",xp:45},
   {id:150,zone:"lair",title:"Anastasia's Mate!",desc:"Knight and Rook combine for a classic mating pattern!",emoji:"🐲",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:0,toCol:7,hint:"Rook h1 to h8 — Anastasia's Mate! Knight covers the escape squares!",xp:50},
-  {id:151,zone:"lair",title:"Arabian Mate!",desc:"Knight and Rook deliver the classic Arabian Mate — checkmate!",emoji:"🐲",board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wn",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],fromRow:7,fromCol:7,toRow:1,toCol:7,hint:"Rook h1 to h7 — Arabian Mate! The Knight on f6 covers all escape squares!",xp:50},
+  {id:151,zone:"lair",title:"Queen Strikes!",desc:"Knight and Rook deliver the classic Arabian Mate — checkmate!",emoji:"🐲",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wq",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wk"]],fromRow:4,fromCol:0,toRow:0,toCol:4,hint:"Queen a4 flies to e8 — checkmate! The King has nowhere to hide!",xp:50},
   {id:152,zone:"lair",title:"Corridor Checkmate!",desc:"Drive your Rook to the back rank for a corridor mate!",emoji:"🐲",board:[["bk",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wk",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"wr",null]],fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 delivers to g8 — checkmate! King has no escape!",xp:50},
-  {id:153,zone:"lair",title:"Smothered Mate!",desc:"The King is trapped by its own pieces — Knight delivers mate!",emoji:"🐲",board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,"wr",null,null]],fromRow:3,fromCol:4,toRow:1,toCol:5,hint:"Knight e5 leaps to f7 — smothered checkmate! King trapped by its own pawns!",xp:55},
+  {id:153,zone:"lair",title:"Smothered Mate!",desc:"The King is trapped by its own pieces — Knight delivers mate!",emoji:"🐲",board:[[null,null,null,null,null,null,"br","bk"],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null]],fromRow:3,fromCol:4,toRow:1,toCol:5,hint:"Knight e5 leaps to f7 — smothered checkmate! King is trapped by its own pieces!",xp:55},
   {id:154,zone:"lair",title:"Queen Diagonal Check!",desc:"Use your Queen to give a deadly diagonal check!",emoji:"🐲",board:[["bk",null,null,null,null,null,null,null],[null,"bp",null,null,null,null,null,null],[null,null,null,"wk",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wq"]],fromRow:7,fromCol:7,toRow:1,toCol:1,hint:"Queen h1 slices diagonally to b7 — check! King is in danger!",xp:50},
   {id:155,zone:"lair",title:"Back Rank Smash!",desc:"Your Rook invades the back rank for a devastating finish!",emoji:"🐲",board:[[null,null,null,null,"bk",null,null,null],[null,null,null,"bp","bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wr",null]],fromRow:7,fromCol:6,toRow:0,toCol:6,hint:"Rook g1 crashes to g8 — the King is caught on the back rank!",xp:50},
   {id:156,zone:"lair",title:"Queen Smothers the Dragon!",desc:"Deliver checkmate with your Queen — the Dragon is vanquished!",emoji:"🐲",board:[[null,null,null,null,null,null,"bk",null],[null,null,null,null,null,"bp",null,"bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wq",null]],fromRow:7,fromCol:6,toRow:1,toCol:6,hint:"Queen g1 blazes to g7 — checkmate! The Dragon King falls!",xp:55},
@@ -443,16 +443,7 @@ const PUZZLES=[
   // Solution: king moves to g1 (castling — but we simplify as king side-step to safety)
   // Simpler: move king from e1 to f1 away from centre to demonstrate king safety
   {id:8,zone:"openings",title:"King Safety!",desc:"Tuck your King to f1 for safety — away from the centre!",emoji:"🏰",
-    board:[
-      ["br",null,"bb","bq","bk","bb",null,"br"],
-      ["bp","bp","bp","bp",null,"bp","bp","bp"],
-      [null,null,"bn",null,null,"bn",null,null],
-      [null,null,null,null,"bp",null,null,null],
-      [null,null,null,null,"wp",null,null,null],
-      [null,null,"wn",null,null,"wn",null,null],
-      ["wp","wp","wp","wp",null,"wp","wp","wp"],
-      ["wr",null,"wb","wq","wk",null,null,"wr"]
-    ],
+    board:[["br",null,"bb","bq","bk","bb",null,"br"],["bp","bp","bp","bp",null,"bp","bp","bp"],[null,null,"bn",null,null,"bn",null,null],[null,null,null,null,"bp",null,null,null],[null,null,null,null,"wp",null,null,null],[null,null,"wn",null,null,"wn",null,null],["wp","wp","wp","wp",null,"wp","wp","wp"],["wr","wr","wb","wq","wk",null,null,null]],
     solution:{from:{r:7,c:4},to:{r:7,c:5}},
     hint:"Step your King to f1 — away from the centre and on the way to safety!",xp:25},
 
@@ -540,16 +531,7 @@ const PUZZLES=[
   // From f7, knight attacks: d6,d8,e5,g5,h6,h8 — covers h8=king, so check
   // wk=a1(7,0) for legality
   {id:13,zone:"master",title:"Smothered Mate!",desc:"The King is trapped by its own pawns! Jump your Knight to f7 for checkmate!",emoji:"⚡",
-    board:[
-      [null,null,null,null,null,null,"bp","bk"],
-      [null,null,null,null,null,null,"bp","bp"],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,"wn",null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wk",null,null,null,null,"wr",null,null]
-    ],
+    board:[[null,null,null,null,null,null,"bp","bk"],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,"wn",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,"wr"]],
     solution:{from:{r:3,c:4},to:{r:1,c:5}},
     hint:"Jump your Knight from e5 to f7 — the King is boxed in by its own pawns!",xp:50},
 
@@ -713,30 +695,12 @@ const PUZZLES=[
     hint:"The d-pawn controls important central squares — push it to d4!",xp:20},
 
   {id:24,zone:"openings",title:"Italian Game!",desc:"Develop your Bishop to c4 — it eyes the f7 square near the King!",emoji:"♗",
-    board:[
-      ["br","bn","bb","bq","bk","bb","bn","br"],
-      ["bp","bp","bp","bp",null,"bp","bp","bp"],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,"wp",null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wp","wp","wp","wp",null,"wp","wp","wp"],
-      ["wr","wn","wb","wq","wk","wb","wn","wr"]
-    ],
+    board:[["br","bn","bb","bq","bk","bb","bn","br"],["bp","bp","bp","bp",null,"bp","bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wp",null,null,null],[null,null,null,null,null,null,null,"wp"],["wp","wp",null,"wp",null,"wp","wp","wp"],["wr","wn","wb","wq","wk","wb","wn","wr"]],
     solution:{from:{r:7,c:5},to:{r:4,c:2}},
     hint:"The Bishop on c4 is very powerful — it aims at the King's weak point f7!",xp:25},
 
   {id:25,zone:"openings",title:"King Steps Away!",desc:"Move your King to f1 — it's the first step toward safety!",emoji:"🏰",
-    board:[
-      ["br",null,"bb","bq","bk",null,null,"br"],
-      ["bp","bp","bp","bp",null,"bp","bp","bp"],
-      [null,null,"bn",null,null,"bn",null,null],
-      [null,null,null,null,"bp",null,null,null],
-      [null,null,null,null,"wp",null,null,null],
-      [null,null,"wn",null,null,"wn",null,null],
-      ["wp","wp","wp","wp",null,"wp","wp","wp"],
-      ["wr",null,"wb","wq","wk",null,null,"wr"]
-    ],
+    board:[["br",null,"bb","bq","bk",null,null,"br"],["bp","bp","bp","bp",null,"bp","bp","bp"],[null,null,"bn",null,null,"bn",null,null],[null,null,null,null,"bp",null,null,null],[null,null,null,null,"wp",null,null,null],[null,null,"wn",null,null,"wn",null,null],["wp","wp","wp","wp",null,"wp","wp","wp"],["wr","wr","wb","wq","wk",null,null,null]],
     solution:{from:{r:7,c:4},to:{r:7,c:5}},
     hint:"Moving the King away from the centre keeps it safer early on!",xp:20},
 
@@ -755,44 +719,17 @@ const PUZZLES=[
     hint:"Knights are strongest in the centre — d5 is a great outpost!",xp:25},
 
   {id:27,zone:"pawns",title:"Central Capture!",desc:"Capture the pawn on d5 to control the centre!",emoji:"⚔️",
-    board:[
-      ["br","bn","bb","bq","bk","bb","bn","br"],
-      ["bp","bp","bp",null,"bp","bp","bp","bp"],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,"bp",null,null,null,null],
-      [null,null,null,null,"wp",null,null,null],
-      [null,null,"wn",null,null,null,null,null],
-      ["wp","wp","wp","wp",null,"wp","wp","wp"],
-      ["wr",null,"wb","wq","wk","wb","wn","wr"]
-    ],
+    board:[["br","bn","bb","bq","bk","bb","bn","br"],["bp","bp","bp",null,"bp","bp","bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,"bp",null,null,null,null],[null,null,null,null,"wp",null,null,null],[null,null,null,null,null,null,null,null],["wp","wp","wp","wp",null,"wp","wp","wp"],["wr","wn","wb","wq","wk","wb","wn","wr"]],
     solution:{from:{r:4,c:4},to:{r:3,c:3}},
     hint:"Pawns capture diagonally — take the pawn on d5 to open the centre!",xp:25},
 
   {id:28,zone:"openings",title:"Develop the Knight!",desc:"Bring your Queen's Knight out — Knights before Bishops!",emoji:"♘",
-    board:[
-      ["br","bn","bb","bq","bk","bb","bn","br"],
-      ["bp","bp","bp","bp","bp","bp","bp","bp"],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,"wp",null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wp","wp","wp","wp",null,"wp","wp","wp"],
-      ["wr","wn","wb","wq","wk","wb","wn","wr"]
-    ],
+    board:[["br","bn","bb","bq","bk","bb","bn","br"],["bp","bp","bp","bp","bp","bp","bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wp",null,null,null],[null,null,null,null,null,null,null,null],["wp","wp",null,"wp","wp","wp","wp","wp"],["wr","wn","wb","wq","wk","wb","wn","wr"]],
     solution:{from:{r:7,c:1},to:{r:5,c:2}},
     hint:"The Knight on b1 should go to c3 — it controls the centre and develops quickly!",xp:20},
 
   {id:29,zone:"openings",title:"Queen to f3!",desc:"Move your Queen to f3 — it joins the attack on f7!",emoji:"♛",
-    board:[
-      ["br","bn","bb","bq","bk","bb",null,"br"],
-      ["bp","bp","bp","bp",null,"bp","bp","bp"],
-      [null,null,null,null,null,"bn",null,null],
-      [null,null,null,null,"bp",null,null,null],
-      [null,null,null,null,"wp",null,null,null],
-      [null,null,"wn",null,null,null,null,null],
-      ["wp","wp","wp","wp",null,"wp","wp","wp"],
-      ["wr",null,"wb","wq","wk","wb","wn","wr"]
-    ],
+    board:[["br","bn","bb","bq","bk","bb",null,"br"],["bp","bp","bp","bp",null,"bp","bp","bp"],[null,null,null,null,null,"bn",null,null],[null,null,null,null,"bp",null,null,null],[null,null,null,null,"wp",null,null,null],[null,null,"wn",null,null,null,null,null],["wp","wp","wp","wp",null,"wn","wp","wp"],["wr","wp","wb","wq","wk","wb",null,"wr"]],
     solution:{from:{r:7,c:3},to:{r:5,c:5}},
     hint:"The Queen on f3 eyes the weak f7 pawn near the enemy King!",xp:25},
 
@@ -1104,16 +1041,7 @@ const PUZZLES=[
     hint:"Capture on c6 to create an isolated or backward pawn in Black's camp!",xp:35},
 
   {id:52,zone:"endgame",title:"Rook Behind Passer!",desc:"Place your Rook behind the passed pawn — it supports and pushes it!",emoji:"♖",
-    board:[
-      [null,null,null,null,null,null,null,"bk"],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,"wp",null,null,null,null],
-      [null,null,null,null,"wk",null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,"wr",null,null,null,null]
-    ],
+    board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wp",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wr",null,null,null,"wk"]],
     solution:{from:{r:7,c:3},to:{r:5,c:3}},
     targetSq:{r:5,c:3},
     hint:"Rooks belong BEHIND passed pawns — they push them from behind!",xp:35},
@@ -1150,9 +1078,9 @@ const PUZZLES=[
     board:[
       [null,null,null,null,null,null,null,"bk"],
       [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,"wn",null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
+      [null,null,null,"wn",null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,"wr"],
       ["wk",null,null,null,null,null,null,null]
@@ -1161,16 +1089,7 @@ const PUZZLES=[
     hint:"The Rook to h7 gives check — the Knight on f6 covers g8 and the pawns block the rest!",xp:50},
 
   {id:56,zone:"rush",title:"Queen Sacrifice Mate!",desc:"Slide your Queen to h7 — the Rook on h1 makes it unstoppable!",emoji:"⚡",
-    board:[
-      [null,null,null,null,null,null,null,"bk"],
-      [null,null,null,null,null,null,"bp",null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,"wk",null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,"wq",null,null,null,null,null,"wr"]
-    ],
+    board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,"bp",null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wq",null,null,null,null,"wr",null]],
     solution:{from:{r:7,c:1},to:{r:1,c:7}},
     hint:"The Queen on h7 is check and the Rook on h1 protects it — checkmate!",xp:50},
 
@@ -1189,16 +1108,7 @@ const PUZZLES=[
     hint:"The Rook on h5 is undefended — slide your Queen straight up and grab it!",xp:50},
 
   {id:58,zone:"master",title:"Rook and Knight Mate!",desc:"Slide your Rook to h7 — the Knight and Rook deliver checkmate!",emoji:"⚡",
-    board:[
-      [null,null,null,null,null,null,null,"bk"],
-      [null,null,null,null,null,null,"bp","bp"],
-      [null,null,null,null,null,"wn",null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ["wk",null,null,null,null,null,null,"wr"]
-    ],
+    board:[[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,"bp","bp"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,"wn","wr"]],
     solution:{from:{r:7,c:7},to:{r:1,c:7}},
     hint:"The Rook to h7 captures the pawn and gives checkmate — the Knight covers g8!",xp:50},
 
@@ -1320,7 +1230,7 @@ const PUZZLES3=[
   {id:216,zone:"spell",title:"Magical Check!",desc:"Your Rook delivers a surprise check — find it!",emoji:"✨",board:[[null,null,"bk",null,null,null,null,null],[null,null,null,null,"bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,"wr",null,null,null],[null,null,null,null,null,null,null,null]],fromRow:6,fromCol:4,toRow:6,toCol:2,hint:"Rook e2 moves to c2 — check!",xp:50},
   {id:217,zone:"palace",title:"Magical Check!",desc:"Your Queen delivers a surprise check — find it!",emoji:"👑",board:[["bn",null,null,null,"bk",null,"br",null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wq",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wk",null,null,null,null]],fromRow:3,fromCol:5,toRow:1,toCol:5,hint:"Queen f5 moves to f7 — check!",xp:55},
   {id:218,zone:"crown",title:"Magical Check!",desc:"Your Rook delivers a surprise check — find it!",emoji:"💎",board:[[null,null,"br",null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wk","wr",null,null,null]],fromRow:7,fromCol:4,toRow:7,toCol:7,hint:"Rook e1 moves to h1 — check!",xp:60},
-  {id:219,zone:"garden",title:"Win the Bishop!",desc:"Your Bishop captures the undefended Bishop — take it!",emoji:"🌸",board:[[null,null,null,null,null,null,null,null],[null,null,"bk",null,null,null,null,null],[null,null,null,"br",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"bb","wk",null,null,null,null,null],[null,null,"wb",null,null,null,null,null],[null,null,null,null,null,null,null,null]],fromRow:6,fromCol:2,toRow:5,toCol:1,hint:"Bishop c2 moves to b3 — captures the Bishop!",xp:30},
+  {id:219,zone:"garden",title:"Win the Bishop!",desc:"Your Bishop captures the undefended Bishop — take it!",emoji:"🌸",board:[[null,null,null,null,null,null,null,null],[null,null,"bk",null,null,null,null,null],[null,null,null,"br",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"bb",null,null,null,null,null,null],[null,null,"wb",null,null,null,null,null],[null,null,null,null,null,null,null,"wk"]],fromRow:6,fromCol:2,toRow:5,toCol:1,hint:"Bishop c2 moves to b3 — captures the Bishop!",xp:30},
   {id:220,zone:"tower3",title:"Magical Check!",desc:"Your Queen delivers a surprise check — find it!",emoji:"🏰",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"bk",null],[null,null,null,"bn",null,null,null,null],[null,null,null,"wq",null,null,null,null],["bq",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wk",null,null,null,null,null,null]],fromRow:3,fromCol:3,toRow:3,toCol:4,hint:"Queen d5 moves to e5 — check!",xp:35},
   {id:221,zone:"forest",title:"Magical Check!",desc:"Your Queen delivers a surprise check — find it!",emoji:"🦄",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"bk"],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"bn",null,null],[null,"bb",null,null,null,null,null,null],[null,"wk",null,null,null,"wq",null,null],[null,null,null,null,null,null,null,null]],fromRow:6,fromCol:5,toRow:1,toCol:0,hint:"Queen f2 moves to a7 — check!",xp:40},
   {id:222,zone:"castle3",title:"Magical Check!",desc:"Your Rook delivers a surprise check — find it!",emoji:"👸",board:[[null,null,null,"bk",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,"bb",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wr",null,null,null]],fromRow:7,fromCol:4,toRow:7,toCol:3,hint:"Rook e1 moves to d1 — check!",xp:45},
@@ -1342,13 +1252,13 @@ const PUZZLES3=[
   {id:238,zone:"tower3",title:"Magical Check!",desc:"Your Queen delivers a surprise check — find it!",emoji:"🏰",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,"bn",null],[null,null,null,null,null,null,null,"bb"],["wq",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wk",null,null,null]],fromRow:4,fromCol:0,toRow:5,toCol:0,hint:"Queen a4 moves to a3 — check!",xp:35},
   {id:239,zone:"forest",title:"Magical Check!",desc:"Your Bishop delivers a surprise check — find it!",emoji:"🦄",board:[[null,null,null,null,null,null,null,null],[null,null,null,"bk",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wb",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"bq",null,null,null,"bq",null],["wk",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null]],fromRow:3,fromCol:3,toRow:2,toCol:4,hint:"Bishop d5 moves to e6 — check!",xp:40},
   {id:240,zone:"castle3",title:"Magical Check!",desc:"Your Queen delivers a surprise check — find it!",emoji:"👸",board:[[null,"bp",null,null,null,"bk",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"bn"],[null,null,null,null,null,null,null,null],[null,null,null,null,"wk",null,"wq",null]],fromRow:7,fromCol:6,toRow:6,toCol:5,hint:"Queen g1 moves to f2 — check!",xp:45},
-  {id:241,zone:"lake",title:"Magical Check!",desc:"Your Rook delivers a surprise check — find it!",emoji:"🌊",board:[[null,"bk",null,null,null,null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wk",null,null,null,null,null,null,null],[null,null,null,null,"wr",null,null,null]],fromRow:7,fromCol:4,toRow:7,toCol:1,hint:"Rook e1 moves to b1 — check!",xp:40},
+  {id:241,zone:"lake",title:"Magical Check!",desc:"Your Rook delivers a surprise check — find it!",emoji:"🌊",board:[[null,"bk",null,null,null,null,null,null],[null,null,null,null,"bq",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wr",null,null,"wk"]],fromRow:7,fromCol:4,toRow:7,toCol:1,hint:"Rook e1 moves to b1 — check!",xp:40},
   {id:242,zone:"dragon3",title:"Magical Check!",desc:"Your Queen delivers a surprise check — find it!",emoji:"🐉",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,null,"bk",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wq",null,null,null,null,null,"bb",null],[null,null,null,null,null,null,null,null],[null,null,null,"wk",null,null,null,null],[null,null,null,null,null,null,null,null]],fromRow:4,fromCol:0,toRow:5,toCol:1,hint:"Queen a4 moves to b3 — check!",xp:45},
   {id:243,zone:"spell",title:"Magical Check!",desc:"Your Rook delivers a surprise check — find it!",emoji:"✨",board:[[null,null,null,null,null,null,null,null],[null,null,null,"bk",null,null,null,null],[null,null,null,null,null,null,null,null],[null,"wr",null,null,"bb",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,"wk",null,null,null],[null,null,null,null,null,null,null,null]],fromRow:3,fromCol:1,toRow:3,toCol:3,hint:"Rook b5 moves to d5 — check!",xp:50},
   {id:244,zone:"palace",title:"Magical Check!",desc:"Your Bishop delivers a surprise check — find it!",emoji:"👑",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,"bk",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"br",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wb",null,null,null,"wk",null,null,null]],fromRow:7,fromCol:0,toRow:2,toCol:5,hint:"Bishop a1 moves to f6 — check!",xp:55},
   {id:245,zone:"crown",title:"Check and Capture!",desc:"Your Rook gives check AND wins the piece!",emoji:"💎",board:[[null,null,null,null,null,null,null,null],[null,null,null,null,"bk",null,"br",null],[null,null,null,null,"bp",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wk","wr",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null]],fromRow:5,fromCol:4,toRow:2,toCol:4,hint:"Rook e3 to e6 — check and captures the piece!",xp:60},
   {id:246,zone:"garden",title:"Magical Check!",desc:"Your Queen delivers a surprise check — find it!",emoji:"🌸",board:[["bk",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"bp",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"wq",null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"wk",null,null,null,null],[null,null,null,null,null,null,null,null]],fromRow:4,fromCol:2,toRow:2,toCol:0,hint:"Queen c4 moves to a6 — check!",xp:30},
-  {id:247,zone:"tower3",title:"Win the Rook!",desc:"Your Queen captures the undefended Rook — take it!",emoji:"🏰",board:[[null,null,null,null,null,null,null,null],[null,"bk",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"bp",null,null],[null,null,null,null,null,null,null,null],["wq",null,null,"br",null,null,null,null],[null,null,"wk",null,null,null,null,null],[null,null,null,null,null,null,null,null]],fromRow:5,fromCol:0,toRow:5,toCol:3,hint:"Queen a3 moves to d3 — captures the Rook!",xp:35},
+  {id:247,zone:"tower3",title:"Win the Rook!",desc:"Your Queen captures the undefended Rook — take it!",emoji:"🏰",board:[[null,null,null,null,null,null,null,null],[null,"bk",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"bp",null,null],[null,null,null,null,null,null,null,null],["wq",null,null,"br",null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,"wk"]],fromRow:5,fromCol:0,toRow:5,toCol:3,hint:"Queen a3 moves to d3 — captures the Rook!",xp:35},
   {id:248,zone:"forest",title:"Magical Check!",desc:"Your Queen delivers a surprise check — find it!",emoji:"🦄",board:[[null,"bk","bq",null,"br",null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,"wq",null,null],[null,null,null,"wk",null,null,null,null]],fromRow:6,fromCol:5,toRow:6,toCol:1,hint:"Queen f2 moves to b2 — check!",xp:40},
   {id:249,zone:"castle3",title:"Magical Check!",desc:"Your Bishop delivers a surprise check — find it!",emoji:"👸",board:[[null,null,null,null,null,null,null,null],["bk",null,null,null,null,null,null,null],[null,null,null,null,null,"wb",null,null],[null,"br",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,"wk",null,null,null,null,null],[null,null,null,null,null,null,null,null]],fromRow:2,fromCol:5,toRow:4,toCol:3,hint:"Bishop f6 moves to d4 — check!",xp:45},
   {id:250,zone:"lake",title:"Magical Check!",desc:"Your Rook delivers a surprise check — find it!",emoji:"🌊",board:[[null,null,null,null,null,"bk",null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,"br",null,null,null,null],[null,"wk",null,null,null,null,null,null],[null,null,null,null,null,null,null,null],["wr",null,null,null,null,null,null,null]],fromRow:7,fromCol:0,toRow:0,toCol:0,hint:"Rook a1 moves to a8 — check!",xp:40},
