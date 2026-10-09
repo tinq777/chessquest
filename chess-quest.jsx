@@ -1898,10 +1898,10 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
   const xpPct = next ? ((xp-rank.min)/(next.min-rank.min))*100 : 100;
 
   return (
-    <div style={{height:"100%", background:world===2?"#0d0010":"#5dade2", position:"relative", display:"flex", flexDirection:"column", overflow:"hidden"}}>
+    <div style={{height:"100%", background:world===2?"#0d0010":world===4?"#1a0530":world===5?"#1a0020":world===6?"#003840":"#5dade2", position:"relative", display:"flex", flexDirection:"column", overflow:"hidden"}}>
 
       {/* Sky/dungeon background */}
-      <div style={{position:"absolute",inset:0,background:world===3?"linear-gradient(180deg,#fce4ec 0%,#f8bbd9 40%,#a5d6a7 40%,#81c784 100%)":world===2?"linear-gradient(180deg,#0d0010 0%,#1a0a0a 40%,#3d0000 40%,#1a0000 100%)":"linear-gradient(180deg,#85c1e9 0%,#5dade2 50%,#27ae60 50%,#1e8449 100%)"}}/>
+      <div style={{position:"absolute",inset:0,background:world===6?"linear-gradient(180deg,#e0f7fa 0%,#80deea 45%,#004d40 45%,#00695c 100%)":world===5?"linear-gradient(180deg,#fce4ec 0%,#f48fb1 45%,#880e4f 45%,#ad1457 100%)":world===4?"linear-gradient(180deg,#1a0530 0%,#2d0a52 45%,#1b0030 45%,#0d001a 100%)":world===3?"linear-gradient(180deg,#fce4ec 0%,#f8bbd9 40%,#a5d6a7 40%,#81c784 100%)":world===2?"linear-gradient(180deg,#0d0010 0%,#1a0a0a 40%,#3d0000 40%,#1a0000 100%)":"linear-gradient(180deg,#85c1e9 0%,#5dade2 50%,#27ae60 50%,#1e8449 100%)"}}/>
 
       {/* Clouds (W1) / Embers (W2) */}
       {world===1&&[[8,8,0.9],[55,5,0.7],[72,12,0.8]].map(([x,y,o],i)=>(
@@ -1919,11 +1919,20 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
       {world===2&&["🔥","💀","🐉","⚔️","🔥"].map((e,i)=>(
         <div key={i} style={{position:"absolute",left:`${10+i*20}%`,top:`${5+i*4}%`,fontSize:18+i*4,opacity:0.25,animation:`cloudDrift ${4+i*1.5}s ease-in-out infinite alternate`}}>{e}</div>
       ))}
+      {world===4&&["⚔️","🗡️","🧙","🏰","⚔️"].map((e,i)=>(
+        <div key={i} style={{position:"absolute",left:`${10+i*20}%`,top:`${5+i*4}%`,fontSize:18+i*4,opacity:0.2,animation:`cloudDrift ${4+i*1.5}s ease-in-out infinite alternate`}}>{e}</div>
+      ))}
+      {world===5&&["👑","💎","🌹","✨","👑"].map((e,i)=>(
+        <div key={i} style={{position:"absolute",left:`${10+i*20}%`,top:`${5+i*4}%`,fontSize:18+i*4,opacity:0.25,animation:`cloudDrift ${4+i*1.5}s ease-in-out infinite alternate`}}>{e}</div>
+      ))}
+      {world===6&&["🌈","✨","🦄","⭐","🌟"].map((e,i)=>(
+        <div key={i} style={{position:"absolute",left:`${10+i*20}%`,top:`${5+i*4}%`,fontSize:18+i*4,opacity:0.3,animation:`cloudDrift ${4+i*1.5}s ease-in-out infinite alternate`}}>{e}</div>
+      ))}
 
       {/* Curved divider */}
       <div style={{position:"absolute",top:"38%",left:0,right:0,height:60,overflow:"hidden"}}>
         <svg viewBox="0 0 400 60" preserveAspectRatio="none" style={{width:"100%",height:"100%"}}>
-          <path d="M0,30 Q100,0 200,30 Q300,60 400,30 L400,60 L0,60 Z" fill={world===3?"#81c784":world===2?"#3d0000":"#27ae60"}/>
+          <path d="M0,30 Q100,0 200,30 Q300,60 400,30 L400,60 L0,60 Z" fill={world===6?"#004d40":world===5?"#880e4f":world===4?"#1b0030":world===3?"#81c784":world===2?"#3d0000":"#27ae60"}/>
         </svg>
       </div>
 
@@ -2252,36 +2261,39 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           {/* Clouds (W1) / Smoke (W2) */}
           {[[55,30,1],[160,18,.85],[250,42,.75],[110,65,.7],[285,25,.8]].map(([cx,cy,op],i)=>(
             <g key={i} opacity={op}>
-              <ellipse cx={cx}    cy={cy}    rx={28+i*4} ry={10+i*2} fill={world===3?"#fce4ec":world===2?"#1a0000":"#fff"}/>
-              <ellipse cx={cx-10} cy={cy-5}  rx={15+i*2} ry={12+i*2} fill={world===3?"#fce4ec":world===2?"#2d0000":"#fff"}/>
-              <ellipse cx={cx+12} cy={cy-4}  rx={16+i*2} ry={10+i*1} fill={world===3?"#fce4ec":world===2?"#220000":"#fff"}/>
+              <ellipse cx={cx}    cy={cy}    rx={28+i*4} ry={10+i*2} fill={world===6?"#b2ebf2":world===5?"#fce4ec":world===4?"#e1bee7":world===3?"#fce4ec":world===2?"#1a0000":"#fff"}/>
+              <ellipse cx={cx-10} cy={cy-5}  rx={15+i*2} ry={12+i*2} fill={world===6?"#b2ebf2":world===5?"#fce4ec":world===4?"#e1bee7":world===3?"#fce4ec":world===2?"#2d0000":"#fff"}/>
+              <ellipse cx={cx+12} cy={cy-4}  rx={16+i*2} ry={10+i*1} fill={world===6?"#b2ebf2":world===5?"#fce4ec":world===4?"#e1bee7":world===3?"#fce4ec":world===2?"#220000":"#fff"}/>
             </g>
           ))}
 
           {/* Sun (W1) / Blood Moon (W2) */}
-          <circle cx="40" cy="45" r="28" fill={world===3?"#fce4ec":world===2?"#5c0000":"#fff9c4"} opacity=".6" filter="url(#softglow)"/>
-          <circle cx="40" cy="45" r="20" fill={world===3?"#f48fb1":world===2?"#8b0000":"#ffee58"} opacity=".9"/>
-          <circle cx="40" cy="45" r="14" fill={world===3?"#e91e8c":world===2?"#cc0000":"#fdd835"}/>
+          <circle cx="40" cy="45" r="28" fill={world===6?"#80deea":world===5?"#f48fb1":world===4?"#9c27b0":world===3?"#fce4ec":world===2?"#5c0000":"#fff9c4"} opacity=".6" filter="url(#softglow)"/>
+          <circle cx="40" cy="45" r="20" fill={world===6?"#26c6da":world===5?"#e91e63":world===4?"#7b1fa2":world===3?"#f48fb1":world===2?"#8b0000":"#ffee58"} opacity=".9"/>
+          <circle cx="40" cy="45" r="14" fill={world===6?"#00acc1":world===5?"#c2185b":world===4?"#6a1b9a":world===3?"#e91e8c":world===2?"#cc0000":"#fdd835"}/>
           {world===2&&<text x="40" y="52" textAnchor="middle" fontSize="16">🌑</text>}
           {world===3&&<text x="40" y="52" textAnchor="middle" fontSize="16">🌸</text>}
+          {world===4&&<text x="40" y="52" textAnchor="middle" fontSize="16">⭐</text>}
+          {world===5&&<text x="40" y="52" textAnchor="middle" fontSize="16">💖</text>}
+          {world===6&&<text x="40" y="52" textAnchor="middle" fontSize="16">🌈</text>}
 
           {/* ── FAR BACKGROUND MOUNTAINS ── */}
-          <polygon points="0,200 60,90 120,200"   fill={world===3?"#f48fb1":world===2?"#2d0000":"#90a4ae"} opacity=".45"/>
-          <polygon points="50,200 140,75 230,200"  fill={world===3?"#f06292":world===2?"#1a0000":"#78909c"} opacity=".4"/>
-          <polygon points="180,200 270,88 320,200" fill={world===3?"#f48fb1":world===2?"#2d0000":"#90a4ae"} opacity=".38"/>
+          <polygon points="0,200 60,90 120,200"   fill={world===6?"#004d40":world===5?"#880e4f":world===4?"#2d0a52":world===3?"#f48fb1":world===2?"#2d0000":"#90a4ae"} opacity=".45"/>
+          <polygon points="50,200 140,75 230,200"  fill={world===6?"#00695c":world===5?"#ad1457":world===4?"#1b0030":world===3?"#f06292":world===2?"#1a0000":"#78909c"} opacity=".4"/>
+          <polygon points="180,200 270,88 320,200" fill={world===6?"#004d40":world===5?"#880e4f":world===4?"#2d0a52":world===3?"#f48fb1":world===2?"#2d0000":"#90a4ae"} opacity=".38"/>
           {/* Snow caps (W1) / Lava peaks (W2) */}
-          <polygon points="60,90 50,125 70,125"   fill={world===3?"#fff9c4":world===2?"#ff2200":"#eceff1"} opacity={world===3||world===2?.4:.8}/>
-          <polygon points="140,75 128,114 152,114" fill={world===3?"#fff9c4":world===2?"#ff4400":"#eceff1"} opacity={world===3||world===2?.35:.85}/>
-          <polygon points="270,88 260,120 280,120" fill={world===3?"#fff9c4":world===2?"#ff2200":"#eceff1"} opacity={world===3||world===2?.3:.75}/>
+          <polygon points="60,90 50,125 70,125"   fill={world===6?"#80deea":world===5?"#f48fb1":world===4?"#9c27b0":world===3?"#fff9c4":world===2?"#ff2200":"#eceff1"} opacity=".4"/>
+          <polygon points="140,75 128,114 152,114" fill={world===6?"#80deea":world===5?"#f48fb1":world===4?"#9c27b0":world===3?"#fff9c4":world===2?"#ff4400":"#eceff1"} opacity=".35"/>
+          <polygon points="270,88 260,120 280,120" fill={world===6?"#80deea":world===5?"#f48fb1":world===4?"#9c27b0":world===3?"#fff9c4":world===2?"#ff2200":"#eceff1"} opacity=".3"/>
 
           {/* Mist at mountain base */}
           <ellipse cx="160" cy="200" rx="200" ry="25" fill="#fff" opacity=".18"/>
 
           {/* ── TERRAIN ── */}
           <rect x="0" y="190" width="320" height="400" fill={world===2?"url(#lavaG)":"url(#grassG)"} opacity=".7"/>
-          <ellipse cx="60"  cy="210" rx="100" ry="35" fill={world===3?"#c8e6c9":world===2?"#3d0000":"#4caf50"} opacity=".6"/>
-          <ellipse cx="260" cy="205" rx="100" ry="32" fill={world===3?"#c8e6c9":world===2?"#2d0000":"#4caf50"} opacity=".55"/>
-          <ellipse cx="160" cy="220" rx="140" ry="28" fill={world===3?"#b2dfdb":world===2?"#350000":"#43a047"} opacity=".5"/>
+          <ellipse cx="60"  cy="210" rx="100" ry="35" fill={world===6?"#004d40":world===5?"#880e4f":world===4?"#1b0030":world===3?"#c8e6c9":world===2?"#3d0000":"#4caf50"} opacity=".6"/>
+          <ellipse cx="260" cy="205" rx="100" ry="32" fill={world===6?"#00695c":world===5?"#ad1457":world===4?"#2d0a52":world===3?"#c8e6c9":world===2?"#2d0000":"#4caf50"} opacity=".55"/>
+          <ellipse cx="160" cy="220" rx="140" ry="28" fill={world===6?"#004d40":world===5?"#6a0136":world===4?"#1a0020":world===3?"#b2dfdb":world===2?"#350000":"#43a047"} opacity=".5"/>
 
           {/* ── CASTLE HILL ── */}
           <ellipse cx="160" cy="110" rx="105" ry="60" fill="url(#hillG)"/>
@@ -2457,9 +2469,9 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           {/* ── ROAD / PATH — two segments, hill area left blank ── */}
           {[roadBottom, roadTop].map((seg,i)=>(
             <g key={i}>
-              <path d={seg} fill="none" stroke={world===3?"#f06292":world===2?"#1a0000":"#5d4037"} strokeWidth="13" strokeLinecap="round" opacity=".4"/>
-              <path d={seg} fill="none" stroke={world===3?"#f8bbd9":world===2?"#3d1010":"#bcaaa4"} strokeWidth="10" strokeLinecap="round" opacity=".9"/>
-              <path d={seg} fill="none" stroke={world===3?"#fce4ec":world===2?"#6b0000":"#d7ccc8"} strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
+              <path d={seg} fill="none" stroke={world===6?"#004d40":world===5?"#880e4f":world===4?"#2d0a52":world===3?"#f06292":world===2?"#1a0000":"#5d4037"} strokeWidth="13" strokeLinecap="round" opacity=".4"/>
+              <path d={seg} fill="none" stroke={world===6?"#80deea":world===5?"#f48fb1":world===4?"#9c27b0":world===3?"#f8bbd9":world===2?"#3d1010":"#bcaaa4"} strokeWidth="10" strokeLinecap="round" opacity=".9"/>
+              <path d={seg} fill="none" stroke={world===6?"#b2ebf2":world===5?"#fce4ec":world===4?"#ce93d8":world===3?"#fce4ec":world===2?"#6b0000":"#d7ccc8"} strokeWidth="3" strokeLinecap="round" strokeDasharray="10,8" opacity=".6"/>
             </g>
           ))}
 
@@ -2467,9 +2479,9 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           {[[15,300],[295,290],[22,420],[302,400],[18,480],[300,460],[14,540],[298,525]].map(([tx,ty],i)=>(
             <g key={i} transform={`translate(${tx},${ty})`} opacity=".9">
               <rect x="-3" y="14" width="6" height="12" rx="1" fill="#5d4037"/>
-              <circle cx="0" cy="8"  r="11" fill={world===2?(i%3===0?"#5c0000":i%3===1?"#7a0000":"#990000"):(i%3===0?"#2e7d32":i%3===1?"#388e3c":"#43a047")}/>
-              <circle cx="0" cy="2"  r="8"  fill={i%3===0?"#388e3c":i%3===1?"#43a047":"#4caf50"}/>
-              <circle cx="0" cy="-3" r="5"  fill={world===2?"#ff4400":"#66bb6a"}/>
+              <circle cx="0" cy="8"  r="11" fill={world===6?(i%3===0?"#004d40":i%3===1?"#00695c":"#00897b"):world===5?(i%3===0?"#880e4f":i%3===1?"#ad1457":"#c2185b"):world===4?(i%3===0?"#1b0030":i%3===1?"#2d0a52":"#4a235a"):world===2?(i%3===0?"#5c0000":i%3===1?"#7a0000":"#990000"):(i%3===0?"#2e7d32":i%3===1?"#388e3c":"#43a047")}/>
+              <circle cx="0" cy="2"  r="8"  fill={world===6?(i%3===0?"#00695c":i%3===1?"#00897b":"#26a69a"):world===5?(i%3===0?"#ad1457":i%3===1?"#c2185b":"#d81b60"):world===4?(i%3===0?"#2d0a52":i%3===1?"#4a235a":"#6a1b9a"):(i%3===0?"#388e3c":i%3===1?"#43a047":"#4caf50")}/>
+              <circle cx="0" cy="-3" r="5"  fill={world===6?"#80cbc4":world===5?"#f48fb1":world===4?"#ce93d8":world===2?"#ff4400":"#66bb6a"}/>
             </g>
           ))}
 
@@ -2920,7 +2932,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           <g transform="translate(160,572)">
             <rect x="-55" y="-12" width="110" height="22" rx="5" fill="#5d4037"/>
             <rect x="-52" y="-9"  width="104" height="16" rx="3" fill="#8d6e63"/>
-            <text x="0" y="2" textAnchor="middle" fill="#fff8e1" fontSize="9" fontWeight="900" fontFamily="sans-serif">{world===3?"👸 FAIRY PALACE 👸":world===2?"🐉 DARK CASTLE 🐉":"🏰 CHESS VILLAGE 🏰"}</text>
+            <text x="0" y="2" textAnchor="middle" fill="#fff8e1" fontSize="9" fontWeight="900" fontFamily="sans-serif">{world===6?"🦄 UNICORN REALM 🦄":world===5?"👑 POWER PALACE 👑":world===4?"⚔️ KNIGHT'S KEEP ⚔️":world===3?"👸 FAIRY PALACE 👸":world===2?"🐉 DARK CASTLE 🐉":"🏰 CHESS VILLAGE 🏰"}</text>
           </g>
         </svg>
       </div>
