@@ -2354,7 +2354,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
           <polygon points="80,115 100,75 125,110"  fill="#5d6e7a" opacity=".6"/>
           <polygon points="200,115 220,70 240,110" fill="#546e7a" opacity=".55"/>
 
-          {/* ── CASTLE (on the hill) — W1: medieval, W2: dark dragon, W3: fairytale ── */}
+          {/* ── CASTLE (on the hill) — W1: medieval, W2: dark dragon, W3: fairytale, W4: knight fortress, W5: grand palace, W6: cloud citadel ── */}
           {world===1 ? (
           <g transform="translate(95,18)" filter="url(#shadow)">
             <rect x="5"  y="60" width="120" height="55" rx="2" fill="#b0bec5"/>
@@ -2431,51 +2431,193 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             {/* Lava drips */}
             {[20,45,85,110].map(lx=>(<ellipse key={lx} cx={lx} cy="117" rx="3" ry="5" fill="#ff4400" opacity=".5"/>))}
           </g>
-          ) : (
+          ) : world===3 ? (
           <g transform="translate(95,18)" filter="url(#shadow)">
             {/* Fairytale Castle — pink and magical */}
-            {/* Sparkle moat */}
             <ellipse cx="65" cy="122" rx="68" ry="10" fill="#f48fb1" opacity=".3"/>
             <ellipse cx="65" cy="122" rx="50" ry="6"  fill="#fce4ec" opacity=".25"/>
-            {/* Castle base — soft pink */}
             <rect x="5"  y="60" width="120" height="55" rx="2" fill="#f8bbd9"/>
             <rect x="5"  y="60" width="120" height="55" rx="2" fill="#fce4ec" opacity=".4"/>
             {[0,1,2,3,4].map(row=>(<rect key={row} x="5" y={60+row*11} width="120" height="1" fill="#f48fb1" opacity=".4"/>))}
-            {/* Left tower */}
             <rect x="0"  y="28" width="30" height="89" rx="3" fill="#f48fb1"/>
             <rect x="100" y="28" width="30" height="89" rx="3" fill="#f48fb1"/>
-            {/* Centre tower */}
             <rect x="45" y="8" width="40" height="109" rx="3" fill="#e91e8c"/>
             <rect x="45" y="8" width="40" height="109" rx="3" fill="#fce4ec" opacity=".2"/>
-            {/* Rounded turret tops */}
             <ellipse cx="15" cy="28" rx="16" ry="10" fill="#e91e8c"/>
             <ellipse cx="115" cy="28" rx="16" ry="10" fill="#e91e8c"/>
             <ellipse cx="65" cy="8" rx="22" ry="12" fill="#c2185b"/>
-            {/* Star battlements */}
             {[2,8,14,22].map(bx=>(<text key={bx} x={bx} y="26" fontSize="7" fill="#fce4ec">⭐</text>))}
             {[102,108,114,122].map(bx=>(<text key={bx} x={bx} y="26" fontSize="7" fill="#fce4ec">⭐</text>))}
             {[46,54,62,70,78].map(bx=>(<text key={bx} x={bx} y="6" fontSize="6" fill="#fce4ec">✨</text>))}
-            {/* Princess flags */}
             <rect x="14" y="2"  width="2" height="14" fill="#fff"/>
             <text x="16" y="4" fontSize="9">👑</text>
             <rect x="64" y="-14" width="2" height="16" fill="#fff"/>
             <text x="66" y="-14" fontSize="11">👸</text>
-            {/* Pointed pink spires */}
             <polygon points="15,28 0,28 30,28 15,4"   fill="#c2185b"/>
             <polygon points="115,28 100,28 130,28 115,4" fill="#c2185b"/>
             <polygon points="65,8 45,8 85,8 65,-18"  fill="#880e4f"/>
-            {/* Gate arch — sparkle glow */}
             <path d="M50,117 L50,88 Q65,72 80,88 L80,117" fill="#c2185b"/>
             <path d="M53,117 L53,90 Q65,77 77,90 L77,117" fill="#f8bbd9" opacity=".5"/>
-            {/* Heart windows */}
             <text x="9"   y="56" textAnchor="middle" fontSize="12">💖</text>
             <text x="115" y="56" textAnchor="middle" fontSize="12">💖</text>
             <text x="65"  y="35" textAnchor="middle" fontSize="14">💎</text>
-            {/* Connecting walls */}
             <rect x="30" y="52" width="16" height="63" rx="1" fill="#f06292"/>
             <rect x="84" y="52" width="16" height="63" rx="1" fill="#f06292"/>
-            {/* Sparkle drips */}
             {[15,40,90,115].map(lx=>(<text key={lx} x={lx} y="118" fontSize="8" opacity=".7">✨</text>))}
+          </g>
+          ) : world===4 ? (
+          <g transform="translate(95,18)" filter="url(#shadow)">
+            {/* Knight's Fortress — dark stone, battle-scarred, imposing */}
+            {/* Moat */}
+            <ellipse cx="65" cy="122" rx="68" ry="10" fill="#1a0a2e" opacity=".6"/>
+            <ellipse cx="65" cy="122" rx="50" ry="6"  fill="#4a0080" opacity=".2"/>
+            {/* Castle base — dark granite */}
+            <rect x="5"  y="60" width="120" height="55" rx="1" fill="#1c1225"/>
+            {[0,1,2,3,4].map(row=>(<rect key={row} x="5" y={60+row*11} width="120" height="1" fill="#2d1b40" opacity=".6"/>))}
+            {/* Left tower — wider and taller */}
+            <rect x="-4"  y="22" width="36" height="95" rx="2" fill="#160d22"/>
+            {/* Right tower */}
+            <rect x="98" y="22" width="36" height="95" rx="2" fill="#160d22"/>
+            {/* Centre keep — tallest, narrow */}
+            <rect x="42" y="4" width="46" height="113" rx="2" fill="#0d0818"/>
+            {/* Stone texture lines */}
+            {[24,36,48,60,72,84,96].map(y=>(<rect key={y} x="5" y={y} width="120" height="1.5" fill="#2d1b40" opacity=".5"/>))}
+            {/* Jagged battlements — left tower */}
+            {[0,7,14,21,28].map(bx=>(<rect key={bx} x={bx} y="14" width="5" height="10" rx="1" fill="#1c1225"/>))}
+            {/* Jagged battlements — right tower */}
+            {[98,105,112,119,126].map(bx=>(<rect key={bx} x={bx} y="14" width="5" height="10" rx="1" fill="#1c1225"/>))}
+            {/* Battlements centre keep */}
+            {[42,50,58,66,74,82].map(bx=>(<rect key={bx} x={bx} y="-4" width="6" height="10" rx="1" fill="#0d0818"/>))}
+            {/* Corner turrets on left */}
+            <circle cx="14" cy="22" r="10" fill="#1c1225" stroke="#2d1b40" strokeWidth="1"/>
+            <circle cx="14" cy="22" r="6"  fill="#0d0818"/>
+            {/* Corner turrets on right */}
+            <circle cx="116" cy="22" r="10" fill="#1c1225" stroke="#2d1b40" strokeWidth="1"/>
+            <circle cx="116" cy="22" r="6"  fill="#0d0818"/>
+            {/* Purple glowing windows */}
+            <rect x="2"  y="38" width="12" height="18" rx="6" fill="#6a1b9a" opacity=".8"/>
+            <rect x="116" y="38" width="12" height="18" rx="6" fill="#6a1b9a" opacity=".8"/>
+            <rect x="50" y="20" width="22" height="20" rx="3" fill="#7b1fa2" opacity=".9"/>
+            {/* Sword flags */}
+            <rect x="12" y="4"  width="2" height="14" fill="#9c27b0"/>
+            <text x="12" y="4"  textAnchor="middle" fontSize="9">⚔️</text>
+            <rect x="64" y="-16" width="2" height="18" fill="#9c27b0"/>
+            <text x="64" y="-16" textAnchor="middle" fontSize="11">👑</text>
+            {/* Spires — pointed and dark */}
+            <polygon points="14,22 2,22 26,22 14,-6"   fill="#2d1b40"/>
+            <polygon points="116,22 104,22 128,22 116,-6" fill="#2d1b40"/>
+            <polygon points="65,4 42,4 88,4 65,-24"    fill="#1a0a2e"/>
+            {/* Gate portcullis */}
+            <path d="M50,117 L50,88 Q65,73 80,88 L80,117" fill="#0d0818"/>
+            {[52,57,62,67,72,77].map(gx=>(<rect key={gx} x={gx} y="84" width="2" height="32" fill="#2d1b40" opacity=".9"/>))}
+            {[88,94,100].map(gy=>(<rect key={gy} x="50" y={gy} width="30" height="2" fill="#2d1b40" opacity=".7"/>))}
+            {/* Purple moat glow */}
+            {[8,30,90,112].map(lx=>(<ellipse key={lx} cx={lx} cy="117" rx="4" ry="6" fill="#7b1fa2" opacity=".3"/>))}
+          </g>
+          ) : world===5 ? (
+          <g transform="translate(95,18)" filter="url(#shadow)">
+            {/* Grand Princess Palace — opulent pink gold */}
+            {/* Glittering moat */}
+            <ellipse cx="65" cy="122" rx="68" ry="10" fill="#fce4ec" opacity=".5"/>
+            <ellipse cx="65" cy="122" rx="50" ry="6"  fill="#f8bbd9" opacity=".4"/>
+            {/* Wide palace base — ivory */}
+            <rect x="2"  y="58" width="126" height="59" rx="3" fill="#fff8e1"/>
+            <rect x="2"  y="58" width="126" height="59" rx="3" fill="#fce4ec" opacity=".3"/>
+            {/* Gold banding */}
+            <rect x="0"  y="56" width="130" height="6"  rx="2" fill="#fdd835"/>
+            <rect x="0"  y="112" width="130" height="5" rx="2" fill="#fdd835"/>
+            {/* Side wings */}
+            <rect x="-6"  y="30" width="34" height="88" rx="3" fill="#fce4ec"/>
+            <rect x="102" y="30" width="34" height="88" rx="3" fill="#fce4ec"/>
+            {/* Gold pilasters on wings */}
+            <rect x="-2"  y="30" width="6" height="88" rx="2" fill="#fdd835" opacity=".6"/>
+            <rect x="26"  y="30" width="6" height="88" rx="2" fill="#fdd835" opacity=".6"/>
+            <rect x="102" y="30" width="6" height="88" rx="2" fill="#fdd835" opacity=".6"/>
+            <rect x="122" y="30" width="6" height="88" rx="2" fill="#fdd835" opacity=".6"/>
+            {/* Grand centre tower */}
+            <rect x="40" y="4" width="50" height="114" rx="3" fill="#fff9c4"/>
+            <rect x="40" y="4" width="50" height="114" rx="3" fill="#fce4ec" opacity=".2"/>
+            {/* Gold columns on centre */}
+            <rect x="44" y="4" width="6"  height="114" rx="2" fill="#fdd835" opacity=".5"/>
+            <rect x="80" y="4" width="6"  height="114" rx="2" fill="#fdd835" opacity=".5"/>
+            {/* Grand dome on centre */}
+            <ellipse cx="65" cy="4"  rx="28" ry="16" fill="#f48fb1"/>
+            <ellipse cx="65" cy="0"  rx="20" ry="12" fill="#e91e8c"/>
+            <ellipse cx="65" cy="-4" rx="12" ry="8"  fill="#c2185b"/>
+            {/* Onion dome tip */}
+            <ellipse cx="65" cy="-10" rx="5" ry="6" fill="#880e4f"/>
+            <rect x="64" y="-20" width="2" height="12" fill="#fdd835"/>
+            <text x="64" y="-22" textAnchor="middle" fontSize="10">💎</text>
+            {/* Dome turrets on wings */}
+            <ellipse cx="10"  cy="30" rx="14" ry="8" fill="#f48fb1"/>
+            <ellipse cx="10"  cy="24" rx="9"  ry="6" fill="#e91e8c"/>
+            <polygon points="10,18 3,24 17,24" fill="#c2185b"/>
+            <rect x="9" y="8" width="2" height="12" fill="#fdd835"/>
+            <text x="9" y="8" textAnchor="middle" fontSize="7">👑</text>
+            <ellipse cx="120" cy="30" rx="14" ry="8" fill="#f48fb1"/>
+            <ellipse cx="120" cy="24" rx="9"  ry="6" fill="#e91e8c"/>
+            <polygon points="120,18 113,24 127,24" fill="#c2185b"/>
+            <rect x="119" y="8" width="2" height="12" fill="#fdd835"/>
+            <text x="119" y="8" textAnchor="middle" fontSize="7">👑</text>
+            {/* Palace windows — arched */}
+            <path d="M6,46 Q14,34 22,46 L22,60 L6,60 Z"  fill="#f8bbd9" opacity=".9"/>
+            <path d="M108,46 Q116,34 124,46 L124,60 L108,60 Z" fill="#f8bbd9" opacity=".9"/>
+            <path d="M49,22 Q65,8 81,22 L81,44 L49,44 Z" fill="#f48fb1" opacity=".9"/>
+            {/* Gold heart crest */}
+            <text x="65" y="36" textAnchor="middle" fontSize="14">💖</text>
+            {/* Grand entrance */}
+            <path d="M50,117 L50,84 Q65,68 80,84 L80,117" fill="#fdd835" opacity=".6"/>
+            <path d="M53,117 L53,86 Q65,72 77,86 L77,117" fill="#fff9c4" opacity=".7"/>
+            {/* Gold star battlements */}
+            {[0,8,16,24].map(bx=>(<text key={bx} x={bx} y="26" fontSize="7" fill="#fdd835">★</text>))}
+            {[106,114,122].map(bx=>(<text key={bx} x={bx} y="26" fontSize="7" fill="#fdd835">★</text>))}
+            {/* Sparkles at base */}
+            {[10,35,65,95,120].map(lx=>(<text key={lx} x={lx} y="120" fontSize="7" opacity=".8">✨</text>))}
+          </g>
+          ) : (
+          <g transform="translate(95,18)" filter="url(#shadow)">
+            {/* Cloud Citadel — ethereal teal and white, floating */}
+            {/* Rainbow moat */}
+            <ellipse cx="65" cy="122" rx="68" ry="10" fill="#80deea" opacity=".4"/>
+            <ellipse cx="65" cy="122" rx="50" ry="6"  fill="#b2ebf2" opacity=".3"/>
+            {/* Fluffy cloud base */}
+            <ellipse cx="65"  cy="90" rx="62" ry="30" fill="#e0f7fa" opacity=".9"/>
+            <ellipse cx="30"  cy="95" rx="30" ry="22" fill="#b2ebf2"/>
+            <ellipse cx="100" cy="95" rx="30" ry="22" fill="#b2ebf2"/>
+            <ellipse cx="65"  cy="85" rx="40" ry="28" fill="#e0f7fa"/>
+            {/* Left tower — crystal */}
+            <rect x="0"  y="30" width="28" height="82" rx="8" fill="#b2ebf2" opacity=".9"/>
+            <rect x="0"  y="30" width="28" height="82" rx="8" fill="#fff"     opacity=".3"/>
+            {/* Right tower */}
+            <rect x="102" y="30" width="28" height="82" rx="8" fill="#b2ebf2" opacity=".9"/>
+            <rect x="102" y="30" width="28" height="82" rx="8" fill="#fff"     opacity=".3"/>
+            {/* Centre spire — tall and tapered */}
+            <rect x="46" y="8" width="38" height="104" rx="10" fill="#80deea" opacity=".95"/>
+            <rect x="46" y="8" width="38" height="104" rx="10" fill="#fff"     opacity=".2"/>
+            {/* Rainbow arches */}
+            {[["#ef9a9a",14],["#ffd54f",12],["#a5d6a7",10],["#80deea",8]].map(([c,r])=>(
+              <ellipse key={c} cx="65" cy="8" rx={r*3} ry={r} fill={c} opacity=".4"/>
+            ))}
+            {/* Crystal turret tops */}
+            <polygon points="14,30 6,30 22,30 14,8"    fill="#00acc1" opacity=".8"/>
+            <polygon points="116,30 108,30 124,30 116,8" fill="#00acc1" opacity=".8"/>
+            <polygon points="65,8 48,8 82,8 65,-20"    fill="#0097a7" opacity=".9"/>
+            {/* Glow windows */}
+            <rect x="6"  y="48" width="12" height="16" rx="6" fill="#e0f7fa" opacity=".9"/>
+            <rect x="112" y="48" width="12" height="16" rx="6" fill="#e0f7fa" opacity=".9"/>
+            <rect x="52" y="24" width="26" height="20" rx="6" fill="#b2ebf2" opacity=".9"/>
+            {/* Star / rainbow flags */}
+            <rect x="13" y="3"  width="2" height="12" fill="#fff"/>
+            <text x="13" y="3"  textAnchor="middle" fontSize="8">🌈</text>
+            <rect x="64" y="-16" width="2" height="18" fill="#fff"/>
+            <text x="64" y="-16" textAnchor="middle" fontSize="10">⭐</text>
+            {/* Unicorn emblem */}
+            <text x="65" y="36" textAnchor="middle" fontSize="14">🦄</text>
+            {/* Cloud gate — soft arch */}
+            <path d="M50,117 L50,90 Q65,76 80,90 L80,117" fill="#80deea" opacity=".7"/>
+            <path d="M53,117 L53,92 Q65,80 77,92 L77,117" fill="#fff" opacity=".5"/>
+            {/* Cloud puffs at base */}
+            {[8,35,65,95,118].map(cx=>(<ellipse key={cx} cx={cx} cy="117" rx="8" ry="5" fill="#e0f7fa" opacity=".7"/>))}
           </g>
           )}
 
@@ -2559,7 +2701,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             const zoneColor = activeZones[i]?.color || "#888";
 
             // Skip last zone — drawn separately above
-            if(b.zone==="rush"||b.zone==="castle2"||b.zone==="crown") return null;
+            if(b.zone==="rush"||b.zone==="castle2"||b.zone==="crown"||b.zone==="champion"||b.zone==="crown5"||b.zone==="ultimate") return null;
 
             return(
               <g key={b.zone} onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
@@ -2878,6 +3020,285 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                         <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🌟"}</text>
                       </g>
                     );
+                    // ── World 4 knight's tale buildings ──
+                    if(b.zone==="joust") return( // Jousting arena
+                      <g>
+                        <rect x="4" y="30" width="46" height="24" rx="2" fill={lo?"#455a64":"#4a235a"}/>
+                        <rect x="0" y="24" width="54" height="8" rx="2" fill={lo?"#37474f":"#6a1b9a"}/>
+                        {!lo&&<><rect x="24" y="14" width="4" height="28" fill="#9c27b0"/>
+                        <text x="27" y="14" textAnchor="middle" fontSize="9">⚔️</text>
+                        {[6,14,34,42].map(fx=>(<rect key={fx} x={fx} y="26" width="6" height="16" rx="1" fill="#7b1fa2" opacity=".6"/>))}</>}
+                        <rect x="18" y="42" width="18" height="12" rx="2" fill={lo?"#37474f":"#38006b"}/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🏇"}</text>
+                      </g>
+                    );
+                    if(b.zone==="quest") return( // Quest outpost
+                      <g>
+                        <rect x="6" y="26" width="42" height="28" rx="3" fill={lo?"#546e7a":"#2d1b40"}/>
+                        <polygon points="2,28 27,6 52,28" fill={lo?"#37474f":"#1a0a2e"}/>
+                        {!lo&&<><text x="27" y="24" textAnchor="middle" fontSize="10">🗺️</text>
+                        <rect x="14" y="30" width="9" height="10" rx="1" fill="#6a1b9a" opacity=".7"/>
+                        <rect x="31" y="30" width="9" height="10" rx="1" fill="#6a1b9a" opacity=".7"/></>}
+                        <rect x="20" y="42" width="14" height="12" rx="3" fill={lo?"#37474f":"#0d0818"}/>
+                        <text x="27" y="24" textAnchor="middle" fontSize="10">{lo?"🔒":"🗺️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="siege") return( // Siege tower / catapult
+                      <g>
+                        <rect x="10" y="14" width="20" height="42" rx="2" fill={lo?"#546e7a":"#1c1225"}/>
+                        {[10,18,26,34,42].map(y=>(<rect key={y} x="10" y={y} width="20" height="2" fill={lo?"#455a64":"#2d1b40"} opacity=".6"/>))}
+                        <rect x="6"  y="10" width="28" height="8" rx="1" fill={lo?"#37474f":"#160d22"}/>
+                        {[6,12,18,24,30].map(bx=>(<rect key={bx} x={bx} y="4" width="4" height="8" rx="1" fill={lo?"#455a64":"#0d0818"}/>))}
+                        {!lo&&<><rect x="30" y="28" width="22" height="6" rx="2" fill="#4a235a"/>
+                        <ellipse cx="52" cy="22" rx="6" ry="6" fill="#2d1b40"/>
+                        <text x="20" y="36" textAnchor="middle" fontSize="8">⚔️</text></>}
+                        <rect x="14" y="48" width="12" height="8" rx="2" fill={lo?"#37474f":"#0d0818"}/>
+                        <text x="20" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🏰"}</text>
+                      </g>
+                    );
+                    if(b.zone==="forest4") return( // Dark enchanted forest
+                      <g>
+                        <ellipse cx="27" cy="36" rx="22" ry="24" fill={lo?"#546e7a":"#1b0030"}/>
+                        <ellipse cx="27" cy="24" rx="16" ry="18" fill={lo?"#455a64":"#2d0a52"}/>
+                        {!lo&&<><text x="27" y="28" textAnchor="middle" fontSize="12">🌲</text>
+                        <text x="12" y="48" fontSize="8" opacity=".6">🍄</text>
+                        <text x="38" y="48" fontSize="8" opacity=".6">🕷️</text></>}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🌲"}</text>
+                      </g>
+                    );
+                    if(b.zone==="dragon4") return( // Dragon's lair cave
+                      <g>
+                        <ellipse cx="27" cy="46" rx="22" ry="14" fill={lo?"#546e7a":"#1b0030"}/>
+                        <path d="M6,46 Q8,26 16,18 Q27,12 38,18 Q46,26 48,46" fill={lo?"#455a64":"#2d0a52"}/>
+                        {!lo&&<><text x="27" y="32" textAnchor="middle" fontSize="14">🐉</text>
+                        <ellipse cx="27" cy="48" rx="12" ry="4" fill="#9c27b0" opacity=".3"/>
+                        {[10,20,34,44].map(fx=><text key={fx} x={fx} y="52" fontSize="7" opacity=".6">⚡</text>)}</>}
+                        {[8,16,24,30,38,46].map(tx=><polygon key={tx} points={`${tx},44 ${tx+3},36 ${tx+6},44`} fill={lo?"#37474f":"#4a235a"}/>)}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🐲"}</text>
+                      </g>
+                    );
+                    if(b.zone==="sword") return( // Sword masters hall
+                      <g>
+                        <rect x="6" y="22" width="42" height="32" rx="3" fill={lo?"#546e7a":"#1c1225"}/>
+                        <polygon points="2,24 27,4 52,24" fill={lo?"#37474f":"#0d0818"}/>
+                        {!lo&&<><text x="20" y="36" textAnchor="middle" fontSize="9">🗡️</text>
+                        <text x="34" y="36" textAnchor="middle" fontSize="9">🗡️</text>
+                        <rect x="24" y="22" width="6" height="20" fill="#9c27b0" opacity=".5"/></>}
+                        <rect x="20" y="42" width="14" height="12" rx="3" fill={lo?"#37474f":"#0d0818"}/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🗡️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="grail") return( // Holy grail chapel
+                      <g>
+                        <rect x="10" y="28" width="34" height="26" rx="3" fill={lo?"#546e7a":"#2d1b40"}/>
+                        <rect x="20" y="14" width="14" height="18" rx="2" fill={lo?"#455a64":"#1a0a2e"}/>
+                        <polygon points="20,16 27,2 34,16" fill={lo?"#37474f":"#6a1b9a"}/>
+                        {!lo&&<><rect x="25" y="3" width="4" height="11" rx="1" fill="#ce93d8"/>
+                        <rect x="22" y="7" width="10" height="3" rx="1" fill="#ce93d8"/>
+                        <text x="27" y="44" textAnchor="middle" fontSize="8">✨</text></>}
+                        <rect x="14" y="32" width="9" height="13" rx="5" fill={lo?"#37474f":"#9c27b0"} opacity={lo?.3:.8}/>
+                        <rect x="31" y="32" width="9" height="13" rx="5" fill={lo?"#37474f":"#9c27b0"} opacity={lo?.3:.8}/>
+                        <rect x="21" y="42" width="12" height="12" rx="6" fill={lo?"#37474f":"#1a0a2e"}/>
+                        <text x="27" y="14" textAnchor="middle" fontSize="10">{lo?"🔒":"✨"}</text>
+                      </g>
+                    );
+                    if(b.zone==="wizard") return( // Wizard's tower
+                      <g>
+                        <rect x="14" y="12" width="26" height="44" rx="4" fill={lo?"#546e7a":"#2d1b40"}/>
+                        {[14,20,26,32,38,42].map(bx=><rect key={bx} x={bx} y="8" width="4" height="8" rx="1" fill={lo?"#455a64":"#1a0a2e"}/>)}
+                        <polygon points="14,14 27,-4 40,14" fill={lo?"#37474f":"#6a1b9a"}/>
+                        {!lo&&<><rect x="22" y="24" width="10" height="12" rx="5" fill="#ce93d8" opacity=".8"/>
+                        <text x="27" y="33" textAnchor="middle" fontSize="9">🔮</text>
+                        <ellipse cx="27" cy="10" rx="10" ry="5" fill="#7b1fa2" opacity=".5"/></>}
+                        <rect x="20" y="44" width="14" height="12" rx="3" fill={lo?"#37474f":"#1a0a2e"}/>
+                        <text x="27" y="8" textAnchor="middle" fontSize="10">{lo?"🔒":"🧙"}</text>
+                      </g>
+                    );
+                    // ── World 5 princess power buildings ──
+                    if(b.zone==="tiara") return( // Tiara tower
+                      <g>
+                        <rect x="14" y="14" width="26" height="42" rx="3" fill={lo?"#546e7a":"#fff9c4"}/>
+                        {[14,20,26,32,38,42].map(bx=><rect key={bx} x={bx} y="10" width="4" height="8" rx="1" fill={lo?"#455a64":"#fdd835"}/>)}
+                        {!lo&&<><ellipse cx="27" cy="26" rx="8" ry="5" fill="#fdd835"/>
+                        <text x="27" y="28" textAnchor="middle" fontSize="9">👑</text>
+                        {[10,44].map(tx=><text key={tx} x={tx} y="8" fontSize="7" opacity=".8">⭐</text>)}</>}
+                        <rect x="20" y="44" width="14" height="12" rx="3" fill={lo?"#37474f":"#f9a825"}/>
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"👑"}</text>
+                      </g>
+                    );
+                    if(b.zone==="garden5") return( // Rose garden pavilion
+                      <g>
+                        <rect x="6" y="28" width="42" height="26" rx="3" fill={lo?"#78909c":"#fce4ec"}/>
+                        <polygon points="2,30 27,8 52,30" fill={lo?"#546e7a":"#f06292"}/>
+                        {!lo&&<><circle cx="12" cy="30" r="5" fill="#e91e8c" opacity=".7"/>
+                        <circle cx="42" cy="30" r="5" fill="#e91e8c" opacity=".7"/>
+                        <text x="27" y="46" textAnchor="middle" fontSize="9">🌹🌹</text></>}
+                        <rect x="19" y="38" width="16" height="16" rx="2" fill={lo?"#37474f":"#f48fb1"}/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🌹"}</text>
+                      </g>
+                    );
+                    if(b.zone==="moat") return( // Moat bridge
+                      <g>
+                        <ellipse cx="27" cy="44" rx="22" ry="12" fill={lo?"#546e7a":"#80deea"}/>
+                        <ellipse cx="27" cy="42" rx="16" ry="8" fill={lo?"#455a64":"#26c6da"}/>
+                        {!lo&&<><rect x="14" y="36" width="26" height="6" rx="2" fill="#a1887f"/>
+                        <text x="27" y="26" textAnchor="middle" fontSize="10">💧</text>
+                        <text x="10" y="46" fontSize="8" opacity=".6">🐟</text>
+                        <text x="40" y="46" fontSize="8" opacity=".6">🐟</text></>}
+                        <text x="27" y="18" textAnchor="middle" fontSize="10">{lo?"🔒":"💧"}</text>
+                      </g>
+                    );
+                    if(b.zone==="ball") return( // Royal ballroom
+                      <g>
+                        <rect x="4" y="22" width="46" height="32" rx="3" fill={lo?"#546e7a":"#f8bbd9"}/>
+                        <polygon points="0,24 27,4 54,24" fill={lo?"#37474f":"#e91e8c"}/>
+                        {!lo&&<><text x="27" y="36" textAnchor="middle" fontSize="12">💃</text>
+                        <rect x="10" y="26" width="9" height="10" rx="1" fill="#f48fb1" opacity=".8"/>
+                        <rect x="35" y="26" width="9" height="10" rx="1" fill="#f48fb1" opacity=".8"/></>}
+                        <rect x="20" y="42" width="14" height="12" rx="4" fill={lo?"#37474f":"#c2185b"}/>
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"💃"}</text>
+                      </g>
+                    );
+                    if(b.zone==="steed") return( // Enchanted stable
+                      <g>
+                        <rect x="4" y="26" width="46" height="28" rx="3" fill={lo?"#546e7a":"#f48fb1"}/>
+                        <polygon points="0,28 27,6 54,28" fill={lo?"#37474f":"#e91e8c"}/>
+                        {!lo&&<><text x="27" y="40" textAnchor="middle" fontSize="12">🐴</text>
+                        <text x="10" y="30" fontSize="8" opacity=".7">✨</text>
+                        <text x="42" y="30" fontSize="8" opacity=".7">✨</text></>}
+                        <rect x="20" y="42" width="14" height="12" rx="3" fill={lo?"#37474f":"#c2185b"}/>
+                        <text x="27" y="24" textAnchor="middle" fontSize="10">{lo?"🔒":"🐴"}</text>
+                      </g>
+                    );
+                    if(b.zone==="mirror") return( // Magic mirror chamber
+                      <g>
+                        <rect x="8" y="16" width="38" height="40" rx="4" fill={lo?"#546e7a":"#fce4ec"}/>
+                        <rect x="12" y="20" width="30" height="32" rx="2" fill={lo?"#37474f":"#f8bbd9"} opacity=".9"/>
+                        {!lo&&<><ellipse cx="27" cy="36" rx="10" ry="12" fill="#fff" opacity=".6"/>
+                        <text x="27" y="38" textAnchor="middle" fontSize="9">🪞</text>
+                        <text x="10" y="16" fontSize="7" opacity=".8">✨</text>
+                        <text x="44" y="16" fontSize="7" opacity=".8">✨</text></>}
+                        <rect x="22" y="52" width="10" height="6" rx="2" fill={lo?"#37474f":"#f06292"}/>
+                        <text x="27" y="14" textAnchor="middle" fontSize="10">{lo?"🔒":"🪞"}</text>
+                      </g>
+                    );
+                    if(b.zone==="sorcery") return( // Sorcery spire
+                      <g>
+                        <rect x="14" y="16" width="26" height="40" rx="4" fill={lo?"#546e7a":"#ce93d8"}/>
+                        {[14,20,26,32,38,42].map(bx=><rect key={bx} x={bx} y="12" width="4" height="8" rx="1" fill={lo?"#455a64":"#ba68c8"}/>)}
+                        <polygon points="14,18 27,-2 40,18" fill={lo?"#37474f":"#9c27b0"}/>
+                        {!lo&&<><ellipse cx="27" cy="30" rx="8" ry="10" fill="#f8bbd9" opacity=".8"/>
+                        <text x="27" y="33" textAnchor="middle" fontSize="9">⚡</text>
+                        <text x="16" y="14" fontSize="6" opacity=".8">⭐</text>
+                        <text x="36" y="14" fontSize="6" opacity=".8">💫</text></>}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"⚡"}</text>
+                      </g>
+                    );
+                    if(b.zone==="palace5") return( // Grand palace
+                      <g>
+                        <rect x="4" y="22" width="46" height="32" rx="2" fill={lo?"#546e7a":"#fff9c4"}/>
+                        <rect x="0" y="16" width="12" height="38" rx="2" fill={lo?"#455a64":"#fdd835"}/>
+                        <rect x="42" y="16" width="12" height="38" rx="2" fill={lo?"#455a64":"#fdd835"}/>
+                        <rect x="17" y="8" width="20" height="46" rx="2" fill={lo?"#37474f":"#f57f17"}/>
+                        {!lo&&<><text x="27" y="24" textAnchor="middle" fontSize="10">💎</text>
+                        <rect x="23" y="34" width="8" height="12" rx="4" fill="#fce4ec"/>
+                        {[2,8,14,36,42,48].map(bx=><rect key={bx} x={bx} y="12" width="4" height="6" rx="1" fill="#f9a825"/>)}</>}
+                        <text x="27" y="6" textAnchor="middle" fontSize="10">{lo?"🔒":"🏰"}</text>
+                      </g>
+                    );
+                    // ── World 6 unicorn rainbow buildings ──
+                    if(b.zone==="rainbow") return( // Rainbow bridge arch
+                      <g>
+                        {!lo&&[["#ef9a9a",24],["#ffd54f",20],["#a5d6a7",16],["#80deea",12]].map(([c,r])=>(
+                          <path key={c} d={`M4,54 Q27,${54-r*2} 50,54`} fill="none" stroke={c} strokeWidth="3" opacity=".8"/>
+                        ))}
+                        <ellipse cx="4"  cy="54" rx="6" ry="8" fill={lo?"#546e7a":"#b2ebf2"}/>
+                        <ellipse cx="50" cy="54" rx="6" ry="8" fill={lo?"#546e7a":"#b2ebf2"}/>
+                        {!lo&&<text x="27" y="20" textAnchor="middle" fontSize="10">🌈</text>}
+                        <text x="27" y="46" textAnchor="middle" fontSize="10">{lo?"🔒":"🌈"}</text>
+                      </g>
+                    );
+                    if(b.zone==="sparkle") return( // Sparkle meadow
+                      <g>
+                        <ellipse cx="27" cy="40" rx="22" ry="18" fill={lo?"#546e7a":"#b2ebf2"}/>
+                        <ellipse cx="27" cy="32" rx="16" ry="14" fill={lo?"#455a64":"#e0f7fa"}/>
+                        {!lo&&<><text x="27" y="30" textAnchor="middle" fontSize="12">✨</text>
+                        <text x="10" y="46" fontSize="8" opacity=".7">🌟</text>
+                        <text x="44" y="46" fontSize="8" opacity=".7">💫</text></>}
+                        <text x="27" y="12" textAnchor="middle" fontSize="10">{lo?"🔒":"✨"}</text>
+                      </g>
+                    );
+                    if(b.zone==="cloud") return( // Floating cloud castle
+                      <g>
+                        <ellipse cx="27" cy="40" rx="22" ry="12" fill={lo?"#546e7a":"#e0f7fa"}/>
+                        <ellipse cx="18" cy="36" rx="14" ry="10" fill={lo?"#455a64":"#b2ebf2"}/>
+                        <ellipse cx="36" cy="36" rx="14" ry="10" fill={lo?"#455a64":"#b2ebf2"}/>
+                        <ellipse cx="27" cy="30" rx="18" ry="14" fill={lo?"#546e7a":"#e0f7fa"}/>
+                        {!lo&&<><rect x="20" y="14" width="14" height="20" rx="4" fill="#80deea"/>
+                        <text x="27" y="26" textAnchor="middle" fontSize="8">☁️</text>
+                        <text x="12" y="20" fontSize="7" opacity=".8">🌤️</text></>}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"☁️"}</text>
+                      </g>
+                    );
+                    if(b.zone==="moonbeam") return( // Moonbeam observatory
+                      <g>
+                        <rect x="14" y="22" width="26" height="34" rx="3" fill={lo?"#546e7a":"#1a1a3e"}/>
+                        <ellipse cx="27" cy="22" rx="16" ry="14" fill={lo?"#455a64":"#001f5b"}/>
+                        <ellipse cx="27" cy="16" rx="10" ry="8"  fill={lo?"#37474f":"#0d1b6b"}/>
+                        {!lo&&<><text x="27" y="18" textAnchor="middle" fontSize="9">🌙</text>
+                        <ellipse cx="40" cy="12" rx="4" ry="4" fill="#fff" opacity=".3"/>
+                        <text x="27" y="40" textAnchor="middle" fontSize="8">⭐</text></>}
+                        <rect x="20" y="46" width="14" height="10" rx="3" fill={lo?"#37474f":"#001f5b"}/>
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🌙"}</text>
+                      </g>
+                    );
+                    if(b.zone==="stardust") return( // Stardust tower
+                      <g>
+                        <rect x="14" y="14" width="26" height="42" rx="4" fill={lo?"#546e7a":"#1a1a3e"}/>
+                        {[14,20,26,32,38,44].map(bx=><rect key={bx} x={bx} y="10" width="4" height="8" rx="1" fill={lo?"#455a64":"#001f5b"}/>)}
+                        <polygon points="14,16 27,-4 40,16" fill={lo?"#37474f":"#0d1b6b"}/>
+                        {!lo&&<><ellipse cx="27" cy="30" rx="8" ry="10" fill="#80deea" opacity=".5"/>
+                        <text x="27" y="33" textAnchor="middle" fontSize="9">⭐</text>
+                        <text x="14" y="12" fontSize="6" opacity=".8">✨</text>
+                        <text x="38" y="12" fontSize="6" opacity=".8">💫</text></>}
+                        <text x="27" y="8" textAnchor="middle" fontSize="10">{lo?"🔒":"⭐"}</text>
+                      </g>
+                    );
+                    if(b.zone==="crystal") return( // Crystal cave
+                      <g>
+                        <path d="M4,54 Q10,20 27,14 Q44,20 50,54 Z" fill={lo?"#546e7a":"#b2ebf2"}/>{/* cave */}
+                        <path d="M10,54 Q14,28 27,22 Q40,28 44,54" fill={lo?"#455a64":"#e0f7fa"} opacity=".8"/>
+                        {!lo&&<><text x="27" y="30" textAnchor="middle" fontSize="10">💎</text>
+                        <text x="14" y="46" fontSize="8" opacity=".7">💠</text>
+                        <text x="40" y="46" fontSize="8" opacity=".7">💠</text></>}
+                        <text x="27" y="12" textAnchor="middle" fontSize="10">{lo?"🔒":"💎"}</text>
+                      </g>
+                    );
+                    if(b.zone==="magic6") return( // Magic meadow
+                      <g>
+                        <ellipse cx="27" cy="36" rx="22" ry="20" fill={lo?"#546e7a":"#a5d6a7"}/>
+                        <ellipse cx="27" cy="26" rx="16" ry="14" fill={lo?"#455a64":"#c8e6c9"}/>
+                        {!lo&&<><text x="27" y="26" textAnchor="middle" fontSize="12">🦄</text>
+                        <text x="10" y="48" fontSize="8" opacity=".7">🌿</text>
+                        <text x="44" y="48" fontSize="8" opacity=".7">🍃</text></>}
+                        <text x="27" y="10" textAnchor="middle" fontSize="10">{lo?"🔒":"🦄"}</text>
+                      </g>
+                    );
+                    if(b.zone==="realm") return( // Enchanted realm manor
+                      <g>
+                        <rect x="4"  y="24" width="46" height="28" rx="3" fill={lo?"#546e7a":"#1a1a3e"}/>
+                        <rect x="0"  y="30" width="12" height="22" rx="2" fill={lo?"#455a64":"#001f5b"}/>
+                        <rect x="42" y="30" width="12" height="22" rx="2" fill={lo?"#455a64":"#001f5b"}/>
+                        <polygon points="0,26 27,4 54,26" fill={lo?"#37474f":"#0d1b6b"}/>
+                        {!lo&&[8,18,28,38].map(wx=>(
+                          <rect key={wx} x={wx} y="28" width="7" height="9" rx="1" fill="#80deea" opacity=".9"/>
+                        ))}
+                        <rect x="20" y="40" width="14" height="12" rx="5" fill={lo?"#37474f":"#001f5b"}/>
+                        {!lo&&<><rect x="26" y="3" width="2" height="10" fill="#80deea"/>
+                        <text x="28" y="3" fontSize="7">🌟</text></>}
+                        <text x="27" y="22" textAnchor="middle" fontSize="10">{lo?"🔒":"🌟"}</text>
+                      </g>
+                    );
                     return null;
                   };
 
@@ -2901,8 +3322,8 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                     style={{transformOrigin:`${b.x}px ${b.y+14}px`,transform:"rotate(-90deg)"}}/>
                 )}
 
-                {/* Complete badge */}
-                {isComplete&&(
+                {/* Complete badge — hidden in preview mode */}
+                {isComplete&&!isBrowseLocked&&(
                   <g>
                     <circle cx={b.x+18} cy={b.y-36} r="9" fill="#43a047" stroke="#fff" strokeWidth="2"/>
                     <text x={b.x+18} y={b.y-32} textAnchor="middle" fontSize="10" fill="#fff">✓</text>
@@ -2956,8 +3377,8 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                     <text x="160" y="88" textAnchor="middle" fontSize="24">🔒</text>
                   </g>
                 )}
-                {/* Complete badge */}
-                {isComplete&&(
+                {/* Complete badge — hidden in preview mode */}
+                {isComplete&&!isBrowseLocked&&(
                   <g>
                     <circle cx="210" cy="22" r="12" fill="#43a047" stroke="#fff" strokeWidth="2.5"/>
                     <text x="210" y="27" textAnchor="middle" fontSize="12" fill="#fff">✓</text>
