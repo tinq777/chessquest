@@ -1970,13 +1970,13 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
             const isUnlocked = i===0 ? true : WORLDS[i-1].puzzles.every(p=>(completedIds||[]).includes(p.id));
             return(
               <button key={w.id}
-                onClick={()=>isUnlocked&&!isActive&&onNav(`switchWorld:${w.id}`)}
+                onClick={()=>{ if(isUnlocked&&!isActive){onNav(`switchWorld:${w.id}`);}else if(!isUnlocked){onNav(`browseWorld:${w.id}`);} }}
                 style={{flex:1,background:isActive?`linear-gradient(135deg,${w.color},${w.bg||w.color})`:isUnlocked?"rgba(255,255,255,.12)":"rgba(0,0,0,.25)",
                   border:isActive?`3px solid rgba(255,255,255,.4)`:isUnlocked?"2px solid rgba(255,255,255,.2)":"2px solid rgba(255,255,255,.05)",
-                  borderRadius:14,padding:"10px 6px",cursor:isUnlocked&&!isActive?"pointer":"default",
+                  borderRadius:14,padding:"10px 6px",cursor:isActive?"default":"pointer",
                   display:"flex",flexDirection:"column",alignItems:"center",gap:3,
                   boxShadow:isActive?`0 4px 0 ${w.bg||w.color}88`:"none",
-                  opacity:isUnlocked?1:.45,
+                  opacity:isUnlocked?1:.55,
                   transform:isActive?"scale(1.06)":"scale(1)",transition:"all .2s"}}>
                 <span style={{fontSize:20}}>{isUnlocked?w.emoji:"🔒"}</span>
                 <div style={{fontSize:9,fontWeight:900,color:"#fff",letterSpacing:.5,textAlign:"center",lineHeight:1.2}}>
@@ -2136,7 +2136,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
 // ═══════════════════════════════════════════════════════════
 // MAP SCREEN — Reading Eggs adventure map style
 // ═══════════════════════════════════════════════════════════
-function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAvatar, playerColor, world=1, activeZones=ZONES, activePuzzles=PUZZLES}){
+function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAvatar, playerColor, world=1, activeZones=ZONES, activePuzzles=PUZZLES, isBrowseLocked=false, browseWorldId=null, onSwitchWorld=null, playerWorld=1}){
 
   const youAreHere = (() => {
     for(let i=0; i<activeZones.length; i++){
@@ -2230,10 +2230,35 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
     <div style={{height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       {/* Header */}
-      <div style={{background:world===6?"linear-gradient(135deg,#006064,#00bcd4)":world===5?"linear-gradient(135deg,#880e4f,#e91e63)":world===4?"linear-gradient(135deg,#4a235a,#8e44ad)":world===3?"linear-gradient(135deg,#880e4f,#e91e8c)":world===2?"linear-gradient(135deg,#7b241c,#c0392b)":"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px",flexShrink:0,boxShadow:world===6?"0 4px 0 #006064":world===5?"0 4px 0 #880e4f":world===4?"0 4px 0 #4a235a":world===3?"0 4px 0 #880e4f":world===2?"0 4px 0 #641e16":"0 4px 0 #1b5e20",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-        <span style={{fontSize:16}}>{world===6?"🦄":world===5?"👑":world===4?"⚔️":world===3?"👸":world===2?"🐉":"🏰"}</span>
-        <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>{world===6?"UNICORN RAINBOWS 🌈":world===5?"PRINCESS POWER 💎":world===4?"KNIGHT'S TALE ⚔️":world===3?"CHESS FAIRYTALE ✨":world===2?"CHESS DUNGEON":"CHESS VILLAGE"}</span>
-        <span style={{fontSize:16}}>{world===2?"🗺️":"🗺️"}</span>
+      <div style={{background:world===6?"linear-gradient(135deg,#006064,#00bcd4)":world===5?"linear-gradient(135deg,#880e4f,#e91e63)":world===4?"linear-gradient(135deg,#4a235a,#8e44ad)":world===3?"linear-gradient(135deg,#880e4f,#e91e8c)":world===2?"linear-gradient(135deg,#7b241c,#c0392b)":"linear-gradient(135deg,#2e7d32,#66bb6a)",padding:"8px 14px 6px",flexShrink:0,boxShadow:world===6?"0 4px 0 #006064":world===5?"0 4px 0 #880e4f":world===4?"0 4px 0 #4a235a":world===3?"0 4px 0 #880e4f":world===2?"0 4px 0 #641e16":"0 4px 0 #1b5e20"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:6}}>
+          <span style={{fontSize:16}}>{world===6?"🦄":world===5?"👑":world===4?"⚔️":world===3?"👸":world===2?"🐉":"🏰"}</span>
+          <span style={{fontSize:14,fontWeight:900,color:"#fff",letterSpacing:1}}>{world===6?"UNICORN RAINBOWS 🌈":world===5?"PRINCESS POWER 💎":world===4?"KNIGHT'S TALE ⚔️":world===3?"CHESS FAIRYTALE ✨":world===2?"CHESS DUNGEON":"CHESS VILLAGE"}{isBrowseLocked?" 👁️ PREVIEW":""}</span>
+        </div>
+        {/* World selector strip */}
+        {onSwitchWorld&&<div style={{display:"flex",gap:5,justifyContent:"center"}}>
+          {WORLDS.map((w,i)=>{
+            const isActive=world===w.id;
+            const isPlayerWorld=playerWorld===w.id;
+            const isUnlocked=i===0||WORLDS[i-1].puzzles.every(p=>(completedIds||[]).includes(p.id));
+            return(
+              <button key={w.id} onClick={()=>onSwitchWorld(w.id)}
+                style={{flex:1,maxWidth:44,background:isActive?`linear-gradient(135deg,${w.color},${w.bg||w.color})`:"rgba(255,255,255,.15)",
+                  border:isActive?"2px solid rgba(255,255,255,.6)":isPlayerWorld?"2px solid rgba(255,255,255,.3)":"2px solid rgba(255,255,255,.08)",
+                  borderRadius:10,padding:"5px 2px",cursor:"pointer",
+                  display:"flex",flexDirection:"column",alignItems:"center",gap:1,
+                  opacity:isActive?1:isUnlocked?.85:.5,
+                  transform:isActive?"scale(1.08)":"scale(1)",transition:"all .15s"}}>
+                <span style={{fontSize:14}}>{isUnlocked?w.emoji:"🔒"}</span>
+                <div style={{fontSize:8,fontWeight:900,color:"#fff",letterSpacing:.3,lineHeight:1}}>W{w.id}{isPlayerWorld&&!isActive?" ★":""}</div>
+              </button>
+            );
+          })}
+        </div>}
+        {/* Browse-locked banner */}
+        {isBrowseLocked&&<div style={{marginTop:5,textAlign:"center",background:"rgba(0,0,0,.3)",borderRadius:8,padding:"4px 8px",fontSize:11,color:"rgba(255,255,255,.85)",fontWeight:700}}>
+          🔒 Complete W{world-1} to unlock this world — levels are locked for preview
+        </div>}
       </div>
 
       {/* Scrollable map */}
@@ -2524,7 +2549,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             const prevZone = i>0 ? activeZones[i-1] : null;
             const prevPuzzles = prevZone ? activePuzzles.filter(p=>p.zone===prevZone.id) : [];
             const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
-            const locked = i===0 ? false : prevDone < prevPuzzles.length;
+            const locked = isBrowseLocked || (i===0 ? false : prevDone < prevPuzzles.length);
             const zonePuzzles = activePuzzles.filter(p=>p.zone===b.zone);
             const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const isHere = i===youAreHere;
@@ -2911,7 +2936,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             const prevZone = i>0 ? activeZones[i-1] : null;
             const prevPuzzles = prevZone ? activePuzzles.filter(p=>p.zone===prevZone.id) : [];
             const prevDone = prevPuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
-            const locked = i>0 && prevDone < prevPuzzles.length;
+            const locked = isBrowseLocked || (i>0 && prevDone < prevPuzzles.length);
             const zonePuzzles = activePuzzles.filter(p=>p.zone===b.zone);
             const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const isHere = i===youAreHere;
@@ -3695,8 +3720,15 @@ function ChessWorld(){
   const world1Done    = WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id));
   const prevWorldDone = world > 1 ? getWorld(world-1).puzzles.every(p=>(completedIds||[]).includes(p.id)) : true;
   const completed    = activePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+  // Browse-world: player can preview locked worlds (zones locked, no play)
+  const isWorldUnlocked=(wid)=>{ const idx=WORLDS.findIndex(w=>w.id===wid); return idx===0||WORLDS[idx-1].puzzles.every(p=>(completedIds||[]).includes(p.id)); };
+  const mapWorld      = browseWorldId ? getWorld(browseWorldId) : activeWorld;
+  const mapZones      = mapWorld.zones;
+  const mapPuzzles    = mapWorld.puzzles;
+  const isBrowseLocked= browseWorldId && !isWorldUnlocked(browseWorldId);
 
   const [tab,setTab]=useState("home");
+  const [browseWorldId,setBrowseWorldId]=useState(null); // null = show player's own world
   const [activePuzzle,setActivePuzzle]=useState(null);
   const [showPlay,setShowPlay]=useState(false);
   const [xpPop,setXpPop]=useState(null);
@@ -3859,8 +3891,8 @@ function ChessWorld(){
             <div style={{fontSize:32,marginBottom:20,letterSpacing:4}}>{"⭐".repeat(3)}</div>
             {/* Buttons */}
             <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>{setZoneCompleteData(null);setTab("home");}} style={{flex:1,background:"#dfe6e9",border:"none",borderRadius:14,padding:14,fontSize:14,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 0 #b2bec3",color:"#2d3436"}}>🏠 Home</button>
-              <button onClick={()=>{setZoneCompleteData(null);setTab("zones");}} style={{flex:1,background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:14,fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 0 #4a3ab5",color:"#fff",animation:"bounceIn .4s .2s both"}}>🗺️ Map</button>
+              <button onClick={()=>{setZoneCompleteData(null);setBrowseWorldId(null);setTab("home");}} style={{flex:1,background:"#dfe6e9",border:"none",borderRadius:14,padding:14,fontSize:14,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 0 #b2bec3",color:"#2d3436"}}>🏠 Home</button>
+              <button onClick={()=>{setZoneCompleteData(null);setBrowseWorldId(null);setTab("zones");}} style={{flex:1,background:"linear-gradient(135deg,#6c5ce7,#a29bfe)",border:"none",borderRadius:14,padding:14,fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 0 #4a3ab5",color:"#fff",animation:"bounceIn .4s .2s both"}}>🗺️ Map</button>
             </div>
           </div>
         </div>
@@ -3968,8 +4000,8 @@ function ChessWorld(){
               msg={playMsg} setMsg={setPlayMsg}
               mood={playMood} setMood={setPlayMood}
             />
-          : tab==="home"   ?  <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} completedIds={completedIds} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else if(t.startsWith("switchWorld:")){const wid=parseInt(t.split(":")[1]);updateProfile({world:wid});setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color} world={world} world1Done={world1Done} activeZones={activeZones} activePuzzles={activePuzzles} activeWorld={activeWorld}/>
-          : tab==="zones"  ? <MapScreen  xp={xp} completedPuzzles={completed} completedIds={completedIds} onStartPuzzle={startZone} playerAvatar={profile.avatar} playerColor={profile.color} world={world} activeZones={activeZones} activePuzzles={activePuzzles}/>
+          : tab==="home"   ?  <HomeScreen xp={xp} streak={streak} completedPuzzles={completed} completedIds={completedIds} onNav={t=>{if(t==="play"){setShowPlay(true);}else if(t.startsWith("zone:")){const zid=t.slice(5);startZone(zid,"home");setTab("zones");}else if(t.startsWith("switchWorld:")){const wid=parseInt(t.split(":")[1]);updateProfile({world:wid});setBrowseWorldId(null);setTab("zones");}else if(t.startsWith("browseWorld:")){const wid=parseInt(t.split(":")[1]);setBrowseWorldId(wid);setTab("zones");}else{setTab(t);}}} gems={gems} playerName={profile.name} playerAvatar={profile.avatar} playerColor={profile.color} world={world} world1Done={world1Done} activeZones={activeZones} activePuzzles={activePuzzles} activeWorld={activeWorld}/>
+          : tab==="zones"  ? <MapScreen  xp={xp} completedPuzzles={completed} completedIds={completedIds} onStartPuzzle={startZone} playerAvatar={profile.avatar} playerColor={profile.color} world={browseWorldId||world} activeZones={mapZones} activePuzzles={mapPuzzles} isBrowseLocked={isBrowseLocked} browseWorldId={browseWorldId} onSwitchWorld={(wid)=>{ const idx=WORLDS.findIndex(w=>w.id===wid); const unlocked=idx===0||WORLDS[idx-1].puzzles.every(p=>(completedIds||[]).includes(p.id)); if(unlocked){updateProfile({world:wid});setBrowseWorldId(null);}else{setBrowseWorldId(wid);} }} playerWorld={world}/>
           : tab==="awards" ? <AwardsScreen xp={xp} completedPuzzles={completed} completedIds={completedIds} streak={streak} world={world}/>
           : null
         }
@@ -3984,8 +4016,8 @@ function ChessWorld(){
               SFX.tap();
               if(id==="play"){ setShowPlay(true); setActivePuzzle(null); setZoneCompleteData(null); }
               else if(showPlay && id!=="play"){
-                tryLeavePlay(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); });
-              } else { setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); }
+                tryLeavePlay(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); if(id!=="zones")setBrowseWorldId(null); });
+              } else { setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); if(id!=="zones")setBrowseWorldId(null); }
             }}
               style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px 0"}}>
               <div style={{
