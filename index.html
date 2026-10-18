@@ -1982,6 +1982,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
                 <div style={{fontSize:9,fontWeight:900,color:"#fff",letterSpacing:.5,textAlign:"center",lineHeight:1.2}}>
                   {isUnlocked?`W${w.id}${isActive?" ✓":""}`:`W${w.id}`}
                 </div>
+                {!isUnlocked&&<div style={{fontSize:7,color:"rgba(255,255,255,.7)",fontWeight:700}}>👁️</div>}
               </button>
             );
           })}
