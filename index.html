@@ -2697,7 +2697,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
             const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
             const isHere = i===youAreHere;
             const pct = zonePuzzles.length ? (done/zonePuzzles.length)*100 : 0;
-            const isComplete = done===zonePuzzles.length;
+            const isComplete = done===zonePuzzles.length && zonePuzzles.length>0;
             const zoneColor = activeZones[i]?.color || "#888";
 
             // Skip last zone — drawn separately above
