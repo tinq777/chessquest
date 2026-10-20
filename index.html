@@ -2088,7 +2088,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
               const isLocked = i>0 && prevD<prevPs.length;
               const zonePuzzles = activePuzzles.filter(p=>p.zone===z.id);
               const done = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
-              const isComplete = done===zonePuzzles.length;
+              const isComplete = done===zonePuzzles.length && zonePuzzles.length>0;
               return(
                 <button key={z.id}
                   onClick={()=>{ if(!isLocked) onNav("zone:"+z.id); }}
@@ -2140,12 +2140,15 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
 function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAvatar, playerColor, world=1, activeZones=ZONES, activePuzzles=PUZZLES, isBrowseLocked=false, browseWorldId=null, onSwitchWorld=null, playerWorld=1}){
 
   const youAreHere = (() => {
+    // If browsing a locked world (no puzzles yet), always show first zone
+    if(isBrowseLocked) return 0;
     for(let i=0; i<activeZones.length; i++){
       const prevZ2 = i>0 ? activeZones[i-1] : null;
       const prevPs2 = prevZ2 ? activePuzzles.filter(p=>p.zone===prevZ2.id) : [];
       const prevD2 = prevPs2.filter(p=>(completedIds||[]).includes(p.id)).length;
       if(i>0 && prevD2 < prevPs2.length) return Math.max(0,i-1);
       const zonePuzzles = activePuzzles.filter(p=>p.zone===activeZones[i].id);
+      if(zonePuzzles.length===0) continue; // skip zones with no puzzles yet
       const zoneDone = zonePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
       if(zoneDone < zonePuzzles.length) return i;
     }
