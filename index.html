@@ -25,7 +25,7 @@
   <script type="text/babel">
 // Chess Quest v3.0 — Local storage edition
 // All data saved to device localStorage. No login, no Firebase, no network needed.
-const APP_VERSION = "1.7.1"; // bump this on every deploy
+const APP_VERSION = "1.7.2"; // bump this on every deploy
 const { useState, useCallback, useRef, useEffect } = React;
 
 class ErrorBoundary extends React.Component {
@@ -4146,6 +4146,8 @@ function ChessWorld(){
   const world1Done    = WORLDS[0].puzzles.every(p=>(completedIds||[]).includes(p.id));
   const prevWorldDone = world > 1 ? getWorld(world-1).puzzles.every(p=>(completedIds||[]).includes(p.id)) : true;
   const completed    = activePuzzles.filter(p=>(completedIds||[]).includes(p.id)).length;
+  const [browseWorldId,setBrowseWorldId]=useState(null); // null = show player's own world
+
   // Browse-world: player can preview locked worlds (zones locked, no play)
   const isWorldUnlocked=(wid)=>{ const idx=WORLDS.findIndex(w=>w.id===wid); return idx===0||WORLDS[idx-1].puzzles.every(p=>(completedIds||[]).includes(p.id)); };
   const mapWorld      = browseWorldId ? getWorld(browseWorldId) : activeWorld;
@@ -4154,7 +4156,6 @@ function ChessWorld(){
   const isBrowseLocked= browseWorldId && !isWorldUnlocked(browseWorldId);
 
   const [tab,setTab]=useState("home");
-  const [browseWorldId,setBrowseWorldId]=useState(null); // null = show player's own world
   const [activePuzzle,setActivePuzzle]=useState(null);
   const [showPlay,setShowPlay]=useState(false);
   const [xpPop,setXpPop]=useState(null);
