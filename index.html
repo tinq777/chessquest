@@ -25,7 +25,7 @@
   <script type="text/babel">
 // Chess Quest v3.0 — Local storage edition
 // All data saved to device localStorage. No login, no Firebase, no network needed.
-const APP_VERSION = "1.7.0"; // bump this on every deploy
+const APP_VERSION = "1.7.1"; // bump this on every deploy
 const { useState, useCallback, useRef, useEffect } = React;
 
 class ErrorBoundary extends React.Component {
@@ -2711,7 +2711,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
               <g key={b.zone} onClick={()=>!locked&&onStartPuzzle(b.zone)} style={{cursor:locked?"default":"pointer"}}>
 
                 {/* Glow ring for current zone */}
-                {isHere&&<circle cx={b.x} cy={b.y} r="38" fill={`${zoneColor}33`} stroke={zoneColor} strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
+                {isHere&&!isBrowseLocked&&<circle cx={b.x} cy={b.y} r="38" fill={`${zoneColor}33`} stroke={zoneColor} strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
 
                 {/* Unique building per zone */}
                 {(()=>{
@@ -3373,7 +3373,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                 {/* Clickable area over castle */}
                 <rect x="95" y="0" width="130" height="145" fill="transparent"/>
                 {/* Glow if current */}
-                {isHere&&<ellipse cx="160" cy="90" rx="65" ry="50" fill="#fdd83533" stroke="#fdd835" strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
+                {isHere&&!isBrowseLocked&&<ellipse cx="160" cy="90" rx="65" ry="50" fill="#fdd83533" stroke="#fdd835" strokeWidth="2" style={{animation:"mapPulse 2s ease-in-out infinite"}}/>}
                 {/* Lock overlay if locked */}
                 {locked&&(
                   <g>
