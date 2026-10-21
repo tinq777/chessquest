@@ -25,6 +25,7 @@
   <script type="text/babel">
 // Chess Quest v3.0 — Local storage edition
 // All data saved to device localStorage. No login, no Firebase, no network needed.
+const APP_VERSION = "1.5.0"; // bump this on every deploy
 const { useState, useCallback, useRef, useEffect } = React;
 
 class ErrorBoundary extends React.Component {
@@ -2117,7 +2118,7 @@ function HomeScreen({xp, streak, completedPuzzles, completedIds, onNav, gems, pl
                     </div>
                   )}
                   {/* Complete badge */}
-                  {isComplete&&(
+                  {isComplete&&zonePuzzles.length>0&&(
                     <div style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#27ae60",border:"2px solid #fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:900}}>✓</div>
                   )}
                 </button>
@@ -4433,7 +4434,8 @@ function ChessWorld(){
       </div>
 
       {/* Bottom nav */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",background:"#fff",borderTop:"3px solid #dfe6e9",padding:"8px 0 12px",flexShrink:0,boxShadow:"0 -4px 0 #dfe6e9"}}>
+      <div style={{background:"#fff",borderTop:"3px solid #dfe6e9",flexShrink:0,boxShadow:"0 -4px 0 #dfe6e9"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",padding:"8px 0 4px"}}>
         {Object.entries(tabCfg).map(([id,cfg])=>{
           const active=(id==="play"&&showPlay)||(id==="zones"&&!!activePuzzle)||(id!=="play"&&!activePuzzle&&tab===id);
           return(
@@ -4460,6 +4462,8 @@ function ChessWorld(){
             </button>
           );
         })}
+      </div>
+      <div style={{textAlign:"center",paddingBottom:"max(8px,env(safe-area-inset-bottom))",fontSize:9,color:"#b2bec3",fontWeight:700,letterSpacing:.5}}>v{APP_VERSION}</div>
       </div>
 
       {/* ── GAME COMPLETE OVERLAY ── */}
