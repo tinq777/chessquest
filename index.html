@@ -25,7 +25,7 @@
   <script type="text/babel">
 // Chess Quest v3.0 — Local storage edition
 // All data saved to device localStorage. No login, no Firebase, no network needed.
-const APP_VERSION = "1.6.0"; // bump this on every deploy
+const APP_VERSION = "1.7.0"; // bump this on every deploy
 const { useState, useCallback, useRef, useEffect } = React;
 
 class ErrorBoundary extends React.Component {
@@ -3342,7 +3342,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                 </text>
 
                 {/* YOU ARE HERE pin */}
-                {isHere&&(
+                {isHere&&!isBrowseLocked&&(
                   <g style={{animation:"mascotFloat 2s ease-in-out infinite"}}>
                     <ellipse cx={b.x} cy={b.y-50} rx="12" ry="12" fill={playerColor||"#e53935"} stroke="#fff" strokeWidth="2.5"/>
                     <text x={b.x} y={b.y-46} textAnchor="middle" fontSize="12">{playerAvatar||"♟️"}</text>
@@ -3392,7 +3392,7 @@ function MapScreen({xp, completedPuzzles, completedIds, onStartPuzzle, playerAva
                 <rect x="120" y="140" width="80" height="16" rx="8" fill={locked?"rgba(30,40,30,.8)":castleZoneColor} opacity=".95"/>
                 <text x="160" y="152" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900" fontFamily="sans-serif">{b.label.toUpperCase()} {b.emoji}</text>
                 {/* YOU ARE HERE on castle */}
-                {isHere&&(
+                {isHere&&!isBrowseLocked&&(
                   <g style={{animation:"mascotFloat 2s ease-in-out infinite"}}>
                     <ellipse cx="160" cy="-8" rx="12" ry="12" fill={playerColor||"#e53935"} stroke="#fff" strokeWidth="2.5"/>
                     <text x="160" y="-4" textAnchor="middle" fontSize="12">{playerAvatar||"♟️"}</text>
@@ -4463,7 +4463,6 @@ function ChessWorld(){
             );
           })}
         </div>
-        <div style={{textAlign:"center",padding:"2px 0 6px",fontSize:9,color:"#b2bec3",fontWeight:700,letterSpacing:.5}}>v{APP_VERSION}</div>
       </div>
 
       {/* ── GAME COMPLETE OVERLAY ── */}
