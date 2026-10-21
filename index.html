@@ -25,7 +25,7 @@
   <script type="text/babel">
 // Chess Quest v3.0 — Local storage edition
 // All data saved to device localStorage. No login, no Firebase, no network needed.
-const APP_VERSION = "1.5.0"; // bump this on every deploy
+const APP_VERSION = "1.6.0"; // bump this on every deploy
 const { useState, useCallback, useRef, useEffect } = React;
 
 class ErrorBoundary extends React.Component {
@@ -4434,36 +4434,36 @@ function ChessWorld(){
       </div>
 
       {/* Bottom nav */}
-      <div style={{background:"#fff",borderTop:"3px solid #dfe6e9",flexShrink:0,boxShadow:"0 -4px 0 #dfe6e9"}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",padding:"8px 0 4px"}}>
-        {Object.entries(tabCfg).map(([id,cfg])=>{
-          const active=(id==="play"&&showPlay)||(id==="zones"&&!!activePuzzle)||(id!=="play"&&!activePuzzle&&tab===id);
-          return(
-            <button key={id} onClick={()=>{
-              SFX.tap();
-              if(id==="play"){ setShowPlay(true); setActivePuzzle(null); setZoneCompleteData(null); }
-              else if(showPlay && id!=="play"){
-                tryLeavePlay(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); if(id!=="zones")setBrowseWorldId(null); });
-              } else { setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); if(id!=="zones")setBrowseWorldId(null); }
-            }}
-              style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px 0"}}>
-              <div style={{
-                width:42,height:42,borderRadius:14,
-                background:active?`linear-gradient(145deg,${cfg.color}ee,${cfg.color}aa)`:"transparent",
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,
-                boxShadow:active?`0 4px 0 ${cfg.color}88`:"none",
-                transform:active?"scale(1.12)":"scale(1)",
-                transition:"all .2s cubic-bezier(.34,1.56,.64,1)",
-                border:active?"2px solid rgba(255,255,255,.4)":"2px solid transparent",
-                animation:active?"navPop 1.5s ease-in-out infinite":"none",
-                filter:active?"drop-shadow(0 2px 8px rgba(255,255,255,.3))":"none",
-              }}>{cfg.icon}</div>
-              <span style={{fontSize:10,color:active?cfg.color:"#95a5a6",fontWeight:active?900:600,transition:"color .2s"}}>{cfg.label}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div style={{textAlign:"center",paddingBottom:"max(8px,env(safe-area-inset-bottom))",fontSize:9,color:"#b2bec3",fontWeight:700,letterSpacing:.5}}>v{APP_VERSION}</div>
+      <div style={{background:"#fff",borderTop:"3px solid #dfe6e9",flexShrink:0,boxShadow:"0 -4px 0 #dfe6e9",paddingBottom:"env(safe-area-inset-bottom)"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",padding:"8px 0 2px"}}>
+          {Object.entries(tabCfg).map(([id,cfg])=>{
+            const active=(id==="play"&&showPlay)||(id==="zones"&&!!activePuzzle)||(id!=="play"&&!activePuzzle&&tab===id);
+            return(
+              <button key={id} onClick={()=>{
+                SFX.tap();
+                if(id==="play"){ setShowPlay(true); setActivePuzzle(null); setZoneCompleteData(null); }
+                else if(showPlay && id!=="play"){
+                  tryLeavePlay(()=>{ setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); if(id!=="zones")setBrowseWorldId(null); });
+                } else { setTab(id); setShowPlay(false); setActivePuzzle(null); setZoneCompleteData(null); if(id!=="zones")setBrowseWorldId(null); }
+              }}
+                style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px 0"}}>
+                <div style={{
+                  width:42,height:42,borderRadius:14,
+                  background:active?`linear-gradient(145deg,${cfg.color}ee,${cfg.color}aa)`:"transparent",
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,
+                  boxShadow:active?`0 4px 0 ${cfg.color}88`:"none",
+                  transform:active?"scale(1.12)":"scale(1)",
+                  transition:"all .2s cubic-bezier(.34,1.56,.64,1)",
+                  border:active?"2px solid rgba(255,255,255,.4)":"2px solid transparent",
+                  animation:active?"navPop 1.5s ease-in-out infinite":"none",
+                  filter:active?"drop-shadow(0 2px 8px rgba(255,255,255,.3))":"none",
+                }}>{cfg.icon}</div>
+                <span style={{fontSize:10,color:active?cfg.color:"#95a5a6",fontWeight:active?900:600,transition:"color .2s"}}>{cfg.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{textAlign:"center",padding:"2px 0 6px",fontSize:9,color:"#b2bec3",fontWeight:700,letterSpacing:.5}}>v{APP_VERSION}</div>
       </div>
 
       {/* ── GAME COMPLETE OVERLAY ── */}
@@ -4612,6 +4612,9 @@ function ChessWorld(){
                 📥 Restore
               </button>
             </div>
+
+            {/* App version */}
+            <div style={{textAlign:"center",paddingTop:8,fontSize:11,color:"#b2bec3",fontWeight:700,letterSpacing:.5}}>Chess Quest v{APP_VERSION}</div>
           </div>
         </div>
       )}
